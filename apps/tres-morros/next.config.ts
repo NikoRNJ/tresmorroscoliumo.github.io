@@ -1,9 +1,7 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  experimental: {
-    typedRoutes: true,
-  },
+  typedRoutes: true,
   images: {
     remotePatterns: [
       {
@@ -15,9 +13,6 @@ const nextConfig: NextConfig = {
         hostname: "flowfront.imgix.net",
       },
     ],
-  },
-  eslint: {
-    dirs: ["src"],
   },
 };
 

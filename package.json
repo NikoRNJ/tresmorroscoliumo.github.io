@@ -6,8 +6,7 @@
     "dev": "pnpm --filter tres-morros dev",
     "build": "pnpm --filter tres-morros build",
     "start": "pnpm --filter tres-morros start",
-    "lint": "pnpm --filter tres-morros lint",
-    "test": "pnpm --filter tres-morros test"
+    "lint": "pnpm --filter tres-morros lint"
   },
   "devDependencies": {
     "@vitest/ui": "^4.0.8",
