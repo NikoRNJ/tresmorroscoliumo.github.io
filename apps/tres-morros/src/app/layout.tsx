@@ -1,21 +1,59 @@
+/**
+ * Root Layout - Layout principal de la aplicación
+ * Incluye metadata, fuentes y componentes globales
+ */
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
 import "./globals.css";
-import { SiteHeader } from "@/components/layout/SiteHeader";
-import { SiteFooter } from "@/components/layout/SiteFooter";
-import { SeoProvider } from "@/components/seo/SeoProvider";
-import { publicEnv } from "@/lib/public-env";
-
-const inter = Inter({
-  subsets: ["latin"],
-  variable: "--font-sans",
-});
+import { Header, Footer } from "@/components/layout";
+import { siteConfig } from "@/lib/config/site";
 
 export const metadata: Metadata = {
-  metadataBase: new URL(publicEnv.siteUrl),
-  title: "Tres Morros",
-  description:
-    "Cabañas Tres Morros de la Octava Región con jacuzzis y una experiencia única.",
+  title: {
+    default: siteConfig.name,
+    template: `%s | ${siteConfig.name}`,
+  },
+  description: siteConfig.description,
+  keywords: siteConfig.keywords,
+  authors: [{ name: siteConfig.author.name }],
+  creator: siteConfig.author.name,
+  openGraph: {
+    type: "website",
+    locale: "es_ES",
+    url: siteConfig.url,
+    title: siteConfig.name,
+    description: siteConfig.description,
+    siteName: siteConfig.name,
+    images: [
+      {
+        url: siteConfig.ogImage,
+        width: 1200,
+        height: 630,
+        alt: siteConfig.name,
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: siteConfig.name,
+    description: siteConfig.description,
+    images: [siteConfig.ogImage],
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      'max-video-preview': -1,
+      'max-image-preview': 'large',
+      'max-snippet': -1,
+    },
+  },
+  icons: {
+    icon: "/favicon.ico",
+    shortcut: "/favicon-16x16.png",
+    apple: "/apple-touch-icon.png",
+  },
 };
 
 export default function RootLayout({
@@ -24,19 +62,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="es">
-      <body className={`${inter.variable} bg-background text-foreground`}>
-        <SeoProvider />
-        <script
-          defer
-          data-domain={publicEnv.plausibleDomain}
-          src="https://plausible.io/js/script.js"
-        />
-        <div className="flex min-h-screen flex-col">
-          <SiteHeader />
-          <main className="flex-1 bg-brand-muted/30">{children}</main>
-          <SiteFooter />
-        </div>
+    <html lang="es" className="scroll-smooth">
+      <body className="font-sans antialiased bg-black text-white">
+        <Header />
+        {children}
+        <Footer />
       </body>
     </html>
   );
