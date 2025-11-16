@@ -1,0 +1,56 @@
+# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+
+# dependencies
+node_modules/
+**/node_modules/
+.pnp
+.pnp.js
+.yarn/install-state.gz
+
+# build artifacts & caches
+.turbo
+.swc
+dist/
+build/
+out/
+.next/
+**/.next/
+.vercel
+
+# testing
+coverage/
+test-results/
+playwright-report/
+.playwright/
+
+# logs & debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+logs/
+*.log
+
+# environment files
+.env
+.env*.local
+.env.production
+
+# misc binaries / secrets
+*.pem
+/ngrok-bin
+*.exe
+*.zip
+
+# typescript
+*.tsbuildinfo
+next-env.d.ts
+
+# IDE / OS files
+.vscode
+.idea
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~

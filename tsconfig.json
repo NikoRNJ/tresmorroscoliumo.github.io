@@ -1,0 +1,12 @@
+{
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@core/*": ["packages/core/src/*"],
+      "@ui/*": ["packages/ui/src/*"]
+    }
+  },
+  "include": ["packages", "tests", "tests-e2e-no-server", "tools"],
+  "exclude": ["node_modules"]
+}

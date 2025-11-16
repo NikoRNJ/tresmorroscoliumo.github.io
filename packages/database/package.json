@@ -1,0 +1,11 @@
+{
+  "name": "@tresmorros/database",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Definiciones SQL y migraciones del proyecto Tres Morros",
+  "files": [
+    "migrations",
+    "supabase-schema.sql"
+  ]
+}
+
