@@ -1,2 +1,1 @@
-web: pnpm --filter @tresmorros/web start -- --hostname 172.66.0.96 --port ${PORT:-3000}
-
+web: pnpm --filter @tresmorros/web start -- --hostname 0.0.0.0 --port ${PORT:-3000}
