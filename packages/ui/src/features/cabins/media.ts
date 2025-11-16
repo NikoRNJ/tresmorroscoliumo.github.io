@@ -35,7 +35,7 @@ export function getCabinGalleryImages(slug: string | null): MediaImage[] {
     return [defaultCabinImage];
   }
 
-  return cabinGalleryMap[slug as CabinSlug] ?? [defaultCabinImage];
+  return [...(cabinGalleryMap[slug as CabinSlug] ?? [defaultCabinImage])];
 }
 
 export function getCabinCoverImage(slug: string | null): MediaImage {
