@@ -1,124 +1,74 @@
-alerts:
-- rule: DEPLOYMENT_FAILED
-- rule: DOMAIN_FAILED
-features:
-- buildpack-stack=ubuntu-22
-- new-nodejs-buildpack=true
-ingress:
-  rules:
-  - component:
-      name: tresmorroscoliumo-github-io
-    match:
-      path:
-        prefix: /
 name: tres-morros-app
-region: atl
+
 services:
-- build_command: pnpm install --frozen-lockfile && pnpm build
-  environment_slug: node-js
-  envs:
-  - key: NODE_ENV
-    scope: RUN_TIME
-    value: production
-  - key: NODE_ENV
-    scope: BUILD_TIME
-    value: production
-  - key: NEXT_PUBLIC_SITE_URL
-    scope: RUN_TIME
-    value: https://tresmorroscoliumo.cl
-  - key: NEXT_PUBLIC_SITE_URL
-    scope: BUILD_TIME
-    value: https://tresmorroscoliumo.cl
-  - key: PUBLIC_EXTERNAL_URL
-    scope: RUN_TIME
-    value: https://tresmorroscoliumo.cl
-  - key: PUBLIC_EXTERNAL_URL
-    scope: BUILD_TIME
-    value: https://tresmorroscoliumo.cl
-  - key: NEXT_PUBLIC_SITE_NAME
-    scope: RUN_TIME
-    value: Tres Morros de Coliumo
-  - key: NEXT_PUBLIC_SITE_NAME
-    scope: BUILD_TIME
-    value: Tres Morros de Coliumo
-  - key: NEXT_PUBLIC_SUPABASE_URL
-    scope: RUN_TIME
-    value: https://tfztguqsdeolxxskumjg.supabase.co
-  - key: NEXT_PUBLIC_SUPABASE_URL
-    scope: BUILD_TIME
-    value: https://tfztguqsdeolxxskumjg.supabase.co
-  - key: NEXT_PUBLIC_SUPABASE_ANON_KEY
-    scope: RUN_TIME
-    value: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRmenRndXFzZGVvbHh4c2t1bWpnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI4MjU2NDEsImV4cCI6MjA3ODQwMTY0MX0.rJPmNYxQRtTCKruCtyif7_qk6oJEQ29eluKmkfa-CLA
-  - key: NEXT_PUBLIC_SUPABASE_ANON_KEY
-    scope: BUILD_TIME
-    value: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRmenRndXFzZGVvbHh4c2t1bWpnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI4MjU2NDEsImV4cCI6MjA3ODQwMTY0MX0.rJPmNYxQRtTCKruCtyif7_qk6oJEQ29eluKmkfa-CLA
-  - key: SUPABASE_SERVICE_ROLE_KEY
-    scope: RUN_TIME
-    value: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRmenRndXFzZGVvbHh4c2t1bWpnIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2MjgyNTY0MSwiZXhwIjoyMDc4NDAxNjQxfQ.6BEnoFAhzJyaMZ5iCayHIQyTMLFFnwdwbbMJ2vcrlO8
-  - key: SUPABASE_SERVICE_ROLE_KEY
-    scope: BUILD_TIME
-    value: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRmenRndXFzZGVvbHh4c2t1bWpnIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2MjgyNTY0MSwiZXhwIjoyMDc4NDAxNjQxfQ.6BEnoFAhzJyaMZ5iCayHIQyTMLFFnwdwbbMJ2vcrlO8
-  - key: FLOW_API_KEY
-    scope: RUN_TIME
-    value: 7E3D3FDF-8C70-4EA0-B30D-789129DLAB01
-  - key: FLOW_API_KEY
-    scope: BUILD_TIME
-    value: 7E3D3FDF-8C70-4EA0-B30D-789129DLAB01
-  - key: FLOW_SECRET_KEY
-    scope: RUN_TIME
-    value: 726eb20964ce8450daaf31f01998561ae8c3f7b8
-  - key: FLOW_SECRET_KEY
-    scope: BUILD_TIME
-    value: 726eb20964ce8450daaf31f01998561ae8c3f7b8
-  - key: FLOW_BASE_URL
-    scope: RUN_TIME
-    value: https://sandbox.flow.cl/api
-  - key: FLOW_BASE_URL
-    scope: BUILD_TIME
-    value: https://sandbox.flow.cl/api
-  - key: FLOW_FORCE_MOCK
-    scope: RUN_TIME
-    value: "true"
-  - key: FLOW_WEBHOOK_SECRET
-    scope: RUN_TIME
-    value: dev-flow-webhook-secret-123
-  - key: SENDGRID_API_KEY
-    scope: RUN_TIME
-    value: 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
-  - key: SENDGRID_API_KEY
-    scope: BUILD_TIME
-    value: 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
-  - key: SENDGRID_FROM_EMAIL
-    scope: RUN_TIME
-    value: nicolas.saavedra5@virginiogomez.cl
-  - key: SENDGRID_FROM_EMAIL
-    scope: BUILD_TIME
-    value: nicolas.saavedra5@virginiogomez.cl
-  - key: SENDGRID_FROM_NAME
-    scope: RUN_TIME
-    value: Tres Morros de Coliumo
-  - key: SENDGRID_FROM_NAME
-    scope: BUILD_TIME
-    value: Tres Morros de Coliumo
-  - key: ADMIN_PASSWORD
-    scope: RUN_TIME
-    value: TresMorros2025Admin!
-  - key: ADMIN_SESSION_SECRET
-    scope: RUN_TIME
-    value: TresMorrosSessionSecret2025!
-  - key: CRON_SECRET
-    scope: RUN_TIME
-    value: dev-cron-secret-123
-  github:
-    branch: main
-    deploy_on_push: true
-    repo: NikoRNJ/tresmorroscoliumo.github.io
-  http_port: 3000
-  instance_count: 1
-  instance_size_slug: apps-s-1vcpu-0.5gb
-  name: tresmorroscoliumo-github-io
-  run_command: |
-    pnpm --filter @tresmorros/web start -- --hostname 0.0.0.0 --port ${PORT:-3000}
-  source_dir: .
+  - name: web
+    source_dir: .
+    github:
+      repo: NikoRNJ/tresmorroscoliumo.github.io
+      branch: main
+      deploy_on_push: true
+    environment_slug: node-js
+    http_port: 3000
+    instance_count: 1
+    instance_size_slug: basic-xxs
+    build_command: pnpm install --frozen-lockfile && pnpm build
+    run_command: >
+      pnpm --filter @tresmorros/web start -- --hostname 0.0.0.0 --port ${PORT:-3000}
+    routes:
+      - path: /
+    envs:
+      - key: NODE_ENV
+        scope: RUN_AND_BUILD
+        value: production
+      - key: NEXT_PUBLIC_SITE_URL
+        scope: RUN_AND_BUILD
+        value: "https://tresmorroscoliumo.cl"
+      - key: NEXT_PUBLIC_SUPABASE_URL
+        scope: RUN_AND_BUILD
+        value: "https://tfztguqsdeolxxskumjg.supabase.co"
+      - key: NEXT_PUBLIC_SUPABASE_ANON_KEY
+        scope: RUN_AND_BUILD
+        value: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRmenRndXFzZGVvbHh4c2t1bWpnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI4MjU2NDEsImV4cCI6MjA3ODQwMTY0MX0.rJPmNYxQRtTCKruCtyif7_qk6oJEQ29eluKmkfa-CLA"
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        scope: RUN_AND_BUILD
+        value: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRmenRndXFzZGVvbHh4c2t1bWpnIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2MjgyNTY0MSwiZXhwIjoyMDc4NDAxNjQxfQ.6BEnoFAhzJyaMZ5iCayHIQyTMLFFnwdwbbMJ2vcrlO8"
+      - key: FLOW_API_KEY
+        scope: RUN_AND_BUILD
+        value: "7E3D3FDF-8C70-4EA0-B30D-789129DLAB01"
+      - key: FLOW_SECRET_KEY
+        scope: RUN_AND_BUILD
+        value: "726eb20964ce8450daaf31f01998561ae8c3f7b8"
+      - key: FLOW_BASE_URL
+        scope: RUN_AND_BUILD
+        value: "https://sandbox.flow.cl/api"
+      - key: FLOW_FORCE_MOCK
+        scope: RUN
+        value: "true"
+      - key: SENDGRID_API_KEY
+        scope: RUN_AND_BUILD
+        value: "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"
+      - key: SENDGRID_FROM_EMAIL
+        scope: RUN_AND_BUILD
+        value: "nicolas.saavedra5@virginiogomez.cl"
+      - key: SENDGRID_FROM_NAME
+        scope: RUN_AND_BUILD
+        value: "Tres Morros de Coliumo"
+      - key: PUBLIC_EXTERNAL_URL
+        scope: RUN_AND_BUILD
+        value: "https://tresmorroscoliumo.cl"
+      - key: NEXT_PUBLIC_SITE_NAME
+        scope: RUN_AND_BUILD
+        value: "Tres Morros de Coliumo"
+      - key: ADMIN_PASSWORD
+        scope: RUN
+        value: "TresMorros2025Admin!"
+      - key: ADMIN_SESSION_SECRET
+        scope: RUN
+        value: "TresMorrosSessionSecret2025!"
+      - key: CRON_SECRET
+        scope: RUN
+        value: "dev-cron-secret-123"
+      - key: FLOW_WEBHOOK_SECRET
+        scope: RUN
+        value: "dev-flow-webhook-secret-123"
 
