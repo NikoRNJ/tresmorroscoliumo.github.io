@@ -87,19 +87,12 @@ tres-morros/
 │       │   ├── layout.tsx            # Root layout
 │       │   ├── globals.css           # Estilos globales
 │       │   └── not-found.tsx         # 404
-│       ├── components/               # Componentes React
-│       │   ├── booking/              # Flujo de reserva
-│       │   ├── cabin/                # Componentes cabañas
-│       │   ├── admin/                # Componentes admin
-│       │   ├── layout/               # Header, Footer
-│       │   ├── ui/                   # Componentes base
-│       │   └── forms/                # Formularios
 │       ├── public/                   # Assets estáticos
 │       │   └── images/               # Imágenes
 │       ├── next.config.mjs           # Config Next.js
 │       ├── tailwind.config.ts        # Config Tailwind
 │       ├── tsconfig.json             # Config TypeScript
-│       └── package.json              # Dependencies
+│       └── package.json              # Dependencies (usa @tresmorros/ui como librería de componentes)
 │
 ├── packages/
 │   ├── core/                         # Lógica de negocio
@@ -142,20 +135,16 @@ tres-morros/
 │   │   ├── package.json
 │   │   └── tsconfig.json
 │   │
-│   └── ui/                          # Componentes UI
+│   └── ui/                          # Biblioteca UI + features
 │       ├── src/
-│       │   ├── components/          # Componentes base
-│       │   │   ├── Button/
-│       │   │   ├── Card/
-│       │   │   ├── Input/
-│       │   │   ├── Calendar/
-│       │   │   └── index.ts
-│       │   ├── hooks/               # Custom hooks
-│       │   │   ├── useMediaQuery.ts
-│       │   │   └── useDebounce.ts
-│       │   ├── styles/              # Estilos compartidos
-│       │   │   └── theme.css
-│       │   └── utils/               # Utils UI
+│       │   ├── ui/                  # Componentes base (Button, Card, Container)
+│       │   ├── booking/             # Wizard, calendario, formularios
+│       │   ├── layout/              # Header/Footer reutilizables
+│       │   ├── features/            # Módulos funcionales (cabins, gallery, etc.)
+│       │   ├── sections/            # Secciones completas (home hero, ubicación, propósito)
+│       │   ├── forms/               # Formularios compartidos (ContactForm)
+│       │   ├── types/               # Tipos compartidos (media, props)
+│       │   └── admin/               # Componentes del panel
 │       ├── package.json
 │       └── tsconfig.json
 │

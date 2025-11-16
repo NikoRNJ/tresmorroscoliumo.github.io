@@ -1,8 +1,8 @@
-import { Hero } from '@/components/cabin/Hero';
-import { PurposeSection } from '@/components/cabin/PurposeSection';
-import { CabinsSection } from '@/components/cabin/CabinsSection';
-import { Gallery } from '@/components/cabin/Gallery';
-import { LocationSection } from '@/components/cabin/LocationSection';
+import { Hero } from '@/components/sections/home/Hero';
+import { PurposeSection } from '@/components/sections/home/PurposeSection';
+import { CabinsSection } from '@/components/features/cabins/CabinsSection';
+import { Gallery } from '@/components/features/gallery/Gallery';
+import { LocationSection } from '@/components/sections/home/LocationSection';
 import { ContactForm } from '@/components/forms/ContactForm';
 import { getActiveCabins } from '@/lib/data/cabins';
 

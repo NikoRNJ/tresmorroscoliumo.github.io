@@ -64,7 +64,7 @@ La Iteración 2 ha sido completada exitosamente con **adaptaciones al tema oscur
   - ✅ 4 tamaños: sm, md, lg, **xl** (corregido de 'full')
   - Responsive con max-width
 
-- **CabinCard**: `components/cabin/CabinCard.tsx`
+- **CabinCard**: `components/features/cabins/CabinCard.tsx`
   - Muestra imagen, título, descripción
   - Iconos de capacidad y precio
   - Link a página de detalle

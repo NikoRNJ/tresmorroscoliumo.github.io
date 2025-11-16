@@ -524,7 +524,7 @@ export async function GET(
 
 **2. Componente de galería (1 hora)**
 ```typescript
-// components/cabin/Gallery.tsx - REEMPLAZAR
+// components/features/gallery/Gallery.tsx - REEMPLAZAR
 
 'use client';
 

@@ -447,7 +447,7 @@ export function Container({ className, size = 'lg', children, ...props }: Contai
 
 ## **PASO 5: Crear Componente CabinCard**
 
-### **Archivo: `components/cabin/CabinCard.tsx`**
+### **Archivo: `components/features/cabins/CabinCard.tsx`**
 
 ```typescript
 import Link from 'next/link';
@@ -523,7 +523,7 @@ export function CabinCard({ cabin, imageUrl }: CabinCardProps) {
 ```typescript
 import { Container } from '@/components/ui/Container';
 import { Button } from '@/components/ui/Button';
-import { CabinCard } from '@/components/cabin/CabinCard';
+import { CabinCard } from '@/components/features/cabins/CabinCard';
 import { supabase } from '@/lib/supabase/client';
 import Link from 'next/link';
 import { ArrowRight, MapPin, Wifi, Coffee } from 'lucide-react';

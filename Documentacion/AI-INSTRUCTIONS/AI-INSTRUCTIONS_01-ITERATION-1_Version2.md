@@ -222,7 +222,9 @@ mkdir -p \
   app/cabanas/[slug] \
   app/admin \
   components/booking \
-  components/cabin \
+  components/features/cabins \
+  components/features/gallery \
+  components/sections/home \
   components/ui \
   components/forms \
   lib/supabase \

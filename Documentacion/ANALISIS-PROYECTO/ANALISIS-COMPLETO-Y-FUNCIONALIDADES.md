@@ -814,7 +814,7 @@ CREATE TABLE reviews (
 **Falta implementar:**
 
 ```tsx
-// components/cabin/Gallery.tsx (MEJORAR)
+// components/features/gallery/Gallery.tsx (MEJORAR)
 export function Gallery({ cabinId }: { cabinId: string }) {
   const [images, setImages] = useState([]);
   

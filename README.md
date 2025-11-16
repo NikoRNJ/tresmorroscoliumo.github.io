@@ -108,6 +108,41 @@ Una vez generado el directorio, puedes entrar allí y arrancar un repo nuevo con
 
 ---
 
+## 🔁 Control de versiones en GitHub
+
+Sugerencias para mantener sincronizado `github.com/NikoRNJ/tresmorroscoliumo`:
+
+1. **Sincroniza antes de trabajar**
+   ```powershell
+   git status -sb
+   git fetch origin
+   git pull --rebase origin main
+   ```
+2. **Sube tus cambios**
+   ```powershell
+   git add -A
+   git commit -m "feat: describe el cambio"
+   git push -u origin main
+   ```
+3. **Conflictos?**  
+   - Revisa `git status` para ver los archivos en conflicto.  
+   - Resuélvelos, marca con `git add` y continúa con `git rebase --continue`.  
+   - Finaliza con `git push` (usa `--force-with-lease` si estabas en medio de un rebase).
+4. **Export minimal + nuevo repo**  
+   ```powershell
+   pnpm export:app
+   cd dist/deployable
+   git init
+   git add .
+   git commit -m "chore: bootstrap"
+   git remote add origin https://github.com/NikoRNJ/tresmorroscoliumo.git
+   git push -u origin main
+   ```
+
+Recuerda que `node_modules/`, `.next/`, `dist/`, `Documentacion/` y otros artefactos pesados ya están cubiertos por `.gitignore`.
+
+---
+
 ## 🧪 Testing
 
 - **Unitarios**  

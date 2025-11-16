@@ -21,10 +21,10 @@ Panorama completo de los módulos implementados hasta la fecha. Se agrupan por c
 ## 2. Componentes de Presentación
 
 ### 2.1. Marketing
-- `components/cabin/Hero.tsx`: sección principal con CTA y desplazamiento suave.
-- `components/cabin/CabinsSection.tsx` + `CabinCard.tsx`: grid responsive de cabañas (usa `formatPrice`, chips de amenities).
-- `components/cabin/Gallery.tsx`: tabs de galería con imágenes estáticas (cuatro categorías).
-- `components/cabin/LocationSection.tsx`: iframe de Google Maps y tarjetas de accesos/entorno.
+- `components/sections/home/Hero.tsx`: sección principal con CTA y desplazamiento suave.
+- `components/features/cabins/CabinsSection.tsx` + `CabinCard.tsx`: grid responsive de cabañas (usa `formatPrice`, chips de amenities).
+- `components/features/gallery/Gallery.tsx`: tabs de galería con imágenes locales (cuatro categorías).
+- `components/sections/home/LocationSection.tsx`: iframe de Google Maps y tarjetas de accesos/entorno.
 - `components/layout/Header.tsx` / `Footer.tsx`: navegación sticky y pie con datos de contacto.
 - `components/forms/ContactForm.tsx`: formulario controlado que intenta llamar `POST /api/contact` (aún no implementado en backend).
 

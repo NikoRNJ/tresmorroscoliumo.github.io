@@ -6,8 +6,8 @@ import Link from 'next/link';
 import { BookingWizard } from '@/components/booking/BookingWizard';
 import { formatPrice } from '@/lib/utils/format';
 import { getCabinBySlug } from '@/lib/data/cabins';
-import { CabinImageCarousel } from '@/components/cabin/CabinImageCarousel';
-import { getCabinCoverImage, getCabinGalleryImages } from '@/components/cabin/media';
+import { CabinImageCarousel } from '@/components/features/cabins/CabinImageCarousel';
+import { getCabinCoverImage, getCabinGalleryImages } from '@/components/features/cabins/media';
 
 interface CabinPageProps {
   params: {

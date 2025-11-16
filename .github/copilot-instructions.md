@@ -1,4 +1,4 @@
-# Tres Morros de Coliumo - AI Agent Instructions
+cd# Tres Morros de Coliumo - AI Agent Instructions
 
 ## Project Overview
 
