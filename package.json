@@ -3,6 +3,10 @@
   "version": "0.2.0",
   "private": true,
   "packageManager": "pnpm@9.12.0",
+  "engines": {
+    "node": "20.18.x",
+    "pnpm": ">=9.12.0"
+  },
   "scripts": {
     "dev": "pnpm --filter @tresmorros/web dev",
     "build": "pnpm --filter @tresmorros/web build",
@@ -13,10 +17,6 @@
     "test:e2e": "start-server-and-test \"pnpm --filter @tresmorros/web dev\" http://localhost:3000 \"vitest run --reporter=verbose --config vitest.e2e.config.ts\"",
     "clear:bookings": "node tools/scripts/clear-bookings.mjs"
   },
-  "workspaces": [
-    "apps/*",
-    "packages/*"
-  ],
   "devDependencies": {
     "@playwright/test": "^1.56.1",
     "@supabase/supabase-js": "^2.81.0",

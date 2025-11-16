@@ -1,0 +1,71 @@
+name: tres-morros-app
+
+services:
+  - name: web
+    source_dir: .
+    github:
+      repo: NikoRNJ/tresmorroscoliumo.github.io
+      branch: main
+      deploy_on_push: true
+    environment_slug: node-js
+    http_port: 3000
+    instance_count: 1
+    instance_size_slug: basic-xxs
+    build_command: pnpm install --frozen-lockfile && pnpm build
+    run_command: >
+      pnpm --filter @tresmorros/web start -- --hostname 0.0.0.0 --port ${PORT:-3000}
+    routes:
+      - path: /
+    envs:
+      - key: NODE_ENV
+        scope: RUN_AND_BUILD
+        value: production
+      - key: NEXT_PUBLIC_SITE_URL
+        scope: RUN_AND_BUILD
+        value: https://tresmorroscoliumo.cl
+      - key: NEXT_PUBLIC_SUPABASE_URL
+        scope: RUN_AND_BUILD
+        type: SECRET
+        value: ""
+      - key: NEXT_PUBLIC_SUPABASE_ANON_KEY
+        scope: RUN_AND_BUILD
+        type: SECRET
+        value: ""
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        scope: RUN_AND_BUILD
+        type: SECRET
+        value: ""
+      - key: FLOW_API_KEY
+        scope: RUN_AND_BUILD
+        type: SECRET
+        value: ""
+      - key: FLOW_SECRET_KEY
+        scope: RUN_AND_BUILD
+        type: SECRET
+        value: ""
+      - key: FLOW_FORCE_MOCK
+        scope: RUN
+        value: "false"
+      - key: SENDGRID_API_KEY
+        scope: RUN_AND_BUILD
+        type: SECRET
+        value: ""
+      - key: SENDGRID_FROM_EMAIL
+        scope: RUN_AND_BUILD
+        value: reservas@tresmorroscoliumo.cl
+      - key: SENDGRID_FROM_NAME
+        scope: RUN_AND_BUILD
+        value: Tres Morros de Coliumo
+      - key: ADMIN_PASSWORD
+        scope: RUN
+        type: SECRET
+        value: ""
+      - key: ADMIN_SESSION_SECRET
+        scope: RUN
+        type: SECRET
+        value: ""
+      - key: CRON_SECRET
+        scope: RUN
+        type: SECRET
+        value: ""
+

@@ -61,9 +61,11 @@ Plataforma integral para la gestión de reservas, comunicación con huéspedes y
    ```
 2. **Variables de entorno**
    ```bash
-   cp .env.example .env.local
-   cp .env.local apps/web/.env.local   # Next carga .env desde apps/web
+   cp env/example.env .env
+   cp env/example.env .env.local            # Opcional para utilizar los scripts locales
+   cp apps/web/env.local.example apps/web/.env.local
    ```
+   > `.env.local` ahora puede versionarse si necesitas subirlo a GitHub/DigitalOcean tal cual, pero se recomienda mantener las llaves reales fuera de commits públicos.
 3. **Base de datos**  
    Ejecutar `packages/database/supabase-schema.sql` y las migraciones dentro de `packages/database/migrations/`.
 4. **Servidor de desarrollo**
@@ -187,7 +189,18 @@ tres-morros/
 | `SENDGRID_API_KEY`, `SENDGRID_FROM_EMAIL`, `SENDGRID_FROM_NAME` | Emails transaccionales. |
 | `ADMIN_PASSWORD`, `ADMIN_SESSION_SECRET` | Acceso al panel administrativo. |
 
-> Mantén `.env` fuera del repositorio. Duplica los valores en `apps/web/.env.local` para que Next los cargue.
+> Plantillas disponibles en `env/example.env` y `apps/web/env.local.example`.
+
+---
+
+## ☁️ Despliegue (DigitalOcean, Nginx, Apache)
+
+Consulta `deploy/README.md` (y el spec `.do/app.yaml`) para:
+
+- App Platform: comandos `pnpm install && pnpm build` + `Procfile` listo.
+- Lista completa de variables para copiar en el panel.
+- Guía de Droplet con Node.js 20 + PNPM, servicio `systemd` de ejemplo y reverse proxy Nginx.
+- Plantillas para Apache (`deploy/apache/vhost.conf`) y Nginx (`deploy/nginx/reverse-proxy.conf`).
 
 ---
 

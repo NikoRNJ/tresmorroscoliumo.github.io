@@ -33,7 +33,8 @@ logs/
 
 # environment files
 .env
-.env*.local
+# .env.local se versiona a pedido del cliente (DigitalOcean demo)
+!.env.local
 .env.production
 
 # misc binaries / secrets

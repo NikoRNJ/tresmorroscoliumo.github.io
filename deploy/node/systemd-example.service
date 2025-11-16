@@ -1,0 +1,19 @@
+[Unit]
+Description=Tres Morros Next.js app
+After=network.target
+
+[Service]
+Type=simple
+User=www-data
+WorkingDirectory=/var/www/tres-morros
+EnvironmentFile=/var/www/tres-morros/.env
+Environment=NODE_ENV=production
+ExecStart=/usr/bin/env pnpm --filter @tresmorros/web start -- -p 3000
+Restart=always
+RestartSec=5
+StandardOutput=append:/var/log/tres-morros.out.log
+StandardError=append:/var/log/tres-morros.err.log
+
+[Install]
+WantedBy=multi-user.target
+
