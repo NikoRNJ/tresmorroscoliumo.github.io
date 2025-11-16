@@ -62,12 +62,21 @@ export async function GET(request: NextRequest) {
     // (reservas que empiezan antes del fin del mes Y terminan después del inicio del mes)
     const { data: bookings, error: bookingsError } = await supabaseAdmin
       .from('bookings')
-      .select('start_date, end_date, status, expires_at, customer_notes')
+      .select('id, start_date, end_date, status, expires_at, customer_notes')
       .eq('cabin_id', cabinId)
       .in('status', ['pending', 'paid'])
       .lte('start_date', endDateStr)
       .gt('end_date', startDateStr)
-      .returns<Array<{ start_date: string; end_date: string; status: string; expires_at: string | null; customer_notes: string | null }>>();
+      .returns<
+        Array<{
+          id: string;
+          start_date: string;
+          end_date: string;
+          status: string;
+          expires_at: string | null;
+          customer_notes: string | null;
+        }>
+      >();
 
     if (bookingsError) {
       console.error('Error fetching bookings:', bookingsError);
@@ -122,8 +131,16 @@ export async function GET(request: NextRequest) {
     });
 
     // Procesar bloqueos administrativos
-    const arrivals: Array<{ date: string; time: string; status: string }> = [];
-    const departures: Array<{ date: string; time: string; status: string }> = [];
+    const arrivals: Array<{ bookingId: string; date: string; time: string; status: string }> = [];
+    const departures: Array<{ bookingId: string; date: string; time: string; status: string }> = [];
+    const occupancy: Array<{
+      bookingId: string;
+      status: string;
+      startDate: string;
+      endDate: string;
+      arrivalTime: string;
+      departureTime: string;
+    }> = [];
 
     const extractTimeFromNotes = (notes: string | null, label: 'Entrada' | 'Salida', fallback: string) => {
       if (!notes) return fallback;
@@ -148,17 +165,44 @@ export async function GET(request: NextRequest) {
     });
 
     bookings?.forEach((booking) => {
+      const isExpiredPending =
+        booking.status === 'pending' &&
+        booking.expires_at !== null &&
+        new Date(booking.expires_at) <= now;
+
+      if (isExpiredPending) {
+        return;
+      }
+
+      const arrivalTime = extractTimeFromNotes(booking.customer_notes, 'Entrada', defaultCheckIn);
+      const departureTime = extractTimeFromNotes(booking.customer_notes, 'Salida', defaultCheckOut);
+
       arrivals.push({
+        bookingId: booking.id,
         date: booking.start_date,
-        time: extractTimeFromNotes(booking.customer_notes, 'Entrada', defaultCheckIn),
+        time: arrivalTime,
         status: booking.status,
       });
       departures.push({
+        bookingId: booking.id,
         date: booking.end_date,
-        time: extractTimeFromNotes(booking.customer_notes, 'Salida', defaultCheckOut),
+        time: departureTime,
         status: booking.status,
       });
+
+      occupancy.push({
+        bookingId: booking.id,
+        status: booking.status,
+        startDate: booking.start_date,
+        endDate: booking.end_date,
+        arrivalTime,
+        departureTime,
+      });
     });
+
+    arrivals.sort((a, b) => a.date.localeCompare(b.date));
+    departures.sort((a, b) => a.date.localeCompare(b.date));
+    occupancy.sort((a, b) => a.startDate.localeCompare(b.startDate));
 
     // Calcular disponibles (los que no están en ninguna otra categoría)
     const availableDates = allDaysStr.filter(
@@ -173,6 +217,7 @@ export async function GET(request: NextRequest) {
       blocked: Array.from(blockedDates),
       arrivals,
       departures,
+      occupancy,
     });
   } catch (error) {
     console.error('Error in availability endpoint:', error);

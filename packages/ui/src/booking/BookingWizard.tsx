@@ -7,9 +7,10 @@ import { BookingForm } from './BookingForm';
 import { Button } from '../ui/Button';
 import { ArrowLeft, Calendar, Users, FileText } from 'lucide-react';
 import type { Cabin } from '@core/types/database';
-import { getIncludedGuests } from '@core/lib/utils/pricing'
-import { formatPrice } from '@core/lib/utils/format'
-import { addDays } from 'date-fns'
+import { getIncludedGuests } from '@core/lib/utils/pricing';
+import { formatPrice } from '@core/lib/utils/format';
+import { addDays } from 'date-fns';
+import { BOOKING_BASE_GUESTS, BOOKING_MAX_EXTRA_GUESTS, resolveMaxGuests } from '@core/lib/config/booking';
 
 interface BookingWizardProps {
   cabin: Cabin;
@@ -24,13 +25,21 @@ type WizardStep = 'dates' | 'party-size' | 'details';
  * 3. Completar datos y confirmar
  */
 export function BookingWizard({ cabin }: BookingWizardProps) {
-  const minGuests = 1;
-  const maxGuests = cabin.capacity_max;
-  const includedGuests = getIncludedGuests(cabin);
+  const allowedMaxGuests = resolveMaxGuests(cabin.capacity_max);
+  const minGuests = Math.min(BOOKING_BASE_GUESTS, allowedMaxGuests);
+  const maxGuests = allowedMaxGuests;
+  const allowedExtraGuests = Math.max(
+    0,
+    Math.min(BOOKING_MAX_EXTRA_GUESTS, maxGuests - BOOKING_BASE_GUESTS)
+  );
+  const includedGuests = Math.min(
+    Math.max(getIncludedGuests(cabin), BOOKING_BASE_GUESTS),
+    allowedMaxGuests
+  );
   const initialPartySize = Math.min(Math.max(includedGuests, minGuests), maxGuests);
   const [currentStep, setCurrentStep] = useState<WizardStep>('dates');
   const [selectedRange, setSelectedRange] = useState<DateRange | undefined>();
-  const [partySize, setPartySize] = useState<number>(2); // Mínimo 2 personas
+  const [partySize, setPartySize] = useState<number>(initialPartySize);
   const [datesConflictMessage, setDatesConflictMessage] = useState<string | null>(null);
 
   // Indicador de progreso
@@ -144,11 +153,13 @@ export function BookingWizard({ cabin }: BookingWizardProps) {
           <div>
             <h2 className="text-2xl font-bold text-white">¿Cuántas personas se alojarán?</h2>
             <p className="mt-1 text-gray-400">
-              Mínimo {minGuests} persona{minGuests !== 1 ? 's' : ''}, máximo {maxGuests} personas
+              Incluye {BOOKING_BASE_GUESTS} persona{BOOKING_BASE_GUESTS !== 1 ? 's' : ''} en la tarifa base.
+              Puedes agregar hasta {allowedExtraGuests} adicional
+              {allowedExtraGuests === 1 ? '' : 'es'} (máx. {maxGuests} personas por cabaña).
             </p>
             {cabin.price_per_extra_person > 0 && maxGuests > includedGuests && (
               <p className="mt-2 text-sm text-primary-400">
-                El precio base cubre {includedGuests} persona{includedGuests !== 1 ? 's' : ''}. Cada adicional: {formatPrice(cabin.price_per_extra_person)}/noche
+                Cada persona extra: {formatPrice(cabin.price_per_extra_person)}/noche
               </p>
             )}
           </div>

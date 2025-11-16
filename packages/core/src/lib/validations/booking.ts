@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { addDays, isAfter, isBefore, parseISO, format } from 'date-fns';
+import { BOOKING_BASE_GUESTS, BOOKING_ABSOLUTE_MAX_GUESTS } from '../config/booking';
 
 /**
  * Schema de validación para disponibilidad
@@ -20,7 +21,14 @@ export const createBookingHoldSchema = z
     cabinId: z.string().uuid('ID de cabaña inválido'),
     startDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Formato de fecha inválido (YYYY-MM-DD)'),
     endDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Formato de fecha inválido (YYYY-MM-DD)'),
-    partySize: z.number().int().min(1, 'Mínimo 1 persona').max(10, 'Máximo 10 personas'),
+    partySize: z
+      .number()
+      .int()
+      .min(BOOKING_BASE_GUESTS, `Mínimo ${BOOKING_BASE_GUESTS} personas`)
+      .max(
+        BOOKING_ABSOLUTE_MAX_GUESTS,
+        `Máximo ${BOOKING_ABSOLUTE_MAX_GUESTS} personas (2 incluidas + 5 adicionales)`
+      ),
     jacuzziDays: z.array(z.string().regex(/^\d{4}-\d{2}-\d{2}$/)).optional().default([]),
     towelsCount: z.number().int().min(0).max(7).optional().default(0),
     customerName: z.string().min(2, 'Nombre muy corto').max(100, 'Nombre muy largo'),

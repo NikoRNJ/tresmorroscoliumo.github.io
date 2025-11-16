@@ -69,20 +69,32 @@ class EmailClient {
     this.initialize();
     
     if (!this.isConfigured) {
-      console.warn('⚠️ SendGrid not configured. Email would have been sent:', {
+      console.warn('⚠️ SendGrid no está configurado. Simulando envío de email (modo mock):', {
         to: mailData.to,
         subject: mailData.subject,
       });
       return {
-        success: false,
-        error: 'SendGrid not configured',
+        success: true,
+        messageId: `mock-email-${Date.now()}`,
       };
     }
 
     try {
       const [response] = await sgMail.send(mailData);
 
-      const recipient = typeof mailData.to === 'string' ? mailData.to : mailData.to;
+      const resolveRecipient = (to: MailDataRequired['to']): string => {
+        if (typeof to === 'string') return to;
+        if (Array.isArray(to)) {
+          const [first] = to;
+          return first ? resolveRecipient(first as MailDataRequired['to']) : '<sin destinatario>';
+        }
+        if (to && typeof to === 'object' && 'email' in to && typeof to.email === 'string') {
+          return to.email;
+        }
+        return '<sin destinatario>';
+      };
+
+      const recipient = resolveRecipient(mailData.to);
       console.log(`✅ Email sent successfully to ${recipient}`, {
         messageId: response.headers['x-message-id'],
         statusCode: response.statusCode,
@@ -113,6 +125,7 @@ class EmailClient {
    * Obtener configuración del remitente por defecto
    */
   getDefaultFrom() {
+    this.initialize();
     return {
       email: this.fromEmail,
       name: this.fromName,

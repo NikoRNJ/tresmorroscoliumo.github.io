@@ -1,0 +1,18 @@
+const DEFAULT_BASE_GUESTS = Number(process.env.NEXT_PUBLIC_DEFAULT_INCLUDED_GUESTS ?? 2) || 2;
+const DEFAULT_MAX_EXTRA_GUESTS = Number(process.env.NEXT_PUBLIC_MAX_EXTRA_GUESTS ?? 5) || 5;
+
+export const BOOKING_BASE_GUESTS = DEFAULT_BASE_GUESTS;
+export const BOOKING_MAX_EXTRA_GUESTS = DEFAULT_MAX_EXTRA_GUESTS;
+export const BOOKING_ABSOLUTE_MAX_GUESTS = BOOKING_BASE_GUESTS + BOOKING_MAX_EXTRA_GUESTS;
+
+/**
+ * Determina el máximo real permitido considerando la capacidad declarada
+ * de la cabaña y el tope de negocio (2 incluidos + 5 adicionales).
+ */
+export function resolveMaxGuests(capacityMax?: number | null): number {
+  if (typeof capacityMax === 'number' && capacityMax > 0) {
+    return Math.min(capacityMax, BOOKING_ABSOLUTE_MAX_GUESTS);
+  }
+  return BOOKING_ABSOLUTE_MAX_GUESTS;
+}
+

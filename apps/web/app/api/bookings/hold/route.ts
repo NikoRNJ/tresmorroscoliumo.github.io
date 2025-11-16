@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase/server';
 import { createBookingHoldSchema, validateJacuzziDays } from '@/lib/validations/booking';
 import { calculatePrice } from '@/lib/utils/pricing';
+import { BOOKING_BASE_GUESTS, resolveMaxGuests } from '@/lib/config/booking';
 import { addMinutes, parseISO, isAfter } from 'date-fns';
 import type { CreateHoldResponse, BookingError } from '@/types/booking';
 import type { Database } from '@/types/database';
@@ -73,14 +74,17 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(errorResponse, { status: 404 });
     }
 
-    const minGuests = 1;
-    const maxGuests = cabin.capacity_max;
+    const maxGuests = resolveMaxGuests(cabin.capacity_max);
+    const minGuests = Math.min(BOOKING_BASE_GUESTS, maxGuests);
 
     // 3. Validar capacidad
     if (partySize < minGuests || partySize > maxGuests) {
       const errorResponse: BookingError = {
         success: false,
-        error: `La cabaña permite entre ${minGuests} y ${maxGuests} personas`,
+        error: `La cabaña permite entre ${minGuests} y ${maxGuests} personas (base de ${BOOKING_BASE_GUESTS} y hasta ${Math.max(
+          0,
+          maxGuests - BOOKING_BASE_GUESTS
+        )} adicionales)`,
         code: 'INVALID_DATA',
       };
       return NextResponse.json(errorResponse, { status: 400 });

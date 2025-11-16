@@ -10,6 +10,7 @@ import { BookingSummary } from './BookingSummary';
 import { Button } from '../ui/Button';
 import { formatPrice } from '@core/lib/utils/format';
 import { calculatePrice, getIncludedGuests } from '@core/lib/utils/pricing';
+import { BOOKING_BASE_GUESTS, BOOKING_MAX_EXTRA_GUESTS, resolveMaxGuests } from '@core/lib/config/booking';
 import type { Cabin } from '@core/types/database';
 
 interface BookingSidebarProps {
@@ -21,9 +22,16 @@ interface BookingSidebarProps {
  * Componente cliente para manejar el estado de la reserva
  */
 export function BookingSidebar({ cabin }: BookingSidebarProps) {
-  const minGuests = 1;
-  const maxGuests = cabin.capacity_max;
-  const includedGuests = getIncludedGuests(cabin);
+  const maxGuests = resolveMaxGuests(cabin.capacity_max);
+  const minGuests = Math.min(BOOKING_BASE_GUESTS, maxGuests);
+  const includedGuests = Math.min(
+    Math.max(getIncludedGuests(cabin), BOOKING_BASE_GUESTS),
+    maxGuests
+  );
+  const allowedExtraGuests = Math.max(
+    0,
+    Math.min(BOOKING_MAX_EXTRA_GUESTS, maxGuests - BOOKING_BASE_GUESTS)
+  );
 
   const [selectedRange, setSelectedRange] = useState<DateRange | undefined>();
   const [partySize, setPartySize] = useState(
@@ -87,11 +95,12 @@ export function BookingSidebar({ cabin }: BookingSidebarProps) {
               </option>
             ))}
           </select>
-          {cabin.price_per_extra_person > 0 && maxGuests > includedGuests && (
-            <p className="mt-2 text-xs text-gray-500">
-              El precio base cubre {includedGuests} persona{includedGuests !== 1 ? 's' : ''}. Cada adicional: {formatPrice(cabin.price_per_extra_person)}/noche
-            </p>
-          )}
+          <p className="mt-2 text-xs text-gray-500">
+            El precio base cubre {BOOKING_BASE_GUESTS} persona{BOOKING_BASE_GUESTS !== 1 ? 's' : ''}. Puedes agregar hasta{' '}
+            {allowedExtraGuests} adicional{allowedExtraGuests === 1 ? '' : 'es'} (máx. {maxGuests}).
+            {cabin.price_per_extra_person > 0 &&
+              ` Cada adicional: ${formatPrice(cabin.price_per_extra_person)}/noche.`}
+          </p>
         </div>
 
         {/* Precios */}

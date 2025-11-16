@@ -110,12 +110,27 @@ function PaymentPageContent() {
         body: JSON.stringify({ bookingId }),
       });
 
+      const data = await response.json();
+
       if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.error || 'Error al crear el pago');
+        if (response.status === 409 && data?.paymentUrl) {
+          try {
+            if (data.token) sessionStorage.setItem('flowToken', data.token);
+          } catch {}
+
+          // Redirigir automáticamente a la orden existente
+          window.location.href = data.paymentUrl;
+          return;
+        }
+
+        throw new Error(data?.error || 'Error al crear el pago');
       }
 
-      const { paymentUrl, token } = await response.json();
+      const { paymentUrl, token } = data;
+
+      if (!paymentUrl) {
+        throw new Error('Flow no retornó la URL de pago');
+      }
 
       try {
         if (token) sessionStorage.setItem('flowToken', token);

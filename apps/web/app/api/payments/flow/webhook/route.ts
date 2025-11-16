@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase/server';
 import { flowClient } from '@/lib/flow/client';
 import { FlowPaymentStatusCode } from '@/types/flow';
-import { sendBookingConfirmation } from '@/lib/email/service';
+import { sendBookingConfirmationForBooking } from '@/lib/email/service';
 import type { Database } from '@/types/database';
 
 type Booking = Database['public']['Tables']['bookings']['Row'];
@@ -103,69 +103,8 @@ export async function POST(request: NextRequest) {
 
       console.log(`✅ Payment successful for booking ${bookingId}`);
 
-      // ✅ NUEVO: Enviar email de confirmación
-      try {
-        // Obtener datos completos de la reserva con la información de la cabaña
-        const { data: fullBookings } = await supabaseAdmin
-          .from('bookings')
-          .select('*, cabins(*)')
-          .eq('id', bookingId)
-          .limit(1);
-
-        // Type assertion para el booking con relación a cabins
-        type BookingWithCabin = Booking & {
-          cabins: Database['public']['Tables']['cabins']['Row'];
-        };
-        const fullBooking = fullBookings?.[0] as BookingWithCabin | undefined;
-
-        if (fullBooking && fullBooking.cabins) {
-          const bookingReference = bookingId.substring(0, 8).toUpperCase();
-          let towelsCount = 0
-          try {
-            const { data: events } = await supabaseAdmin
-              .from('api_events')
-              .select('payload')
-              .eq('booking_id', bookingId)
-              .eq('event_type', 'booking_hold_created')
-              .limit(1)
-            const payload = (events?.[0] as any)?.payload
-            if (payload && typeof payload.towels_count === 'number') {
-              towelsCount = Math.max(0, Math.min(7, payload.towels_count))
-            }
-          } catch {}
-          
-          await sendBookingConfirmation({
-            to: {
-              email: fullBooking.customer_email,
-              name: fullBooking.customer_name,
-            },
-            subject: `✅ Reserva confirmada - ${fullBooking.cabins.title} - Ref: ${bookingReference}`,
-            bookingId: bookingId,
-            bookingReference,
-            cabinName: fullBooking.cabins.title,
-            cabinSlug: fullBooking.cabins.slug,
-            checkInDate: fullBooking.start_date,
-            checkOutDate: fullBooking.end_date,
-            numberOfGuests: fullBooking.party_size,
-            hasJacuzzi: (fullBooking.jacuzzi_days as string[])?.length > 0,
-            jacuzziDays: (fullBooking.jacuzzi_days as string[]) || [],
-            towelsCount,
-            towelsPrice: towelsCount * 2000,
-            totalPrice: fullBooking.amount_total,
-            customerName: fullBooking.customer_name,
-            customerEmail: fullBooking.customer_email,
-            customerPhone: fullBooking.customer_phone,
-          });
-
-          // Actualizar timestamp de confirmación enviada
-          await (supabaseAdmin.from('bookings') as any)
-            .update({ confirmation_sent_at: new Date().toISOString() })
-            .eq('id', bookingId);
-        }
-      } catch (emailError) {
-        // No fallar el webhook si el email falla
-        console.error('Error sending confirmation email:', emailError);
-      }
+      // Enviar email de confirmación (manejado internamente)
+      await sendBookingConfirmationForBooking(bookingId);
 
       return NextResponse.json({ success: true, status: 'paid' });
     } else if (paymentStatus.status === FlowPaymentStatusCode.REJECTED) {

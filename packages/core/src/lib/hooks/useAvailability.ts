@@ -3,9 +3,19 @@
 import { useState, useEffect } from 'react';
 
 interface CalendarCheckpoint {
+  bookingId?: string;
   date: string;
   time: string;
   status: string;
+}
+
+interface OccupancyEntry {
+  bookingId: string;
+  status: string;
+  startDate: string;
+  endDate: string;
+  arrivalTime: string;
+  departureTime: string;
 }
 
 interface AvailabilityData {
@@ -15,6 +25,7 @@ interface AvailabilityData {
   blocked: string[];
   arrivals: CalendarCheckpoint[];
   departures: CalendarCheckpoint[];
+  occupancy?: OccupancyEntry[];
 }
 
 interface UseAvailabilityReturn {

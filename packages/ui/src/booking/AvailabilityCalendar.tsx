@@ -47,11 +47,21 @@ export function AvailabilityCalendar({
   const departureDates = departureMarkers.map((marker) => parseISO(marker.date));
   const checkpointMap = useMemo(() => {
     const map = new Map<string, { type: 'arrival' | 'departure'; label: string }>();
+    const formatLabel = (prefix: string, time: string, status: string) => {
+      const statusLabel = status === 'paid' ? 'Pagado' : 'Pendiente';
+      return `${prefix} ${time} · ${statusLabel}`;
+    };
     arrivalMarkers.forEach((marker) => {
-      map.set(marker.date, { type: 'arrival', label: `Llegan ${marker.time}` });
+      map.set(marker.date, {
+        type: 'arrival',
+        label: formatLabel('Llegan', marker.time, marker.status),
+      });
     });
     departureMarkers.forEach((marker) => {
-      map.set(marker.date, { type: 'departure', label: `Se retiran ${marker.time}` });
+      map.set(marker.date, {
+        type: 'departure',
+        label: formatLabel('Se retiran', marker.time, marker.status),
+      });
     });
     return map;
   }, [arrivalMarkers, departureMarkers]);

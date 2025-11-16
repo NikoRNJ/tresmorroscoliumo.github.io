@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase/server';
 import { flowClient } from '@/lib/flow/client';
+import { sendBookingConfirmationForBooking } from '@/lib/email/service';
 import { z } from 'zod';
 import { isAfter, parseISO } from 'date-fns';
 import type { Database } from '@/types/database';
@@ -83,10 +84,19 @@ export async function POST(request: NextRequest) {
 
     // 5. Verificar si ya existe una orden de Flow para esta reserva
     if (booking.flow_order_id) {
+      const previousPaymentData = (booking.flow_payment_data ?? null) as Record<string, any> | null;
+      const previousPaymentUrl = typeof previousPaymentData?.url === 'string' ? previousPaymentData.url : null;
+      const previousToken = typeof previousPaymentData?.token === 'string' ? previousPaymentData.token : null;
+
       return NextResponse.json(
         { 
           error: 'Ya existe una orden de pago para esta reserva',
-          existingOrder: booking.flow_order_id 
+          existingOrder: booking.flow_order_id,
+          flowOrder: booking.flow_order_id,
+          paymentUrl: previousPaymentUrl,
+          token: previousToken,
+          mode: typeof previousPaymentData?.mode === 'string' ? previousPaymentData.mode : isMockFlow ? 'mock' : 'live',
+          status: booking.status,
         },
         { status: 409 }
       );
@@ -133,6 +143,13 @@ export async function POST(request: NextRequest) {
     if (updateError) {
       console.error('Error updating booking with flow order:', updateError);
       // No retornamos error porque la orden ya se creó en Flow
+    } else if (isMockFlow) {
+      // Simular confirmación automática en modo mock para probar emails end-to-end
+      try {
+        await sendBookingConfirmationForBooking(bookingId);
+      } catch (emailError) {
+        console.error('Error sending mock confirmation email:', emailError);
+      }
     }
 
     // 8. Log del evento
