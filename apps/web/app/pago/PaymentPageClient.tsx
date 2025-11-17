@@ -88,6 +88,9 @@ export function PaymentPageClient({ booking }: PaymentPageClientProps) {
   };
 
   if (!bookingState) {
+  const jacuzziDays = Array.isArray(bookingState.jacuzzi_days)
+    ? bookingState.jacuzzi_days
+    : [];
     return (
       <Container className="py-16">
         <div className="mx-auto max-w-2xl text-center">
@@ -203,11 +206,11 @@ export function PaymentPageClient({ booking }: PaymentPageClientProps) {
               <p className="text-lg font-semibold text-white">{bookingState.party_size}</p>
             </div>
 
-            {bookingState.jacuzzi_days.length > 0 && (
+            {jacuzziDays.length > 0 && (
               <div>
                 <p className="text-sm text-gray-400">Días con jacuzzi</p>
                 <p className="text-lg font-semibold text-white">
-                  {bookingState.jacuzzi_days.length}
+                  {jacuzziDays.length}
                 </p>
               </div>
             )}
