@@ -1,6 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAdmin } from '@/lib/auth/admin';
 import { supabaseAdmin } from '@/lib/supabase/server';
+import type { Database } from '@/types/database';
+
+type CabinImageMutableFields = Pick<
+  Database['public']['Tables']['cabin_images']['Row'],
+  'sort_order' | 'alt_text'
+>;
 
 export async function POST(request: NextRequest) {
   const isAdmin = await requireAdmin();
@@ -18,7 +24,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'imageId requerido' }, { status: 400 });
     }
 
-    const updatePayload: Record<string, unknown> = {};
+    const updatePayload: Partial<CabinImageMutableFields> = {};
 
     if (typeof sortOrder === 'number') {
       updatePayload.sort_order = sortOrder;
