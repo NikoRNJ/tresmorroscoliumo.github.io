@@ -22,6 +22,10 @@ const replaysOnErrorSampleRate = parseNumber(
 );
 
 const enableReplay = replaysSessionSampleRate > 0 || replaysOnErrorSampleRate > 0;
+const replayIntegration =
+  enableReplay && typeof (Sentry as typeof Sentry & { replayIntegration?: () => any }).replayIntegration === 'function'
+    ? (Sentry as typeof Sentry & { replayIntegration: () => any }).replayIntegration()
+    : null;
 
 Sentry.init({
   dsn: dsn || undefined,
@@ -30,7 +34,7 @@ Sentry.init({
   tracesSampleRate,
   replaysSessionSampleRate,
   replaysOnErrorSampleRate,
-  integrations: enableReplay ? [Sentry.replayIntegration()] : [],
+  integrations: replayIntegration ? [replayIntegration] : [],
 });
 
 
