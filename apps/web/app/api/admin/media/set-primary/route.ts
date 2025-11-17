@@ -25,13 +25,11 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Imagen no encontrada' }, { status: 404 });
     }
 
-    await supabaseAdmin
-      .from('cabin_images')
+    await (supabaseAdmin.from('cabin_images') as any)
       .update({ is_primary: false })
       .eq('cabin_id', image.cabin_id);
 
-    const { error: primaryError } = await supabaseAdmin
-      .from('cabin_images')
+    const { error: primaryError } = await (supabaseAdmin.from('cabin_images') as any)
       .update({ is_primary: true })
       .eq('id', imageId);
 
