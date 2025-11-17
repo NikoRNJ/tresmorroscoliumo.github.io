@@ -20,8 +20,9 @@ export async function POST(request: NextRequest) {
   try {
     // 1. Parsear el body (Flow envía form-urlencoded)
     const formData = await request.formData();
-    const token = formData.get('token') as string;
-    const signature = formData.get('s') as string;
+    const rawPayload = Object.fromEntries(formData.entries()) as Record<string, string>;
+    const { s: signature, ...payloadForSignature } = rawPayload;
+    const token = payloadForSignature.token;
 
     if (!token || !signature) {
       console.error('Missing token or signature in webhook');
@@ -30,7 +31,7 @@ export async function POST(request: NextRequest) {
 
     // 2. Validar la firma del webhook
     const isValidSignature = flowClient.validateWebhookSignature(
-      { token },
+      payloadForSignature,
       signature
     );
 
@@ -39,7 +40,7 @@ export async function POST(request: NextRequest) {
       await (supabaseAdmin.from('api_events') as any).insert({
         event_type: 'webhook_invalid_signature',
         event_source: 'flow',
-        payload: { token },
+        payload: payloadForSignature,
         status: 'error',
         error_message: 'Invalid signature',
       });

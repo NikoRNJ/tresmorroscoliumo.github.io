@@ -1,13 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { supabaseAdmin } from '@/lib/supabase/server';
-import type { Database } from '@/types/database';
-
-type Booking = Database['public']['Tables']['bookings']['Row'];
-type Cabin = Database['public']['Tables']['cabins']['Row'];
-
-interface BookingWithCabin extends Booking {
-  cabin: Cabin;
-}
+import { getBookingWithMeta } from '@/lib/data/bookings';
 
 /**
  * GET /api/bookings/[id]
@@ -26,41 +18,20 @@ export async function GET(
       return NextResponse.json({ error: 'Booking ID is required' }, { status: 400 });
     }
 
-    // Consultar la reserva con join a la cabaña
-    const { data: bookings, error } = await supabaseAdmin
-      .from('bookings')
-      .select(`
-        *,
-        cabin:cabin_id (*)
-      `)
-      .eq('id', bookingId)
-      .limit(1);
-
-    if (error) {
-      console.error('Error fetching booking:', error);
-      return NextResponse.json({ error: 'Database error' }, { status: 500 });
-    }
-
-    const booking = bookings?.[0] as BookingWithCabin | undefined;
+    const { booking, error } = await getBookingWithMeta(bookingId);
 
     if (!booking) {
+      if (error) {
+        console.error('Error fetching booking:', error);
+        return NextResponse.json({ error: 'Database error' }, { status: 500 });
+      }
+
       return NextResponse.json({ error: 'Booking not found' }, { status: 404 });
     }
 
-    // Verificar si la reserva ha expirado
-    const now = new Date();
-    const expiresAt = booking.expires_at ? new Date(booking.expires_at) : now;
-    const isExpired = booking.status === 'pending' && booking.expires_at && now > expiresAt;
-
-    // Calcular tiempo restante para el hold (en segundos)
-    const timeRemaining = isExpired ? 0 : Math.max(0, Math.floor((expiresAt.getTime() - now.getTime()) / 1000));
-
-    // Retornar datos enriquecidos
     return NextResponse.json({
       booking: {
         ...booking,
-        isExpired,
-        timeRemaining,
       },
     });
   } catch (error) {
