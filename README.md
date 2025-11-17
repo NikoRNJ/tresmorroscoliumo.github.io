@@ -191,7 +191,7 @@ tres-morros/
 | `FLOW_WEBHOOK_SECRET` | Secreto interno para validar callbacks de Flow. |
 | `SENDGRID_API_KEY`, `SENDGRID_FROM_EMAIL`, `SENDGRID_FROM_NAME` | Emails transaccionales. |
 | `ADMIN_PASSWORD`, `ADMIN_SESSION_SECRET` | Acceso al panel administrativo. |
-| `SENTRY_DSN`, `NEXT_PUBLIC_SENTRY_DSN` | Observabilidad (errores y Replays). |
+| `SENTRY_DSN`, `NEXT_PUBLIC_SENTRY_DSN`, `SENTRY_AUTH_TOKEN`, `SENTRY_ORG`, `SENTRY_PROJECT` | Observabilidad (Sentry + sourcemaps). |
 
 > Plantillas disponibles en `env/example.env` y `apps/web/env.local.example`.
 
@@ -205,6 +205,21 @@ Antes de desplegar:
 pnpm check:env   # Verifica que las variables críticas estén presentes
 pnpm build       # Ejecuta el build (prebuild corre automáticamente)
 ```
+
+### Observabilidad (Sentry)
+
+1. Instala la configuración recomendada ejecutando el wizard (usa tu cuenta ya creada):
+   ```bash
+   npx @sentry/wizard@latest -i nextjs --saas \
+     --org dr-virginio-gomez --project javascript-nextjs
+   ```
+   (Ya incluimos los archivos base y `.sentryclirc`, por lo que esto solo confirma la integración).
+2. En App Platform (Build y Run) define:
+   - `SENTRY_DSN` y `NEXT_PUBLIC_SENTRY_DSN` (los encuentras en **Project Settings → Client Keys (DSN)**).
+   - `SENTRY_AUTH_TOKEN` (token con permiso “project:releases”).
+   - `SENTRY_ORG=dr-virginio-gomez`, `SENTRY_PROJECT=javascript-nextjs`.
+3. Opcional: `SENTRY_TRACES_SAMPLE_RATE`, `SENTRY_PROFILES_SAMPLE_RATE`, `NEXT_PUBLIC_SENTRY_REPLAYS_*` para ajustar los muestreos.
+4. Tras cada despliegue, las sourcemaps se subirán automáticamente gracias al `withSentryConfig` en `next.config.mjs`.
 
 Consulta `deploy/README.md` (y el spec `.do/app.yaml`) para:
 

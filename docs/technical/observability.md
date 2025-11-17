@@ -20,13 +20,18 @@ Este documento resume los mecanismos habilitados para monitorear `tresmorroscoli
 
 ## 2. Instrumentación con Sentry
 
-- Se integró `@sentry/nextjs` en la app (`sentry.client/server/edge.config.ts`).  
+- Se integró `@sentry/nextjs` en la app (`sentry.client/server/edge.config.ts`) y se añadió `app/global-error.tsx` para capturar errores de render.  
+- Ejecuta el wizard oficial si necesitas regenerar archivos:
+  ```bash
+  npx @sentry/wizard@latest -i nextjs --saas \
+    --org dr-virginio-gomez --project javascript-nextjs
+  ```
 - Configura las siguientes variables en App Platform (Build y Run):
-  - `SENTRY_DSN` (también copiar en `NEXT_PUBLIC_SENTRY_DSN` si quieres exponerlo a Replay).
+  - `SENTRY_DSN` (copiar también en `NEXT_PUBLIC_SENTRY_DSN` si usas Replay).
   - `SENTRY_TRACES_SAMPLE_RATE` / `NEXT_PUBLIC_SENTRY_TRACES_SAMPLE_RATE` (0.1 recomendado).
-  - Opcional: `SENTRY_PROFILES_SAMPLE_RATE`, `NEXT_PUBLIC_SENTRY_REPLAYS_SESSION_SAMPLE_RATE`, `NEXT_PUBLIC_SENTRY_REPLAYS_ON_ERROR_SAMPLE_RATE`.
-- Para subir sourcemaps, define variables solo en **build time**:
-  - `SENTRY_AUTH_TOKEN`, `SENTRY_ORG`, `SENTRY_PROJECT`.
+  - Opcionales: `SENTRY_PROFILES_SAMPLE_RATE`, `NEXT_PUBLIC_SENTRY_REPLAYS_SESSION_SAMPLE_RATE`, `NEXT_PUBLIC_SENTRY_REPLAYS_ON_ERROR_SAMPLE_RATE`.
+- Para subir sourcemaps define en **build time**:
+  - `SENTRY_AUTH_TOKEN` (token con `project:releases`), `SENTRY_ORG=dr-virginio-gomez`, `SENTRY_PROJECT=javascript-nextjs`.
 - Releases: usa `SENTRY_RELEASE` o exporta `GIT_COMMIT_SHA`. Se propaga automáticamente a Sentry y al endpoint `health-lite`.
 
 ## 3. Health checks
