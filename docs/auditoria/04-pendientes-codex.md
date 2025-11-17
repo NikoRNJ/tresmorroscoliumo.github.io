@@ -2,10 +2,15 @@
 
 Backlog consolidado con orden de criticidad (1 = urgente). Incluye tareas tomadas de la auditoría y de los planes previos (`PLAN_ITERATIVO.md`).
 
+## Completado
+- **Constraint anti-traslapes** · Se migró a `btree_gist` con `bookings_no_overlap` y se maneja `SQLSTATE 23P01` en `/api/bookings/hold`.
+- **Reemisión automática de órdenes Flow** · `/api/payments/flow/create` invalida órdenes vencidas y se bloquea el deploy si `FLOW_FORCE_MOCK=true`.
+- **Normalización de horarios** · `arrival_time` / `departure_time` ahora son columnas dedicadas y se exponen en Availability/Emails.
+- **Hardening auth admin** · Contraseña hasheada, rate limiting básico y sesiones firmadas.
+
 ## Crítica
-1. **Constraint anti-traslapes** · Implementar `EXCLUDE USING gist` y manejar `SQLSTATE 23P01` en `/api/bookings/hold`. Sin esto seguimos expuestos a dobles reservas si dos huéspedes confirman minutos antes del pago.
-2. **Reemisión automática de órdenes Flow** · Permitir regenerar tokens caducados y bloquear despliegues si `FLOW_FORCE_MOCK` está activo en producción.
-3. **Normalización de horarios** · Guardar `arrival_time`/`departure_time` en columnas dedicadas y mostrar esa data en disponibilidad, emails y panel.
+1. **Flujo reservas + Flow estable** · Reproducir y corregir el error “Error al crear la reserva” (logs `/api/bookings/hold`, `/api/payments/flow/create`) hasta asegurar pago end-to-end en producción.
+2. **Correo transaccional confiable** · Verificar dominio en SendGrid/Resend, registrar errores con reintentos y exponer un test manual en `/api/health`.
 
 ## Alta
 4. **Correo transaccional confiable** · Verificar dominio en SendGrid/Resend, registrar errores en `api_events` con reintentos y exponer un test manual en `/api/health`.
@@ -16,8 +21,7 @@ Backlog consolidado con orden de criticidad (1 = urgente). Incluye tareas tomada
 ## Media
 8. **Panel admin completo** · Implementar vistas funcionales para `cabanas`, `bloqueos` y `configuracion` o esconderlas tras feature-flag; añadir edición de bloqueos y exportaciones.
 9. **Scripts seguros** · Separar `clear-blocks` de `clear-bookings`, añadir confirmaciones y documentar el flujo en `README`.
-10. **Hardening auth admin** · Migrar helpers a `apps/web`, usar hashes persistentes y throttling básico.
-11. **Monitoreo de pagos** · Sumar panel (Supabase o dashboard) que liste eventos `payment_*`, junto con alertas Sentry por `flow_payment_error`.
+10. **Monitoreo de pagos** · Sumar panel (Supabase o dashboard) que liste eventos `payment_*`, junto con alertas Sentry por `flow_payment_error`.
 
 ## Baja
 12. **docs/business/incidents.md** · Crear el registro de incidentes mencionado en `observability.md`.

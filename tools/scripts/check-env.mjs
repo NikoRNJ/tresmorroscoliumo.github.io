@@ -20,8 +20,9 @@ const isProdEnv =
   toBool(process.env.CI);
 
 const flowForceMock = normalize(process.env.FLOW_FORCE_MOCK).toLowerCase() === 'true';
+const allowMockInProd = toBool(process.env.FLOW_ALLOW_MOCK_IN_PROD);
 
-if (isProdEnv && flowForceMock) {
+if (isProdEnv && flowForceMock && !allowMockInProd) {
   console.error(
     '❌ FLOW_FORCE_MOCK está en "true" pero el build se está ejecutando para producción.\n' +
       '   Configura llaves reales de Flow y establece FLOW_FORCE_MOCK=false antes de desplegar.'
@@ -29,7 +30,11 @@ if (isProdEnv && flowForceMock) {
   process.exit(1);
 }
 
-const needsRealFlow = !flowForceMock || isProdEnv;
+if (isProdEnv && flowForceMock && allowMockInProd) {
+  console.warn('⚠️ FLOW_FORCE_MOCK=true en producción (modo mock habilitado explícitamente).');
+}
+
+const needsRealFlow = !flowForceMock || (isProdEnv && !allowMockInProd);
 
 const requiredKeys = [
   { key: 'NEXT_PUBLIC_SITE_URL', label: 'URL pública del sitio (SEO & links)' },

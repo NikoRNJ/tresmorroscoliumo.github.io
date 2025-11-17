@@ -48,6 +48,7 @@ Este documento resume los mecanismos habilitados para monitorear `tresmorroscoli
   2. Actualiza los secrets y ejecuta `pnpm check:env` (fallará si `FLOW_FORCE_MOCK=true` en entornos prod/CI).
   3. Despliega y verifica `GET /api/payments/flow/status` (`configured: true`, `forceMock: false`).
 - Si Flow queda en modo mock en producción, las rutas `/api/payments/flow/*` registran `flow_payment_error` y envían alertas a Sentry automáticamente. Configura una alerta dedicada en Sentry sobre ese tag.
+- `FLOW_ALLOW_MOCK_IN_PROD=true` solo debe usarse como bypass temporal cuando requieras desplegar con `FLOW_FORCE_MOCK=true`. Como segunda medida de seguridad, el endpoint `flow/create` devuelve `FLOW_AUTH_ERROR` (HTTP 502) si Flow responde `401 apiKey not found`.
 
 ## 4. Dashboard y alertas sugeridas
 

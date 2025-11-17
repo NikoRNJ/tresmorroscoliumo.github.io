@@ -304,10 +304,25 @@ export async function POST(request: NextRequest) {
       extra: { bookingId },
     });
 
-    const message = error instanceof Error ? error.message : 'Error al crear la orden de pago'
-    return NextResponse.json(
-      { error: message },
-      { status: 500 }
-    );
+    const rawMessage = errorPayload.error;
+    const isFlowAuthError =
+      typeof rawMessage === 'string' &&
+      /401/.test(rawMessage) &&
+      /apiKey not found|Api Key/i.test(rawMessage);
+
+    if (isFlowAuthError) {
+      const hint =
+        'Flow rechazó las credenciales configuradas (apiKey/secret). Revisa las claves en DigitalOcean o habilita el modo mock temporalmente.';
+      return NextResponse.json(
+        {
+          error: hint,
+          code: 'FLOW_AUTH_ERROR',
+        },
+        { status: 502 }
+      );
+    }
+
+    const message = error instanceof Error ? error.message : 'Error al crear la orden de pago';
+    return NextResponse.json({ error: message, code: 'FLOW_PAYMENT_ERROR' }, { status: 500 });
   }
 }

@@ -61,7 +61,13 @@ export function PaymentPageClient({ booking }: PaymentPageClientProps) {
           return;
         }
 
-        throw new Error(data?.error || 'Error al crear el pago');
+        const flowError = new Error(data?.error || 'Error al crear el pago') as Error & {
+          code?: string;
+          status?: number;
+        };
+        flowError.code = data?.code;
+        flowError.status = response.status;
+        throw flowError;
       }
 
       const { paymentUrl, token } = data;
@@ -76,7 +82,13 @@ export function PaymentPageClient({ booking }: PaymentPageClientProps) {
 
       window.location.href = paymentUrl;
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error desconocido');
+      if (err && typeof err === 'object' && 'code' in err && (err as any).code === 'FLOW_AUTH_ERROR') {
+        setError(
+          'La pasarela de Flow rechazó las credenciales configuradas. Nuestro equipo ya fue notificado; intenta nuevamente más tarde o contáctanos.'
+        );
+      } else {
+        setError(err instanceof Error ? err.message : 'Error desconocido');
+      }
       setPaying(false);
     }
   };

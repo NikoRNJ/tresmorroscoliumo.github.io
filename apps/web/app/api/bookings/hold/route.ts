@@ -196,6 +196,23 @@ export async function POST(request: NextRequest) {
 
       const dbErrorCode = (bookingError as any)?.code;
 
+      await (supabaseAdmin.from('api_events') as any).insert({
+        event_type: 'booking_hold_error',
+        event_source: 'system',
+        payload: {
+          dbErrorCode,
+          bookingError,
+          cabinId,
+          startDate,
+          endDate,
+        },
+        status: 'error',
+        error_message:
+          bookingError instanceof Error
+            ? bookingError.message
+            : dbErrorCode || 'unknown_hold_error',
+      });
+
       if (dbErrorCode === '23505' || dbErrorCode === '23P01') {
         const errorResponse: BookingError = {
           success: false,
@@ -242,6 +259,16 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(response, { status: 201 });
   } catch (error) {
     console.error('Error in booking hold endpoint:', error);
+
+    await (supabaseAdmin.from('api_events') as any).insert({
+      event_type: 'booking_hold_exception',
+      event_source: 'system',
+      payload: {
+        error: error instanceof Error ? error.message : 'Unknown error',
+      },
+      status: 'error',
+      error_message: error instanceof Error ? error.message : 'Unknown error',
+    });
 
     // Error de validación de Zod
     if (error instanceof Error && error.name === 'ZodError') {

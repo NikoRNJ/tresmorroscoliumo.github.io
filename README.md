@@ -189,6 +189,7 @@ tres-morros/
 | `SUPABASE_SERVICE_ROLE_KEY` | Mutaciones críticas (holds, pagos, limpieza). |
 | `FLOW_API_KEY`, `FLOW_SECRET_KEY`, `FLOW_BASE_URL` | Credenciales Flow/Webpay. |
 | `FLOW_FORCE_MOCK` | `true` en desarrollo/E2E para simular pagos. |
+| `FLOW_ALLOW_MOCK_IN_PROD` | Usa `true` solo si necesitas habilitar el modo mock en producción de forma controlada. |
 | `FLOW_WEBHOOK_SECRET` | Secreto interno para validar callbacks de Flow. |
 | `SENDGRID_API_KEY`, `SENDGRID_FROM_EMAIL`, `SENDGRID_FROM_NAME` | Emails transaccionales. |
 | `ADMIN_PASSWORD` / `ADMIN_PASSWORD_HASH`, `ADMIN_SESSION_SECRET` | Acceso al panel administrativo (usa `ADMIN_PASSWORD_HASH` con SHA-256 para no almacenar texto plano). |
