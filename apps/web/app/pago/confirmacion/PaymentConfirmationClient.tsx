@@ -129,6 +129,9 @@ export function PaymentConfirmationClient({
   }
 
   if (status === 'success' && booking) {
+    const jacuzziDays = Array.isArray(booking.jacuzzi_days)
+      ? booking.jacuzzi_days
+      : [];
     return (
       <Container className="py-16">
         <div className="mx-auto max-w-2xl">
@@ -170,11 +173,11 @@ export function PaymentConfirmationClient({
                 <p className="text-lg font-semibold text-white">{booking.party_size}</p>
               </div>
 
-              {booking.jacuzzi_days.length > 0 && (
+              {jacuzziDays.length > 0 && (
                 <div>
                   <p className="text-sm text-gray-400">Días con jacuzzi</p>
                   <p className="text-lg font-semibold text-white">
-                    {booking.jacuzzi_days.length}
+                    {jacuzziDays.length}
                   </p>
                 </div>
               )}
