@@ -88,9 +88,6 @@ export function PaymentPageClient({ booking }: PaymentPageClientProps) {
   };
 
   if (!bookingState) {
-  const jacuzziDays = Array.isArray(bookingState.jacuzzi_days)
-    ? bookingState.jacuzzi_days
-    : [];
     return (
       <Container className="py-16">
         <div className="mx-auto max-w-2xl text-center">
@@ -108,6 +105,10 @@ export function PaymentPageClient({ booking }: PaymentPageClientProps) {
       </Container>
     );
   }
+
+  const jacuzziDays = Array.isArray(bookingState.jacuzzi_days)
+    ? bookingState.jacuzzi_days
+    : [];
 
   if (bookingState.isExpired || bookingState.status === 'expired') {
     return (
