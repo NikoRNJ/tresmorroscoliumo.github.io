@@ -24,7 +24,7 @@ const nextConfig = {
   experimental: {
     optimizePackageImports: ['@sendgrid/mail', 'date-fns', 'react-day-picker'],
   },
-  transpilePackages: ['@tresmorros/ui', '@tresmorros/core', 'react-admin', 'ra-core', 'ra-ui-materialui'],
+  transpilePackages: ['@tresmorros/ui', '@tresmorros/core'],
 
   async headers() {
     return [

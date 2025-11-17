@@ -172,7 +172,7 @@ Este documento sirve como **molde completo** para operar y escalar la aplicació
 - [ ] Implementar guardas de importación (ej. core no depende de web).
 - [ ] Añadir Storybook o docs de UI (`packages/ui`) para acelerar diseño.
 - [ ] Integrar monitor de background jobs (expiración de holds) vía CRON/Hono Worker.
-- [ ] Extender el dashboard React Admin (`/admin/dashboard`) con data providers reales (reservas, media, pagos) y acciones inline.
+- [ ] Extender el dashboard de métricas (`/admin/dashboard`) con data providers reales (reservas, media, pagos) y acciones inline.
 
 ---
 

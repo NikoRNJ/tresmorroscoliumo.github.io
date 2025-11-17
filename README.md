@@ -10,7 +10,7 @@ Plataforma integral para la gestión de reservas, comunicación con huéspedes y
 - **Flujo de pagos**: integración con Flow/Webpay (modo sandbox y producción) con confirmaciones vía webhook y reintentos manuales seguros.
 - **Notificaciones por correo**: contacto, eventos especiales y confirmaciones de pago usando plantillas enriquecidas y SendGrid.
 - **Panel administrativo**: autenticación básica protegida por cookies, revisión de reservas y bloqueos manuales.
-- **React Admin Metrics**: tablero `/admin/dashboard` que consume `/api/admin/metrics` para mostrar KPIs, estados de reservas y alertas Flow reutilizando un layout estilo React Admin.
+- **Dashboard de métricas**: tablero `/admin/dashboard` que consume `/api/admin/metrics` para mostrar KPIs, estados de reservas y alertas Flow con layout estilo React Admin.
 - **Monitoreo**: endpoints `/api/health` y `/api/health-lite` para supervisión rápida en despliegues.
 
 ---

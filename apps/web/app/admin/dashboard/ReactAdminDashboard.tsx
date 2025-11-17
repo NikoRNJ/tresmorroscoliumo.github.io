@@ -1,12 +1,6 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import {
-  AdminContext,
-  AdminUI,
-  Layout,
-  type DashboardProps,
-} from 'react-admin';
 import { formatPrice } from '@core/lib/utils/format';
 
 type MetricsResponse = {
@@ -22,9 +16,7 @@ type MetricsResponse = {
   generatedAt: string;
 };
 
-const noopDataProvider = {};
-
-function MetricsDashboard(_props: DashboardProps) {
+export default function ReactAdminDashboard() {
   const [metrics, setMetrics] = useState<MetricsResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -86,9 +78,10 @@ function MetricsDashboard(_props: DashboardProps) {
   return (
     <div className="space-y-4">
       <div>
-        <h2 className="text-2xl font-bold text-gray-900">
-          React Admin · Métricas en vivo
-        </h2>
+        <div className="text-sm font-semibold uppercase tracking-wide text-primary-600">
+          Panel de métricas
+        </div>
+        <h2 className="text-2xl font-bold text-gray-900">Visión general</h2>
         <p className="text-sm text-gray-500">
           Última actualización: {new Date(metrics.generatedAt).toLocaleString('es-CL')}
         </p>
@@ -151,16 +144,6 @@ function MetricCard({ label, value }: { label: string; value: string | number })
       <p className="text-xs uppercase tracking-wide text-gray-500">{label}</p>
       <p className="mt-2 text-2xl font-semibold text-gray-900">{value}</p>
     </div>
-  );
-}
-
-export default function ReactAdminDashboard() {
-  return (
-    <AdminContext dataProvider={noopDataProvider}>
-      <AdminUI layout={Layout} dashboard={MetricsDashboard} disableTelemetry>
-        <></>
-      </AdminUI>
-    </AdminContext>
   );
 }
 
