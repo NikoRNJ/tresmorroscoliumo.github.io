@@ -119,7 +119,7 @@ services:
         value: "true"
 
       - key: FLOW_WEBHOOK_SECRET
-        scope: RUN_TIME
+        scope: BUILD_TIME
         value: "dev-flow-webhook-secret-123"
 
       # Observabilidad / Sentry
