@@ -7,10 +7,12 @@
     "node": "20.18.x"
   },
   "scripts": {
+    "prebuild": "pnpm check:env",
     "dev": "pnpm --filter @tresmorros/web dev",
     "build": "pnpm --filter @tresmorros/web build",
     "start": "pnpm --filter @tresmorros/web start",
     "lint": "pnpm --filter @tresmorros/web lint",
+    "check:env": "node tools/scripts/check-env.mjs",
     "export:app": "node tools/scripts/export-minimal.mjs",
     "test": "vitest run --reporter=verbose",
     "test:e2e": "start-server-and-test \"pnpm --filter @tresmorros/web dev\" http://localhost:3000 \"vitest run --reporter=verbose --config vitest.e2e.config.ts\"",

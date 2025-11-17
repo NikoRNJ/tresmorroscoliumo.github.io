@@ -1,3 +1,5 @@
+import { withSentryConfig } from '@sentry/nextjs';
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   images: {
@@ -63,4 +65,14 @@ const nextConfig = {
   },
 };
 
-export default nextConfig;
+const sentryWebpackPluginOptions = {
+  silent: true,
+  dryRun: !process.env.SENTRY_AUTH_TOKEN,
+  disableLogger: true,
+};
+
+const sentryBuildOptions = {
+  hideSourceMaps: true,
+};
+
+export default withSentryConfig(nextConfig, sentryWebpackPluginOptions, sentryBuildOptions);

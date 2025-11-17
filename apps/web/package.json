@@ -9,6 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@sentry/nextjs": "8.31.0",
     "@tresmorros/core": "workspace:*",
     "@tresmorros/ui": "workspace:*",
     "date-fns": "^4.1.0",
@@ -27,4 +28,3 @@
     "tailwindcss": "^3.4.1"
   }
 }
-

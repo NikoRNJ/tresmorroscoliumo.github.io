@@ -18,8 +18,18 @@ services:
       deploy_on_push: true
     environment_slug: node-js
     http_port: 3000
-    instance_count: 1
-    instance_size_slug: apps-s-1vcpu-0.5gb
+    instance_size_slug: apps-s-1vcpu-1gb
+    scaling:
+      min_instances: 1
+      max_instances: 2
+      target_cpu_percent: 60
+    health_check:
+      http_path: /api/health-lite
+      initial_delay_seconds: 30
+      period_seconds: 30
+      timeout_seconds: 10
+      success_threshold: 1
+      failure_threshold: 3
     build_command: pnpm install --frozen-lockfile && pnpm build
     run_command: >
       pnpm --filter @tresmorros/web start --hostname 0.0.0.0 --port ${PORT:-3000}
@@ -41,6 +51,13 @@ services:
       - key: NEXT_PUBLIC_SITE_URL
         scope: BUILD_TIME
         value: "https://tresmorroscoliumo.cl"
+
+      - key: NEXT_PUBLIC_SITE_ENV
+        scope: RUN_TIME
+        value: "production"
+      - key: NEXT_PUBLIC_SITE_ENV
+        scope: BUILD_TIME
+        value: "production"
 
       - key: PUBLIC_EXTERNAL_URL
         scope: RUN_TIME
@@ -107,6 +124,38 @@ services:
       - key: FLOW_WEBHOOK_SECRET
         scope: RUN_TIME
         value: "dev-flow-webhook-secret-123"
+
+      # Observabilidad / Sentry
+      - key: SENTRY_DSN
+        scope: RUN_TIME
+        value: ""
+      - key: NEXT_PUBLIC_SENTRY_DSN
+        scope: RUN_TIME
+        value: ""
+      - key: NEXT_PUBLIC_SENTRY_TRACES_SAMPLE_RATE
+        scope: RUN_TIME
+        value: "0.1"
+      - key: NEXT_PUBLIC_SENTRY_REPLAYS_SESSION_SAMPLE_RATE
+        scope: RUN_TIME
+        value: "0"
+      - key: NEXT_PUBLIC_SENTRY_REPLAYS_ON_ERROR_SAMPLE_RATE
+        scope: RUN_TIME
+        value: "1"
+      - key: SENTRY_TRACES_SAMPLE_RATE
+        scope: RUN_TIME
+        value: "0.1"
+      - key: SENTRY_PROFILES_SAMPLE_RATE
+        scope: RUN_TIME
+        value: "0.1"
+      - key: SENTRY_AUTH_TOKEN
+        scope: BUILD_TIME
+        value: ""
+      - key: SENTRY_ORG
+        scope: BUILD_TIME
+        value: ""
+      - key: SENTRY_PROJECT
+        scope: BUILD_TIME
+        value: ""
 
       # SendGrid
       - key: SENDGRID_API_KEY

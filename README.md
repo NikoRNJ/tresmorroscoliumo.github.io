@@ -182,18 +182,29 @@ tres-morros/
 
 | Variable | Uso |
 | --- | --- |
+| `NEXT_PUBLIC_SITE_URL` / `PUBLIC_EXTERNAL_URL` | URL base y callbacks usados en emails / Flow. |
+| `NEXT_PUBLIC_SITE_ENV` | Nombre del entorno (`development`, `staging`, `production`). |
 | `NEXT_PUBLIC_SUPABASE_URL` / `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Cliente público (reservas). |
 | `SUPABASE_SERVICE_ROLE_KEY` | Mutaciones críticas (holds, pagos, limpieza). |
 | `FLOW_API_KEY`, `FLOW_SECRET_KEY`, `FLOW_BASE_URL` | Credenciales Flow/Webpay. |
 | `FLOW_FORCE_MOCK` | `true` en desarrollo/E2E para simular pagos. |
+| `FLOW_WEBHOOK_SECRET` | Secreto interno para validar callbacks de Flow. |
 | `SENDGRID_API_KEY`, `SENDGRID_FROM_EMAIL`, `SENDGRID_FROM_NAME` | Emails transaccionales. |
 | `ADMIN_PASSWORD`, `ADMIN_SESSION_SECRET` | Acceso al panel administrativo. |
+| `SENTRY_DSN`, `NEXT_PUBLIC_SENTRY_DSN` | Observabilidad (errores y Replays). |
 
 > Plantillas disponibles en `env/example.env` y `apps/web/env.local.example`.
 
 ---
 
 ## ☁️ Despliegue (DigitalOcean, Nginx, Apache)
+
+Antes de desplegar:
+
+```bash
+pnpm check:env   # Verifica que las variables críticas estén presentes
+pnpm build       # Ejecuta el build (prebuild corre automáticamente)
+```
 
 Consulta `deploy/README.md` (y el spec `.do/app.yaml`) para:
 
