@@ -38,14 +38,20 @@ export async function sendBookingConfirmation(
     });
 
     // Si se envió exitosamente, loggear en api_events
+    const eventPayloadBase = {
+      to: data.to.email,
+      subject: data.subject,
+      attempts: result.attempts ?? 1,
+      mode: result.mode ?? (emailClient.isReady() ? 'live' : 'mock'),
+    };
+
     if (result.success) {
       await (supabaseAdmin.from('api_events') as any).insert({
         event_type: 'email_sent_confirmation',
         event_source: 'sendgrid',
         booking_id: data.bookingId,
         payload: {
-          to: data.to.email,
-          subject: data.subject,
+          ...eventPayloadBase,
           messageId: result.messageId,
         },
         status: 'success',
@@ -59,7 +65,7 @@ export async function sendBookingConfirmation(
         event_source: 'sendgrid',
         booking_id: data.bookingId,
         payload: {
-          to: data.to.email,
+          ...eventPayloadBase,
           error: result.error,
         },
         status: 'error',

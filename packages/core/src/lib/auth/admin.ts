@@ -11,12 +11,23 @@ import { cookies } from 'next/headers'
 import crypto from 'crypto'
 
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD
+const ADMIN_PASSWORD_HASH = process.env.ADMIN_PASSWORD_HASH
 const ADMIN_SESSION_SECRET = process.env.ADMIN_SESSION_SECRET
 const SESSION_COOKIE_NAME = 'admin_session'
 const SESSION_DURATION = 24 * 60 * 60 * 1000
+const NODE_ENV = (process.env.NODE_ENV || '').toLowerCase()
+const SITE_ENV = (process.env.NEXT_PUBLIC_SITE_ENV || '').toLowerCase()
+const IS_PROD = NODE_ENV === 'production' || SITE_ENV === 'production'
 
-if (!ADMIN_PASSWORD) {
-  console.warn('⚠️ ADMIN_PASSWORD not set. Admin panel will not be accessible.')
+const storedPasswordHash =
+  ADMIN_PASSWORD_HASH ||
+  (ADMIN_PASSWORD ? hashPassword(ADMIN_PASSWORD) : null)
+
+if (!storedPasswordHash) {
+  console.warn('⚠️ ADMIN_PASSWORD/ADMIN_PASSWORD_HASH not set. Admin panel will not be accessible.')
+}
+if (!ADMIN_SESSION_SECRET) {
+  console.warn('⚠️ ADMIN_SESSION_SECRET not set. Admin sessions will be rejected.')
 }
 
 /**
@@ -27,28 +38,46 @@ function hashPassword(password: string): string {
 }
 
 function signToken(token: string): string {
-  if (!ADMIN_SESSION_SECRET) return ''
+  if (!ADMIN_SESSION_SECRET) {
+    throw new Error('ADMIN_SESSION_SECRET is not defined')
+  }
   return crypto.createHmac('sha256', ADMIN_SESSION_SECRET).update(token).digest('hex')
 }
 
 function verifySignature(token: string, signature: string): boolean {
   if (!ADMIN_SESSION_SECRET) return false
   const expected = signToken(token)
-  return crypto.timingSafeEqual(Buffer.from(expected), Buffer.from(signature))
+  const expectedBuffer = Buffer.from(expected)
+  const providedBuffer = Buffer.from(signature)
+  if (expectedBuffer.length !== providedBuffer.length) {
+    return false
+  }
+  return crypto.timingSafeEqual(expectedBuffer, providedBuffer)
+}
+
+function timingSafeCompare(a: string, b: string): boolean {
+  const bufA = Buffer.from(a)
+  const bufB = Buffer.from(b)
+  if (bufA.length !== bufB.length) return false
+  return crypto.timingSafeEqual(bufA, bufB)
 }
 
 /**
  * Verificar si la contraseña es correcta
  */
 export function verifyAdminPassword(password: string): boolean {
-  if (!ADMIN_PASSWORD) return false
-  return hashPassword(password) === hashPassword(ADMIN_PASSWORD)
+  if (!storedPasswordHash) return false
+  const attemptHash = hashPassword(password)
+  return timingSafeCompare(attemptHash, storedPasswordHash)
 }
 
 /**
  * Crear sesión de admin
  */
 export async function createAdminSession(): Promise<string> {
+  if (!ADMIN_SESSION_SECRET) {
+    throw new Error('ADMIN_SESSION_SECRET is required to create admin sessions')
+  }
   const sessionToken = crypto.randomBytes(32).toString('hex')
   const signature = signToken(sessionToken)
   const value = `${sessionToken}.${signature}`
@@ -56,7 +85,7 @@ export async function createAdminSession(): Promise<string> {
 
   cookies().set(SESSION_COOKIE_NAME, value, {
     httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
+    secure: IS_PROD,
     sameSite: 'strict',
     expires: expiresAt,
     path: '/',

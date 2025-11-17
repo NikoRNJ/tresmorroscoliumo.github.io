@@ -14,8 +14,9 @@ import { cn } from '@core/lib/utils/cn';
 
 const navigation = [
   { name: 'Dashboard', href: '/admin', icon: LayoutDashboard },
+  { name: 'Métricas (React Admin)', href: '/admin/dashboard', icon: Home },
   { name: 'Reservas', href: '/admin/reservas', icon: Calendar },
-  { name: 'Cabañas', href: '/admin/cabanas', icon: Home },
+  { name: 'Media', href: '/admin/media', icon: FileText },
   { name: 'Bloqueos', href: '/admin/bloqueos', icon: FileText },
   { name: 'Configuración', href: '/admin/configuracion', icon: Settings },
 ];

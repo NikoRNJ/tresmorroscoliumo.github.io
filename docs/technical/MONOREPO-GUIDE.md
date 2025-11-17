@@ -104,7 +104,8 @@ Este documento sirve como **molde completo** para operar y escalar la aplicació
 | `FLOW_API_KEY`, `FLOW_SECRET_KEY`, `FLOW_BASE_URL` | Flow API real | core |
 | `FLOW_FORCE_MOCK` | `"true"` evita llamadas reales a Flow (recomendado para dev/e2e) | core |
 | `SENDGRID_API_KEY`, `SENDGRID_FROM_EMAIL`, `SENDGRID_FROM_NAME` | Envío de correos | core |
-| `ADMIN_PASSWORD`, `ADMIN_SESSION_SECRET` | Panel admin | core |
+| `ADMIN_PASSWORD` / `ADMIN_PASSWORD_HASH`, `ADMIN_SESSION_SECRET` | Panel admin (usa hash SHA-256 cuando sea posible) | core |
+| `ADMIN_LOGIN_MAX_ATTEMPTS`, `ADMIN_LOGIN_WINDOW_MS` | Rate limiting de login admin | web |
 | `PUBLIC_EXTERNAL_URL`, `NEXT_PUBLIC_SITE_URL` | Links absolutos en correos / Flow | core / web |
 
 > Mantén los secretos fuera del repo. Para CI se recomienda inyectarlos como variables de entorno o usar un proveedor de secretos (Vercel, Doppler, etc.).  
@@ -171,6 +172,7 @@ Este documento sirve como **molde completo** para operar y escalar la aplicació
 - [ ] Implementar guardas de importación (ej. core no depende de web).
 - [ ] Añadir Storybook o docs de UI (`packages/ui`) para acelerar diseño.
 - [ ] Integrar monitor de background jobs (expiración de holds) vía CRON/Hono Worker.
+- [ ] Extender el dashboard React Admin (`/admin/dashboard`) con data providers reales (reservas, media, pagos) y acciones inline.
 
 ---
 

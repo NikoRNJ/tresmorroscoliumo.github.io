@@ -22,6 +22,15 @@ Este directorio contiene configuraciones listas para usar en DigitalOcean App Pl
 5. **Archivos `.env`**  
    - `.env.local` está permitido en el repo para DigitalOcean, pero evita subir llaves sensibles a repos públicos.  
    - Para separar secretos, deja los valores en blanco en `.do/app.yaml` y complétalos desde la UI o `doctl apps update`.
+6. **Scheduler para expirar holds**  
+   - En App Platform abre la pestaña **Jobs** → **Add Job**.  
+   - Programa la expresión `*/5 * * * *` y usa como comando:  
+     ```bash
+     curl -X POST "$APP_URL/api/jobs/expire-holds" \
+       -H "x-cron-secret: $CRON_SECRET"
+     ```  
+   - Reemplaza `APP_URL` por la URL pública (`https://www.tresmorroscoliumo.cl`) y asegúrate de que `CRON_SECRET` coincida con el valor del entorno.  
+   - Revisa los logs de la App después del primer disparo; debería registrarse un evento `booking_hold_expired` en `api_events` cuando encuentre holds vencidos.
 
 ---
 
@@ -84,6 +93,7 @@ Si tu infraestructura ya usa Apache como frontal, aprovecha `deploy/apache/vhost
 - `curl -f http://127.0.0.1:3000/api/health` en el servidor debe devolver `200 OK`.
 - Verifica que el cron secreto (`CRON_SECRET`) coincida con el configurado en Jobs/CRON de DigitalOcean.
 - Asegura que `FLOW_FORCE_MOCK=false` en producción y que las llaves de Flow/Supabase/SendGrid sean las reales.
+- Comprueba que el remitente de SendGrid esté verificado ejecutando, desde tu máquina, `curl -fsSL https://api.sendgrid.com/v3/user/account -H "Authorization: Bearer $SENDGRID_API_KEY"`. Debe responder `200` y el remitente (`SENDGRID_FROM_EMAIL`) debe aparecer como *verified* en el panel.
 - No olvides reiniciar el servicio (o re desplegar en App Platform) cada vez que cambies variables sensibles.
 
 ---

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import * as Sentry from '@sentry/nextjs';
 import { supabaseAdmin } from '@/lib/supabase/server';
 import { flowClient } from '@/lib/flow/client';
 import { FlowPaymentStatusCode } from '@/types/flow';
@@ -18,6 +19,23 @@ type Booking = Database['public']['Tables']['bookings']['Row'];
  */
 export async function POST(request: NextRequest) {
   try {
+    const runtimeEnv = (process.env.NEXT_PUBLIC_SITE_ENV || process.env.NODE_ENV || '').toLowerCase();
+    const isProdRuntime = runtimeEnv === 'production';
+    const isMockFlow = !flowClient.isConfigured();
+
+    if (isProdRuntime && isMockFlow) {
+      const errorMessage = 'Flow webhook recibió una llamada pero Flow está deshabilitado/mode mock en producción.';
+      await (supabaseAdmin.from('api_events') as any).insert({
+        event_type: 'flow_payment_error',
+        event_source: 'flow',
+        payload: { reason: 'webhook_on_mock', runtimeEnv },
+        status: 'error',
+        error_message: errorMessage,
+      });
+      Sentry.captureMessage(errorMessage, { level: 'error', extra: { runtimeEnv } });
+      return NextResponse.json({ error: 'Flow no está configurado' }, { status: 503 });
+    }
+
     // 1. Parsear el body (Flow envía form-urlencoded)
     const formData = await request.formData();
     const rawPayload = Object.fromEntries(formData.entries()) as Record<string, string>;
@@ -37,6 +55,10 @@ export async function POST(request: NextRequest) {
 
     if (!isValidSignature) {
       console.error('Invalid webhook signature');
+      Sentry.captureMessage('Invalid Flow webhook signature', {
+        level: 'warning',
+        extra: { payload: payloadForSignature },
+      });
       await (supabaseAdmin.from('api_events') as any).insert({
         event_type: 'webhook_invalid_signature',
         event_source: 'flow',
@@ -65,6 +87,10 @@ export async function POST(request: NextRequest) {
 
     if (bookingError || !booking) {
       console.error('Booking not found for Flow order:', paymentStatus.flowOrder);
+      Sentry.captureMessage('Flow webhook booking not found', {
+        level: 'warning',
+        extra: { paymentStatus },
+      });
       await (supabaseAdmin.from('api_events') as any).insert({
         event_type: 'webhook_booking_not_found',
         event_source: 'flow',
@@ -168,6 +194,7 @@ export async function POST(request: NextRequest) {
     }
   } catch (error) {
     console.error('Error processing Flow webhook:', error);
+    Sentry.captureException(error, { tags: { scope: 'flow_payment_error', action: 'webhook' } });
 
     await (supabaseAdmin.from('api_events') as any).insert({
       event_type: 'webhook_error',

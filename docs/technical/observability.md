@@ -40,13 +40,22 @@ Este documento resume los mecanismos habilitados para monitorear `tresmorroscoli
 - `GET /api/health`: realiza una consulta real a Supabase. Úsalo en consultas menos frecuentes (p. ej. cada 5 min) para validar conectividad de base de datos.
 - Ambos responden con `Cache-Control: no-store` para que los monitores siempre obtengan datos frescos.
 
+### 3.1 Rotación de llaves Flow
+
+- Mantén los secretos de Flow (`FLOW_API_KEY`, `FLOW_SECRET_KEY`, `FLOW_BASE_URL`) en App Platform Secrets o en tu orquestador de despliegues.  
+- Antes de rotar:
+  1. Duplica las llaves en el panel de Flow (sandbox o producción) y valida el comercio.
+  2. Actualiza los secrets y ejecuta `pnpm check:env` (fallará si `FLOW_FORCE_MOCK=true` en entornos prod/CI).
+  3. Despliega y verifica `GET /api/payments/flow/status` (`configured: true`, `forceMock: false`).
+- Si Flow queda en modo mock en producción, las rutas `/api/payments/flow/*` registran `flow_payment_error` y envían alertas a Sentry automáticamente. Configura una alerta dedicada en Sentry sobre ese tag.
+
 ## 4. Dashboard y alertas sugeridas
 
 - **Panel de errores**: En Sentry, crea alertas por tasa de errores > 5 % y por eventos de tipo `payment_*`.
 - **Métricas de disponibilidad**: UptimeRobot / Better Stack con tres monitors:
-  1. `https://tresmorroscoliumo.cl/api/health-lite` (30 s, tiempo de respuesta).
-  2. `https://tresmorroscoliumo.cl/api/health` (5 min, DB reachability).
-  3. `https://tresmorroscoliumo.cl` (HTTP básico desde otra región).
+  1. `https://www.tresmorroscoliumo.cl/api/health-lite` (30 s, tiempo de respuesta).
+  2. `https://www.tresmorroscoliumo.cl/api/health` (5 min, DB reachability).
+  3. `https://www.tresmorroscoliumo.cl` (HTTP básico desde otra región).
 - **Registros de pagos**: crea una consulta programada en Supabase (`api_events` donde `event_type` como `'payment_*'`) y envía resumen diario a Slack/Email.
 
 ## 5. Procedimiento ante incidentes

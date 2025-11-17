@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import * as Sentry from '@sentry/nextjs'
 import { supabaseAdmin } from '@/lib/supabase/server'
 import { flowClient } from '@/lib/flow/client'
 import { FlowPaymentStatusCode } from '@/types/flow'
@@ -7,6 +8,24 @@ export async function POST(request: NextRequest) {
   try {
     const { token, bookingId } = await request.json()
     if (!token) return NextResponse.json({ error: 'token requerido' }, { status: 400 })
+
+    const runtimeEnv = (process.env.NEXT_PUBLIC_SITE_ENV || process.env.NODE_ENV || '').toLowerCase()
+    const isProdRuntime = runtimeEnv === 'production'
+    const isMockFlow = !flowClient.isConfigured()
+
+    if (isProdRuntime && isMockFlow) {
+      const errorMessage = 'Confirmación manual no disponible: Flow está en modo mock en producción.'
+      await (supabaseAdmin.from('api_events') as any).insert({
+        event_type: 'flow_payment_error',
+        event_source: 'flow',
+        booking_id: bookingId ?? null,
+        payload: { token, runtimeEnv },
+        status: 'error',
+        error_message: errorMessage,
+      })
+      Sentry.captureMessage(errorMessage, { level: 'error', extra: { token, bookingId } })
+      return NextResponse.json({ error: 'Servicio de pagos no disponible' }, { status: 503 })
+    }
 
     const status = await flowClient.getPaymentStatus(token)
     const id = bookingId || status.commerceOrder
@@ -40,6 +59,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ success: true })
   } catch (e) {
+    Sentry.captureException(e, { tags: { scope: 'flow_payment_error', action: 'manual_confirm' } })
     return NextResponse.json({ success: false, status: FlowPaymentStatusCode.PENDING }, { status: 202 })
   }
 }

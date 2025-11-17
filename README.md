@@ -10,6 +10,7 @@ Plataforma integral para la gestión de reservas, comunicación con huéspedes y
 - **Flujo de pagos**: integración con Flow/Webpay (modo sandbox y producción) con confirmaciones vía webhook y reintentos manuales seguros.
 - **Notificaciones por correo**: contacto, eventos especiales y confirmaciones de pago usando plantillas enriquecidas y SendGrid.
 - **Panel administrativo**: autenticación básica protegida por cookies, revisión de reservas y bloqueos manuales.
+- **React Admin Metrics**: tablero `/admin/dashboard` que consume `/api/admin/metrics` para mostrar KPIs, estados de reservas y alertas Flow reutilizando un layout estilo React Admin.
 - **Monitoreo**: endpoints `/api/health` y `/api/health-lite` para supervisión rápida en despliegues.
 
 ---
@@ -190,7 +191,8 @@ tres-morros/
 | `FLOW_FORCE_MOCK` | `true` en desarrollo/E2E para simular pagos. |
 | `FLOW_WEBHOOK_SECRET` | Secreto interno para validar callbacks de Flow. |
 | `SENDGRID_API_KEY`, `SENDGRID_FROM_EMAIL`, `SENDGRID_FROM_NAME` | Emails transaccionales. |
-| `ADMIN_PASSWORD`, `ADMIN_SESSION_SECRET` | Acceso al panel administrativo. |
+| `ADMIN_PASSWORD` / `ADMIN_PASSWORD_HASH`, `ADMIN_SESSION_SECRET` | Acceso al panel administrativo (usa `ADMIN_PASSWORD_HASH` con SHA-256 para no almacenar texto plano). |
+| `ADMIN_LOGIN_MAX_ATTEMPTS`, `ADMIN_LOGIN_WINDOW_MS` | Límite de intentos del panel admin (por defecto 5 intentos en 5 min). |
 | `SENTRY_DSN`, `NEXT_PUBLIC_SENTRY_DSN`, `SENTRY_AUTH_TOKEN`, `SENTRY_ORG`, `SENTRY_PROJECT` | Observabilidad (Sentry + sourcemaps). |
 
 > Plantillas disponibles en `env/example.env` y `apps/web/env.local.example`.

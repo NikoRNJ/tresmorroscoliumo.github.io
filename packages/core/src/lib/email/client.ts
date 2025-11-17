@@ -67,58 +67,73 @@ class EmailClient {
    */
   async send(mailData: MailDataRequired): Promise<EmailSendResult> {
     this.initialize();
-    
+
+    const mode: EmailSendResult['mode'] = this.isConfigured ? 'live' : 'mock';
+
     if (!this.isConfigured) {
-      console.warn('⚠️ SendGrid no está configurado. Simulando envío de email (modo mock):', {
+      console.warn('⚠️ SendGrid no está configurado. Emails reales no serán enviados:', {
         to: mailData.to,
         subject: mailData.subject,
       });
       return {
-        success: true,
-        messageId: `mock-email-${Date.now()}`,
-      };
-    }
-
-    try {
-      const [response] = await sgMail.send(mailData);
-
-      const resolveRecipient = (to: MailDataRequired['to']): string => {
-        if (typeof to === 'string') return to;
-        if (Array.isArray(to)) {
-          const [first] = to;
-          return first ? resolveRecipient(first as MailDataRequired['to']) : '<sin destinatario>';
-        }
-        if (to && typeof to === 'object' && 'email' in to && typeof to.email === 'string') {
-          return to.email;
-        }
-        return '<sin destinatario>';
-      };
-
-      const recipient = resolveRecipient(mailData.to);
-      console.log(`✅ Email sent successfully to ${recipient}`, {
-        messageId: response.headers['x-message-id'],
-        statusCode: response.statusCode,
-      });
-      
-      return {
-        success: true,
-        messageId: response.headers['x-message-id'],
-      };
-    } catch (error) {
-      console.error('❌ Error sending email:', error);
-
-      if (error instanceof Error) {
-        return {
-          success: false,
-          error: error.message,
-        };
-      }
-
-      return {
         success: false,
-        error: 'Unknown error sending email',
+        error: 'SENDGRID_NOT_CONFIGURED',
+        mode,
       };
     }
+
+    const resolveRecipient = (to: MailDataRequired['to']): string => {
+      if (typeof to === 'string') return to;
+      if (Array.isArray(to)) {
+        const [first] = to;
+        return first ? resolveRecipient(first as MailDataRequired['to']) : '<sin destinatario>';
+      }
+      if (to && typeof to === 'object' && 'email' in to && typeof to.email === 'string') {
+        return to.email;
+      }
+      return '<sin destinatario>';
+    };
+
+    const maxAttempts = Math.max(
+      1,
+      Number(process.env.SENDGRID_MAX_RETRIES || 3)
+    );
+    let lastError: unknown = null;
+
+    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+      try {
+        const [response] = await sgMail.send(mailData);
+        const recipient = resolveRecipient(mailData.to);
+        console.log(`✅ Email sent successfully to ${recipient}`, {
+          messageId: response.headers['x-message-id'],
+          statusCode: response.statusCode,
+          attempts: attempt,
+        });
+
+        return {
+          success: true,
+          messageId: response.headers['x-message-id'],
+          attempts: attempt,
+          mode,
+        };
+      } catch (error) {
+        lastError = error;
+        console.error(`❌ Error sending email (attempt ${attempt}/${maxAttempts}):`, error);
+        if (attempt < maxAttempts) {
+          await new Promise((resolve) => setTimeout(resolve, attempt * 250));
+        }
+      }
+    }
+
+    return {
+      success: false,
+      error:
+        lastError instanceof Error
+          ? lastError.message
+          : 'Unknown error sending email',
+      attempts: maxAttempts,
+      mode,
+    };
   }
 
   /**

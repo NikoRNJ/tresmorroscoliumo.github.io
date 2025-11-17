@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import * as Sentry from '@sentry/nextjs';
 import { supabaseAdmin } from '@/lib/supabase/server';
 import { flowClient } from '@/lib/flow/client';
 import { sendBookingConfirmationForBooking } from '@/lib/email/service';
@@ -35,10 +36,11 @@ const createPaymentSchema = z.object({
  * }
  */
 export async function POST(request: NextRequest) {
+  let bookingId: string | undefined;
   try {
     // 1. Validar body
     const body = await request.json();
-    const { bookingId } = createPaymentSchema.parse(body);
+    ({ bookingId } = createPaymentSchema.parse(body));
 
     // 2. Obtener la reserva con join a cabin
     const { data: bookings, error: bookingError } = await supabaseAdmin
@@ -83,6 +85,36 @@ export async function POST(request: NextRequest) {
     }
 
     const isMockFlow = !flowClient.isConfigured();
+    const runtimeEnv = (process.env.NEXT_PUBLIC_SITE_ENV || process.env.NODE_ENV || '').toLowerCase();
+    const isProdRuntime = runtimeEnv === 'production';
+    const allowMockInProd = (process.env.FLOW_ALLOW_MOCK_IN_PROD || '').toLowerCase() === 'true';
+
+    if (isProdRuntime && isMockFlow && !allowMockInProd) {
+      const errorMessage = 'Flow está en modo mock en un entorno marcado como producción.';
+      const extra = {
+        bookingId,
+        runtimeEnv,
+      };
+
+      await (supabaseAdmin.from('api_events') as any).insert({
+        event_type: 'flow_payment_error',
+        event_source: 'flow',
+        booking_id: bookingId,
+        payload: extra,
+        status: 'error',
+        error_message: errorMessage,
+      });
+
+      Sentry.captureMessage(errorMessage, { level: 'error', extra });
+
+      return NextResponse.json(
+        {
+          error:
+            'El servicio de pagos no está disponible en este momento. Intenta nuevamente en unos minutos.',
+        },
+        { status: 503 }
+      );
+    }
 
     // 5. Verificar si ya existe una orden de Flow para esta reserva
     if (booking.flow_order_id) {
@@ -257,12 +289,19 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const errorPayload = { error: error instanceof Error ? error.message : 'Unknown error' };
+
     await (supabaseAdmin.from('api_events') as any).insert({
       event_type: 'flow_payment_error',
       event_source: 'flow',
-      payload: { error: error instanceof Error ? error.message : 'Unknown error' },
+      payload: errorPayload,
       status: 'error',
-      error_message: error instanceof Error ? error.message : 'Unknown error',
+      error_message: errorPayload.error,
+    });
+
+    Sentry.captureException(error, {
+      tags: { scope: 'flow_payment_error' },
+      extra: { bookingId },
     });
 
     const message = error instanceof Error ? error.message : 'Error al crear la orden de pago'

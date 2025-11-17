@@ -4,16 +4,32 @@ import process from 'node:process';
 const normalize = (value) => String(value ?? '').trim();
 const isTruthy = (value) => normalize(value).length > 0;
 
-const shouldSkip = ['1', 'true', 'yes'].includes(
-  normalize(process.env.CHECK_ENV_SKIP).toLowerCase()
-);
+const toBool = (value) => ['1', 'true', 'yes'].includes(normalize(value).toLowerCase());
+
+const shouldSkip = toBool(process.env.CHECK_ENV_SKIP);
 
 if (shouldSkip) {
   process.exit(0);
 }
 
-const needsRealFlow =
-  normalize(process.env.FLOW_FORCE_MOCK).toLowerCase() !== 'true';
+const nodeEnv = normalize(process.env.NODE_ENV).toLowerCase();
+const siteEnv = normalize(process.env.NEXT_PUBLIC_SITE_ENV).toLowerCase();
+const isProdEnv =
+  nodeEnv === 'production' ||
+  siteEnv === 'production' ||
+  toBool(process.env.CI);
+
+const flowForceMock = normalize(process.env.FLOW_FORCE_MOCK).toLowerCase() === 'true';
+
+if (isProdEnv && flowForceMock) {
+  console.error(
+    '❌ FLOW_FORCE_MOCK está en "true" pero el build se está ejecutando para producción.\n' +
+      '   Configura llaves reales de Flow y establece FLOW_FORCE_MOCK=false antes de desplegar.'
+  );
+  process.exit(1);
+}
+
+const needsRealFlow = !flowForceMock || isProdEnv;
 
 const requiredKeys = [
   { key: 'NEXT_PUBLIC_SITE_URL', label: 'URL pública del sitio (SEO & links)' },
