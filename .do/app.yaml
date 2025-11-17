@@ -19,10 +19,7 @@ services:
     environment_slug: node-js
     http_port: 3000
     instance_size_slug: apps-s-1vcpu-1gb
-    scaling:
-      min_instances: 1
-      max_instances: 2
-      target_cpu_percent: 60
+    instance_count: 1
     health_check:
       http_path: /api/health-lite
       initial_delay_seconds: 30
