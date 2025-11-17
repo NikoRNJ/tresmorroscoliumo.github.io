@@ -2,11 +2,9 @@ import { NextResponse } from 'next/server';
 import { addDays, startOfMonth } from 'date-fns';
 import { requireAdmin } from '@/lib/auth/admin';
 import { supabaseAdmin } from '@/lib/supabase/server';
+import type { Database } from '@/types/database';
 
-type StatusCountRow = {
-  status: string;
-  count: number;
-};
+type BookingStatus = Database['public']['Tables']['bookings']['Row']['status'];
 
 export async function GET() {
   const isAdmin = await requireAdmin();
@@ -21,11 +19,26 @@ export async function GET() {
   const today = now.toISOString().slice(0, 10);
   const inSevenDays = addDays(now, 7).toISOString().slice(0, 10);
 
-  const statusPromise = supabaseAdmin
-    .from('bookings')
-    .select('status, count:count(*)')
-    .group('status')
-    .returns<StatusCountRow[]>();
+  async function countByStatus(status: BookingStatus) {
+    const { count, error } = await supabaseAdmin
+      .from('bookings')
+      .select('*', { count: 'exact', head: true })
+      .eq('status', status);
+
+    if (error) {
+      throw error;
+    }
+
+    return count ?? 0;
+  }
+
+  const statusKeys: BookingStatus[] = ['pending', 'paid', 'expired', 'canceled'];
+  const statusCountsPromise = Promise.all(
+    statusKeys.map(async (status) => ({
+      status,
+      count: await countByStatus(status),
+    }))
+  );
 
   const revenuePromise = supabaseAdmin
     .from('bookings')
@@ -56,27 +69,27 @@ export async function GET() {
     .limit(5);
 
   const [
-    { data: statusRows, error: statusError },
+    statusRows,
     { data: revenueRows, error: revenueError },
     { data: upcomingRows, error: upcomingError },
     { count: flowErrorsCount, error: flowErrorsError },
     { data: recentFlowEvents, error: recentFlowError },
   ] = await Promise.all([
-    statusPromise,
+    statusCountsPromise,
     revenuePromise,
     upcomingPromise,
     flowErrorsPromise,
     recentFlowPromise,
   ]);
 
-  if (statusError || revenueError || upcomingError || flowErrorsError || recentFlowError) {
+  if (revenueError || upcomingError || flowErrorsError || recentFlowError) {
     return NextResponse.json(
       { error: 'No se pudieron calcular las métricas' },
       { status: 500 }
     );
   }
 
-  const statusCounts = (statusRows || []).reduce<Record<string, number>>((acc, row) => {
+  const statusCounts = statusRows.reduce<Record<string, number>>((acc, row) => {
     acc[row.status] = Number(row.count || 0);
     return acc;
   }, {});
