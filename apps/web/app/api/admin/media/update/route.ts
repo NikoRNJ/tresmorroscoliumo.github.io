@@ -35,8 +35,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'No hay cambios para aplicar' }, { status: 400 });
     }
 
-    const { error } = await supabaseAdmin
-      .from('cabin_images')
+    const { error } = await (supabaseAdmin.from('cabin_images') as any)
       .update(updatePayload)
       .eq('id', imageId);
 
