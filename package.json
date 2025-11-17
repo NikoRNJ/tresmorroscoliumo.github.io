@@ -15,7 +15,7 @@
     "check:env": "node tools/scripts/check-env.mjs",
     "export:app": "node tools/scripts/export-minimal.mjs",
     "test": "vitest run --reporter=verbose",
-    "test:e2e": "cross-env SENTRY_DISABLED=true PORT=3301 E2E_BASE_URL=http://localhost:3301 pnpm --filter @tresmorros/web build && cross-env SENTRY_DISABLED=true PORT=3301 E2E_BASE_URL=http://localhost:3301 start-server-and-test \"pnpm --filter @tresmorros/web start\" http://localhost:3301 \"vitest run --reporter=verbose --config vitest.e2e.config.ts\"",
+    "test:e2e": "cross-env SENTRY_DISABLED=true PORT=3301 E2E_BASE_URL=http://localhost:3301 FLOW_FORCE_MOCK=true FLOW_ALLOW_MOCK_IN_PROD=true pnpm --filter @tresmorros/web build && cross-env SENTRY_DISABLED=true PORT=3301 E2E_BASE_URL=http://localhost:3301 FLOW_FORCE_MOCK=true FLOW_ALLOW_MOCK_IN_PROD=true start-server-and-test \"pnpm --filter @tresmorros/web start\" http://localhost:3301 \"vitest run --reporter=verbose --config vitest.e2e.config.ts\"",
     "clear:bookings": "node tools/scripts/clear-bookings.mjs"
   },
   "devDependencies": {
