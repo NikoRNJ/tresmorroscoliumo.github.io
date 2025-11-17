@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 
-const BASE_URL = 'http://localhost:3000'
+const BASE_URL = process.env.E2E_BASE_URL || 'http://localhost:3000'
 
 function formatDate(d: Date) {
   const y = d.getFullYear(); const m = String(d.getMonth()+1).padStart(2,'0'); const dd = String(d.getDate()).padStart(2,'0')

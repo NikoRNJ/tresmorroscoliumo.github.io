@@ -62,7 +62,7 @@ export async function GET(request: NextRequest) {
     // (reservas que empiezan antes del fin del mes Y terminan después del inicio del mes)
     const { data: bookings, error: bookingsError } = await supabaseAdmin
       .from('bookings')
-      .select('id, start_date, end_date, status, expires_at, customer_notes')
+      .select('id, start_date, end_date, status, expires_at, arrival_time, departure_time')
       .eq('cabin_id', cabinId)
       .in('status', ['pending', 'paid'])
       .lte('start_date', endDateStr)
@@ -74,7 +74,8 @@ export async function GET(request: NextRequest) {
           end_date: string;
           status: string;
           expires_at: string | null;
-          customer_notes: string | null;
+          arrival_time: string | null;
+          departure_time: string | null;
         }>
       >();
 
@@ -142,17 +143,18 @@ export async function GET(request: NextRequest) {
       departureTime: string;
     }> = [];
 
-    const extractTimeFromNotes = (notes: string | null, label: 'Entrada' | 'Salida', fallback: string) => {
-      if (!notes) return fallback;
-      const regex = new RegExp(`${label}:\\s*([0-9]{1,2}:[0-9]{2}\\s?(?:AM|PM)?)`, 'i');
-      const match = notes.match(regex);
-      if (!match) return fallback;
-      const value = match[1].trim().toUpperCase();
-      return value.includes('AM') || value.includes('PM') ? value : `${value} ${label === 'Entrada' ? 'PM' : 'AM'}`;
-    };
+    const DEFAULT_CHECK_IN = '15:00';
+    const DEFAULT_CHECK_OUT = '12:00';
 
-    const defaultCheckIn = '03:00 PM';
-    const defaultCheckOut = '11:00 AM';
+    const formatTimeLabel = (time: string | null | undefined, fallback: string) => {
+      const source = time || fallback;
+      const [hoursStr, minutesStr] = source.split(':');
+      const hours = Number(hoursStr);
+      const minutes = Number(minutesStr);
+      const period = hours >= 12 ? 'PM' : 'AM';
+      const hour12 = ((hours + 11) % 12) + 1;
+      return `${hour12.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')} ${period}`;
+    };
 
     blocks?.forEach((block) => {
       const blockDays = getDatesBetween(block.start_date, block.end_date);
@@ -174,8 +176,8 @@ export async function GET(request: NextRequest) {
         return;
       }
 
-      const arrivalTime = extractTimeFromNotes(booking.customer_notes, 'Entrada', defaultCheckIn);
-      const departureTime = extractTimeFromNotes(booking.customer_notes, 'Salida', defaultCheckOut);
+      const arrivalTime = formatTimeLabel(booking.arrival_time, DEFAULT_CHECK_IN);
+      const departureTime = formatTimeLabel(booking.departure_time, DEFAULT_CHECK_OUT);
 
       arrivals.push({
         bookingId: booking.id,

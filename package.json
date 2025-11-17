@@ -15,7 +15,7 @@
     "check:env": "node tools/scripts/check-env.mjs",
     "export:app": "node tools/scripts/export-minimal.mjs",
     "test": "vitest run --reporter=verbose",
-    "test:e2e": "start-server-and-test \"pnpm --filter @tresmorros/web dev\" http://localhost:3000 \"vitest run --reporter=verbose --config vitest.e2e.config.ts\"",
+    "test:e2e": "cross-env SENTRY_DISABLED=true PORT=3301 E2E_BASE_URL=http://localhost:3301 pnpm --filter @tresmorros/web build && cross-env SENTRY_DISABLED=true PORT=3301 E2E_BASE_URL=http://localhost:3301 start-server-and-test \"pnpm --filter @tresmorros/web start\" http://localhost:3301 \"vitest run --reporter=verbose --config vitest.e2e.config.ts\"",
     "clear:bookings": "node tools/scripts/clear-bookings.mjs"
   },
   "devDependencies": {
@@ -25,14 +25,15 @@
     "@types/react": "^18.3.11",
     "@types/react-dom": "^18.3.0",
     "@vitejs/plugin-react": "^5.1.0",
-    "vite-tsconfig-paths": "^4.3.1",
+    "cross-env": "^10.1.0",
+    "dotenv": "^16.4.5",
     "eslint": "^8.57.1",
     "prettier": "^3.6.2",
     "prettier-plugin-tailwindcss": "^0.7.1",
     "start-server-and-test": "^2.1.2",
-    "dotenv": "^16.4.5",
     "turbo": "^2.2.3",
     "typescript": "^5.6.3",
+    "vite-tsconfig-paths": "^4.3.1",
     "vitest": "^4.0.8"
   }
 }

@@ -9,6 +9,8 @@ import type { Database } from '@/types/database';
 type Booking = Database['public']['Tables']['bookings']['Row'];
 type Cabin = Database['public']['Tables']['cabins']['Row'];
 
+const DEFAULT_FLOW_ORDER_TTL_MINUTES = 30;
+
 // Schema de validación
 const createPaymentSchema = z.object({
   bookingId: z.string().uuid('ID de reserva inválido'),
@@ -85,21 +87,71 @@ export async function POST(request: NextRequest) {
     // 5. Verificar si ya existe una orden de Flow para esta reserva
     if (booking.flow_order_id) {
       const previousPaymentData = (booking.flow_payment_data ?? null) as Record<string, any> | null;
-      const previousPaymentUrl = typeof previousPaymentData?.url === 'string' ? previousPaymentData.url : null;
-      const previousToken = typeof previousPaymentData?.token === 'string' ? previousPaymentData.token : null;
+      const previousPaymentUrl =
+        typeof previousPaymentData?.url === 'string' ? previousPaymentData.url : null;
+      const previousToken =
+        typeof previousPaymentData?.token === 'string' ? previousPaymentData.token : null;
+      const previousFlowOrder = booking.flow_order_id;
+      const createdAtIso =
+        typeof previousPaymentData?.createdAt === 'string' ? previousPaymentData.createdAt : null;
+      const ttlMinutesEnv = Number(process.env.FLOW_ORDER_TTL_MINUTES ?? DEFAULT_FLOW_ORDER_TTL_MINUTES);
+      const ttlMs =
+        (Number.isFinite(ttlMinutesEnv) && ttlMinutesEnv > 0
+          ? ttlMinutesEnv
+          : DEFAULT_FLOW_ORDER_TTL_MINUTES) *
+        60 *
+        1000;
+      const createdAt = createdAtIso ? new Date(createdAtIso).getTime() : null;
+      const nowMs = Date.now();
+      const orderIsStale = !createdAt || nowMs - createdAt > ttlMs;
+      const missingData = !previousPaymentUrl || !previousToken;
 
-      return NextResponse.json(
-        { 
-          error: 'Ya existe una orden de pago para esta reserva',
-          existingOrder: booking.flow_order_id,
-          flowOrder: booking.flow_order_id,
-          paymentUrl: previousPaymentUrl,
-          token: previousToken,
-          mode: typeof previousPaymentData?.mode === 'string' ? previousPaymentData.mode : isMockFlow ? 'mock' : 'live',
-          status: booking.status,
+      if (!orderIsStale && !missingData) {
+        return NextResponse.json(
+          {
+            error: 'Ya existe una orden de pago para esta reserva',
+            existingOrder: previousFlowOrder,
+            flowOrder: previousFlowOrder,
+            paymentUrl: previousPaymentUrl,
+            token: previousToken,
+            mode:
+              typeof previousPaymentData?.mode === 'string'
+                ? previousPaymentData.mode
+                : isMockFlow
+                  ? 'mock'
+                  : 'live',
+            status: booking.status,
+          },
+          { status: 409 }
+        );
+      }
+
+      const { error: resetError } = await (supabaseAdmin.from('bookings') as any)
+        .update({
+          flow_order_id: null,
+          flow_payment_data: null,
+        })
+        .eq('id', bookingId);
+
+      if (resetError) {
+        console.error('Error resetting Flow order info:', resetError);
+        return NextResponse.json({ error: 'No se pudo regenerar la orden de pago' }, { status: 500 });
+      }
+
+      await (supabaseAdmin.from('api_events') as any).insert({
+        event_type: 'flow_payment_regenerated',
+        event_source: 'flow',
+        booking_id: bookingId,
+        payload: {
+          previousFlowOrder,
+          previousCreatedAt: createdAtIso,
+          reason: missingData ? 'missing_data' : 'expired',
         },
-        { status: 409 }
-      );
+        status: 'success',
+      });
+
+      booking.flow_order_id = null;
+      booking.flow_payment_data = null;
     }
 
     // 6. Crear la orden en Flow

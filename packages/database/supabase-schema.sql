@@ -11,6 +11,7 @@
 
 -- Habilitar extensiones necesarias
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+CREATE EXTENSION IF NOT EXISTS btree_gist;
 
 -- ==============================================
 -- TABLA: cabins
@@ -81,6 +82,8 @@ CREATE TABLE IF NOT EXISTS bookings (
   start_date DATE NOT NULL,
   end_date DATE NOT NULL CHECK (end_date > start_date),
   nights INTEGER GENERATED ALWAYS AS (end_date - start_date) STORED,
+  arrival_time TIME NOT NULL DEFAULT '15:00',
+  departure_time TIME NOT NULL DEFAULT '12:00',
   
   -- Información de huéspedes
   party_size INTEGER NOT NULL CHECK (party_size > 0),
@@ -120,8 +123,13 @@ CREATE INDEX idx_bookings_flow_order ON bookings(flow_order_id);
 CREATE INDEX idx_bookings_expires_at ON bookings(expires_at) 
   WHERE expires_at IS NOT NULL;
 
--- Prevenir reservas superpuestas
-CREATE UNIQUE INDEX idx_bookings_no_overlap ON bookings(cabin_id, start_date, end_date)
+-- Prevenir reservas superpuestas (permite check-out y check-in el mismo día)
+ALTER TABLE bookings
+  ADD CONSTRAINT bookings_no_overlap
+  EXCLUDE USING gist (
+    cabin_id WITH =,
+    daterange(start_date, end_date, '[)') WITH &&
+  )
   WHERE status IN ('pending', 'paid');
 
 COMMENT ON TABLE bookings IS 'Reservas de cabañas (incluye pending holds y confirmadas)';

@@ -75,4 +75,21 @@ const sentryBuildOptions = {
   hideSourceMaps: true,
 };
 
-export default withSentryConfig(nextConfig, sentryWebpackPluginOptions, sentryBuildOptions);
+const normalize = (value) => (value ?? '').trim().toLowerCase();
+const sentryDisabledTokens = new Set(['1', 'true', 'yes', 'on']);
+const forcedSentryDisabled = sentryDisabledTokens.has(
+  normalize(process.env.SENTRY_DISABLED ?? process.env.NEXT_PUBLIC_SENTRY_DISABLED)
+);
+const hasSentryDsn =
+  Boolean((process.env.SENTRY_DSN ?? '').trim()) ||
+  Boolean((process.env.NEXT_PUBLIC_SENTRY_DSN ?? '').trim());
+
+const enableSentry = hasSentryDsn && !forcedSentryDisabled;
+
+if (!enableSentry && process.env.NODE_ENV !== 'production') {
+  console.info('[Sentry] Integración de build deshabilitada (faltan DSN o SENTRY_DISABLED=true).');
+}
+
+export default enableSentry
+  ? withSentryConfig(nextConfig, sentryWebpackPluginOptions, sentryBuildOptions)
+  : nextConfig;

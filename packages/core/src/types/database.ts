@@ -106,6 +106,8 @@ export interface Database {
           start_date: string;
           end_date: string;
           nights: number;
+          arrival_time: string;
+          departure_time: string;
           party_size: number;
           jacuzzi_days: Json;
           status: 'pending' | 'paid' | 'expired' | 'canceled';
@@ -131,6 +133,8 @@ export interface Database {
           start_date: string;
           end_date: string;
           party_size: number;
+          arrival_time?: string;
+          departure_time?: string;
           jacuzzi_days?: Json;
           status?: 'pending' | 'paid' | 'expired' | 'canceled';
           flow_order_id?: string | null;
@@ -155,6 +159,8 @@ export interface Database {
           start_date?: string;
           end_date?: string;
           party_size?: number;
+          arrival_time?: string;
+          departure_time?: string;
           jacuzzi_days?: Json;
           status?: 'pending' | 'paid' | 'expired' | 'canceled';
           flow_order_id?: string | null;

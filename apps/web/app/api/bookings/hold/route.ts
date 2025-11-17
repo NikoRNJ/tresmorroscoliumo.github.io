@@ -166,22 +166,14 @@ export async function POST(request: NextRequest) {
     // 8. Crear el hold (expires_at = now + 45 minutos)
     const expiresAt = addMinutes(new Date(), 45);
 
-    const formatTimeLabel = (time: string) => {
-      const [hours, minutes] = time.split(':').map((val) => Number(val));
-      const period = hours >= 12 ? 'PM' : 'AM';
-      const hour12 = ((hours + 11) % 12) + 1;
-      return `${hour12.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')} ${period}`;
-    };
-
-    const arrivalTimeLabel = formatTimeLabel(arrivalTime);
-    const departureTimeLabel = formatTimeLabel(departureTime);
-
     const { data: bookings, error: bookingError } = await supabaseAdmin
       .from('bookings')
       .insert({
         cabin_id: cabinId,
         start_date: startDate,
         end_date: endDate,
+        arrival_time: arrivalTime,
+        departure_time: departureTime,
         party_size: partySize,
         jacuzzi_days: jacuzziDays,
         status: 'pending',
@@ -191,7 +183,7 @@ export async function POST(request: NextRequest) {
         customer_name: customerName,
         customer_email: customerEmail,
         customer_phone: customerPhone,
-        customer_notes: `${customerNotes || ''}${customerNotes ? ' | ' : ''}Entrada: ${arrivalTimeLabel} | Salida: ${departureTimeLabel}`,
+        customer_notes: customerNotes || null,
         expires_at: expiresAt.toISOString(),
       } as any)
       .select()
@@ -202,7 +194,9 @@ export async function POST(request: NextRequest) {
     if (bookingError || !booking) {
       console.error('Error creating booking:', bookingError);
 
-      if ((bookingError as any)?.code === '23505') {
+      const dbErrorCode = (bookingError as any)?.code;
+
+      if (dbErrorCode === '23505' || dbErrorCode === '23P01') {
         const errorResponse: BookingError = {
           success: false,
           error:
