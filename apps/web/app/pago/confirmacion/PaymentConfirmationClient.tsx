@@ -39,6 +39,24 @@ export function PaymentConfirmationClient({
 
   const tokenRef = useRef<string | null>(tokenFromQuery);
 
+  const fetchWithTimeout = async (input: RequestInfo | URL, init?: RequestInit, timeoutMs = 5000) => {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), timeoutMs);
+    try {
+      const res = await fetch(input, {
+        ...(init || {}),
+        headers: {
+          ...(init?.headers || {}),
+          'ngrok-skip-browser-warning': 'true',
+        },
+        signal: controller.signal,
+      });
+      return res;
+    } finally {
+      clearTimeout(timer);
+    }
+  };
+
   useEffect(() => {
     if (!tokenRef.current && typeof window !== 'undefined') {
       tokenRef.current = sessionStorage.getItem('flowToken');
@@ -57,17 +75,20 @@ export function PaymentConfirmationClient({
 
     const checkPaymentStatus = async () => {
       try {
-        if (tokenRef.current && attempts === 0) {
-          try {
-            await fetch('/api/payments/flow/confirm', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ token: tokenRef.current, bookingId }),
-            });
-          } catch {}
+        if (attempts === 0) {
+          const tokenToUse = tokenRef.current;
+          if (tokenToUse) {
+            try {
+              await fetchWithTimeout('/api/payments/flow/confirm', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ token: tokenToUse, bookingId }),
+              });
+            } catch {}
+          }
         }
 
-        const response = await fetch(`/api/bookings/${bookingId}`);
+        const response = await fetchWithTimeout(`/api/bookings/${bookingId}`);
 
         if (!response.ok) {
           throw new Error('No se pudo verificar el estado del pago');
@@ -78,6 +99,17 @@ export function PaymentConfirmationClient({
 
         if (fetchedBooking) {
           setBooking(fetchedBooking);
+        }
+
+        if (!tokenRef.current && fetchedBooking?.flow_payment_data && typeof (fetchedBooking as any).flow_payment_data?.token === 'string' && attempts === 0) {
+          tokenRef.current = (fetchedBooking as any).flow_payment_data.token as string;
+          try {
+            await fetchWithTimeout('/api/payments/flow/confirm', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ token: tokenRef.current, bookingId }),
+            });
+          } catch {}
         }
 
         if (fetchedBooking?.status === 'paid') {

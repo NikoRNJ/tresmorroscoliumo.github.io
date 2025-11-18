@@ -22,8 +22,9 @@ export async function POST(request: NextRequest) {
     const runtimeEnv = (process.env.NEXT_PUBLIC_SITE_ENV || process.env.NODE_ENV || '').toLowerCase();
     const isProdRuntime = runtimeEnv === 'production';
     const isMockFlow = !flowClient.isConfigured();
+    const allowMockInProd = (process.env.FLOW_ALLOW_MOCK_IN_PROD || '').toLowerCase() === 'true';
 
-    if (isProdRuntime && isMockFlow) {
+    if (isProdRuntime && isMockFlow && !allowMockInProd) {
       const errorMessage = 'Flow webhook recibió una llamada pero Flow está deshabilitado/mode mock en producción.';
       await (supabaseAdmin.from('api_events') as any).insert({
         event_type: 'flow_payment_error',

@@ -7,13 +7,28 @@ import { FlowPaymentStatusCode } from '@/types/flow'
 export async function POST(request: NextRequest) {
   try {
     const { token, bookingId } = await request.json()
-    if (!token) return NextResponse.json({ error: 'token requerido' }, { status: 400 })
+    let effectiveToken = token
+
+    if (!effectiveToken && bookingId) {
+      const { data: bookings } = await supabaseAdmin
+        .from('bookings')
+        .select('flow_payment_data')
+        .eq('id', bookingId)
+        .limit(1)
+        .returns<Array<{ flow_payment_data: any }>>()
+      const paymentData = bookings?.[0]?.flow_payment_data as any
+      const savedToken = typeof paymentData?.token === 'string' ? paymentData.token : null
+      if (savedToken) effectiveToken = savedToken
+    }
+
+    if (!effectiveToken) return NextResponse.json({ error: 'token requerido' }, { status: 400 })
 
     const runtimeEnv = (process.env.NEXT_PUBLIC_SITE_ENV || process.env.NODE_ENV || '').toLowerCase()
     const isProdRuntime = runtimeEnv === 'production'
     const isMockFlow = !flowClient.isConfigured()
+    const allowMockInProd = (process.env.FLOW_ALLOW_MOCK_IN_PROD || '').toLowerCase() === 'true'
 
-    if (isProdRuntime && isMockFlow) {
+    if (isProdRuntime && isMockFlow && !allowMockInProd) {
       const errorMessage = 'Confirmación manual no disponible: Flow está en modo mock en producción.'
       await (supabaseAdmin.from('api_events') as any).insert({
         event_type: 'flow_payment_error',
@@ -27,7 +42,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Servicio de pagos no disponible' }, { status: 503 })
     }
 
-    const status = await flowClient.getPaymentStatus(token)
+    const status = await flowClient.getPaymentStatus(effectiveToken)
     const id = bookingId || status.commerceOrder
     if (!id) return NextResponse.json({ error: 'bookingId no encontrado' }, { status: 400 })
 

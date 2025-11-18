@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
+import { buildHttpError, HttpResponseError, parseResponseBody } from '../utils/http';
 
 interface CalendarCheckpoint {
   bookingId?: string;
@@ -18,7 +19,7 @@ interface OccupancyEntry {
   departureTime: string;
 }
 
-interface AvailabilityData {
+export interface AvailabilityData {
   available: string[];
   pending: string[];
   booked: string[];
@@ -76,13 +77,17 @@ export function useAvailability(
         cache: 'no-store',
       });
 
+      const parsed = await parseResponseBody<AvailabilityData>(response);
+
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Error al obtener disponibilidad');
+        throw buildHttpError(response, parsed, 'Error al obtener disponibilidad');
       }
 
-      const data: AvailabilityData = await response.json();
-      setAvailability(data);
+      if (!parsed.isJson || !parsed.data) {
+        throw new HttpResponseError('Respuesta de disponibilidad inválida', response.status, parsed.text);
+      }
+
+      setAvailability(parsed.data);
     } catch (err) {
       console.error('Error fetching availability:', err);
       setError(err instanceof Error ? err.message : 'Error desconocido');

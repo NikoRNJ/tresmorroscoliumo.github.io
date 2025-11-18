@@ -13,6 +13,8 @@ import { format } from 'date-fns';
 import { Loader2, AlertCircle } from 'lucide-react';
 import type { Cabin } from '@core/types/database';
 import type { CreateHoldResponse, BookingError } from '@core/types/booking';
+import type { AvailabilityData } from '@core/lib/hooks/useAvailability';
+import { buildHttpError, parseResponseBody } from '@core/lib/utils/http';
 
 const PERIOD_OPTIONS = ['AM', 'PM'] as const;
 type Meridiem = typeof PERIOD_OPTIONS[number];
@@ -117,7 +119,9 @@ export function BookingForm({ cabin, startDate, endDate, partySize, onBack, onDa
     );
   };
 
-  const ensureDatesStillAvailable = async () => {
+  type AvailabilityCheckResult = { ok: boolean; message?: string };
+
+  const ensureDatesStillAvailable = async (): Promise<AvailabilityCheckResult> => {
     const monthKeys = getMonthKeys(stayDates);
     const targetSet = new Set(stayDates);
 
@@ -127,22 +131,30 @@ export function BookingForm({ cabin, startDate, endDate, partySize, onBack, onDa
         `/api/availability?cabinId=${cabin.id}&year=${year}&month=${Number(month)}&ts=${Date.now()}`,
         { cache: 'no-store' }
       );
+
+      const parsed = await parseResponseBody<AvailabilityData>(response);
+
       if (!response.ok) {
-        continue;
+        const httpError = buildHttpError(response, parsed, 'No se pudo validar la disponibilidad.');
+        return { ok: false, message: httpError.message };
       }
-      const data = await response.json();
+
+      if (!parsed.isJson || !parsed.data) {
+        return { ok: false, message: 'La respuesta de disponibilidad no es válida. Intenta nuevamente.' };
+      }
+
       const unavailable = new Set<string>([
-        ...(data.booked || []),
-        ...(data.pending || []),
-        ...(data.blocked || []),
+        ...(parsed.data.booked || []),
+        ...(parsed.data.pending || []),
+        ...(parsed.data.blocked || []),
       ]);
       const conflict = Array.from(targetSet).some((date) => unavailable.has(date));
       if (conflict) {
-        return false;
+        return { ok: false };
       }
     }
 
-    return true;
+    return { ok: true };
   };
 
   // Submit del formulario
@@ -166,10 +178,15 @@ export function BookingForm({ cabin, startDate, endDate, partySize, onBack, onDa
         return;
       }
 
-      const datesStillAvailable = await ensureDatesStillAvailable();
-      if (!datesStillAvailable) {
-        setApiError('Las fechas acaban de ocuparse. Vuelve a seleccionar otro rango disponible.');
-        onDatesUnavailable?.();
+      const availabilityResult = await ensureDatesStillAvailable();
+      if (!availabilityResult.ok) {
+        setApiError(
+          availabilityResult.message ??
+            'Las fechas acaban de ocuparse. Vuelve a seleccionar otro rango disponible.'
+        );
+        if (!availabilityResult.message) {
+          onDatesUnavailable?.();
+        }
         setIsSubmitting(false);
         return;
       }
@@ -193,17 +210,26 @@ export function BookingForm({ cabin, startDate, endDate, partySize, onBack, onDa
           }),
       });
 
-      const result: CreateHoldResponse | BookingError = await response.json();
+      const parsed = await parseResponseBody<CreateHoldResponse | BookingError>(response);
+
+      if (!parsed.isJson || !parsed.data) {
+        throw new Error('El servidor devolvió una respuesta inválida al crear la reserva.');
+      }
+
+      const result = parsed.data;
 
       if (!response.ok || !result.success) {
-        const error = result as BookingError;
-        if (error.code === 'DATES_UNAVAILABLE') {
+        const bookingError = result as BookingError;
+        if (bookingError.code === 'DATES_UNAVAILABLE') {
           setApiError(
             'Otro huésped reservó esas fechas segundos antes que tú. Actualizamos el calendario para que elijas un nuevo rango disponible.'
           );
           onDatesUnavailable?.();
+        } else if (!response.ok) {
+          const httpError = buildHttpError(response, parsed, bookingError.error);
+          setApiError(httpError.message);
         } else {
-          setApiError(error.error);
+          setApiError(bookingError.error);
         }
         return;
       }

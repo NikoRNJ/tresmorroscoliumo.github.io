@@ -7,10 +7,20 @@ import { Button } from '@/components/ui/Button';
 import { Clock, CheckCircle, CreditCard, AlertTriangle } from 'lucide-react';
 import { formatPrice, formatDateRange } from '@/lib/utils/format';
 import type { BookingWithMeta } from '@core/lib/data/bookings';
+import { buildHttpError, parseResponseBody } from '@core/lib/utils/http';
 
 interface PaymentPageClientProps {
   booking: BookingWithMeta;
 }
+
+type FlowCreateResponse = {
+  success?: boolean;
+  paymentUrl?: string;
+  token?: string;
+  flowOrder?: number;
+  code?: string;
+  error?: string;
+};
 
 export function PaymentPageClient({ booking }: PaymentPageClientProps) {
   const router = useRouter();
@@ -49,7 +59,8 @@ export function PaymentPageClient({ booking }: PaymentPageClientProps) {
         body: JSON.stringify({ bookingId: bookingState.id }),
       });
 
-      const data = await response.json();
+      const parsed = await parseResponseBody<FlowCreateResponse>(response);
+      const data = parsed.data;
 
       if (!response.ok) {
         if (response.status === 409 && data?.paymentUrl) {
@@ -61,13 +72,18 @@ export function PaymentPageClient({ booking }: PaymentPageClientProps) {
           return;
         }
 
-        const flowError = new Error(data?.error || 'Error al crear el pago') as Error & {
+        const httpError = buildHttpError(response, parsed, data?.error || 'Error al crear el pago');
+        const flowError = new Error(httpError.message) as Error & {
           code?: string;
           status?: number;
         };
-        flowError.code = data?.code;
-        flowError.status = response.status;
+        flowError.code = data?.code ?? ((httpError.payload as FlowCreateResponse | undefined)?.code);
+        flowError.status = httpError.status;
         throw flowError;
+      }
+
+      if (!parsed.isJson || !data) {
+        throw new Error('El servidor devolvió una respuesta inválida al crear el pago.');
       }
 
       const { paymentUrl, token } = data;

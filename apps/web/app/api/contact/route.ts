@@ -40,7 +40,7 @@ export async function POST(request: NextRequest) {
     })
 
     if (!mailResult.success) {
-      return NextResponse.json({ success: false, error: 'No se pudo enviar el mensaje' }, { status: 500 })
+      return NextResponse.json({ success: false, error: mailResult.error || 'SENDGRID_SEND_FAILED' }, { status: 502 })
     }
 
     return NextResponse.json({ success: true })

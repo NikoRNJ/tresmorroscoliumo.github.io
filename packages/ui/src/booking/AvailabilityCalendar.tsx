@@ -218,7 +218,7 @@ export function AvailabilityCalendar({
         <div className="flex h-full flex-col items-center justify-center text-center">
           <span>{children}</span>
           {checkpoint && (
-            <span className="mt-1 text-[10px] font-semibold text-amber-100 leading-tight">
+            <span className="checkpoint-label mt-1">
               {checkpoint.label}
             </span>
           )}
@@ -391,6 +391,19 @@ export function AvailabilityCalendar({
           font-weight: bold;
         }
         
+        .calendar-dark .checkpoint-label {
+          display: block;
+          width: 100%;
+          font-size: 10px;
+          line-height: 1.1;
+          color: #fef3c7;
+          white-space: normal;
+          word-break: break-word;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          max-height: 2.2em;
+        }
+
         .calendar-dark .rdp-day.day-arrival {
           background-color: #92400e !important;
           color: #fff7ed !important;
