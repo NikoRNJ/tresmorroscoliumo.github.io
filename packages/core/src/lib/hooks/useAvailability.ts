@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 
 interface CalendarCheckpoint {
   bookingId?: string;
@@ -32,7 +32,7 @@ interface UseAvailabilityReturn {
   availability: AvailabilityData | null;
   isLoading: boolean;
   error: string | null;
-  refetch: () => void;
+  refetch: () => Promise<void>;
 }
 
 /**
@@ -43,13 +43,19 @@ interface UseAvailabilityReturn {
  */
 export function useAvailability(
   cabinId: string | null,
-  currentMonth: Date
+  currentMonth: Date,
+  refreshToken = 0
 ): UseAvailabilityReturn {
   const [availability, setAvailability] = useState<AvailabilityData | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchAvailability = async () => {
+  const monthKey = useMemo(
+    () => `${currentMonth.getFullYear()}-${currentMonth.getMonth()}`,
+    [currentMonth]
+  );
+
+  const fetchAvailability = useCallback(async () => {
     if (!cabinId) return;
 
     setIsLoading(true);
@@ -63,9 +69,12 @@ export function useAvailability(
         cabinId,
         year: year.toString(),
         month: month.toString(),
+        ts: Date.now().toString(),
       });
 
-      const response = await fetch(`/api/availability?${params}`);
+      const response = await fetch(`/api/availability?${params}`, {
+        cache: 'no-store',
+      });
 
       if (!response.ok) {
         const errorData = await response.json();
@@ -80,12 +89,11 @@ export function useAvailability(
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [cabinId, monthKey]);
 
   useEffect(() => {
     fetchAvailability();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [cabinId, currentMonth.getMonth(), currentMonth.getFullYear()]);
+  }, [fetchAvailability, refreshToken]);
 
   return {
     availability,

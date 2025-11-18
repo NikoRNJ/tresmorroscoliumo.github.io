@@ -124,7 +124,8 @@ export function BookingForm({ cabin, startDate, endDate, partySize, onBack, onDa
     for (const key of monthKeys) {
       const [year, month] = key.split('-');
       const response = await fetch(
-        `/api/availability?cabinId=${cabin.id}&year=${year}&month=${Number(month)}`
+        `/api/availability?cabinId=${cabin.id}&year=${year}&month=${Number(month)}&ts=${Date.now()}`,
+        { cache: 'no-store' }
       );
       if (!response.ok) {
         continue;
@@ -223,7 +224,8 @@ export function BookingForm({ cabin, startDate, endDate, partySize, onBack, onDa
       }
 
       const successResponse = result as CreateHoldResponse;
-      router.push(successResponse.redirectUrl);
+      const fallbackPath = `/pago?booking=${successResponse.booking.id}`;
+      router.push(successResponse.redirectUrl || fallbackPath);
     } catch (error) {
       console.error('Error submitting booking:', error);
       setApiError('Error al procesar la reserva. Por favor intenta nuevamente.');

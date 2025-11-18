@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { DateRange } from 'react-day-picker'
 import { AvailabilityCalendar } from './AvailabilityCalendar';
 import { BookingForm } from './BookingForm';
@@ -41,6 +41,7 @@ export function BookingWizard({ cabin }: BookingWizardProps) {
   const [selectedRange, setSelectedRange] = useState<DateRange | undefined>();
   const [partySize, setPartySize] = useState<number>(initialPartySize);
   const [datesConflictMessage, setDatesConflictMessage] = useState<string | null>(null);
+  const [availabilityRefreshToken, setAvailabilityRefreshToken] = useState(0);
 
   // Indicador de progreso
   const steps = [
@@ -64,7 +65,14 @@ export function BookingWizard({ cabin }: BookingWizardProps) {
     setDatesConflictMessage('Las fechas que seleccionaste acaban de ser tomadas. Volvamos a elegir un nuevo rango disponible.');
     setSelectedRange(undefined);
     setCurrentStep('dates');
+    setAvailabilityRefreshToken((token) => token + 1);
   };
+
+  useEffect(() => {
+    if (currentStep === 'dates') {
+      setAvailabilityRefreshToken((token) => token + 1);
+    }
+  }, [currentStep]);
 
   return (
     <div className="space-y-8">
@@ -129,6 +137,7 @@ export function BookingWizard({ cabin }: BookingWizardProps) {
             cabinId={cabin.id}
             onRangeSelect={handleRangeSelect}
             selectedRange={selectedRange}
+            refreshToken={availabilityRefreshToken}
           />
 
           <div className="flex justify-end">

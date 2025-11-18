@@ -5,13 +5,14 @@ import { DayPicker, DateRange, type DayButtonProps } from 'react-day-picker';
 import { es } from 'date-fns/locale';
 import { format, parseISO, addMonths, differenceInDays, addDays, startOfMonth } from 'date-fns';
 import { useAvailability } from '@core/lib/hooks/useAvailability';
-import { ChevronLeft, ChevronRight, Loader2 } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Loader2, RotateCw } from 'lucide-react';
 import 'react-day-picker/dist/style.css';
 
 interface AvailabilityCalendarProps {
   cabinId: string;
   onRangeSelect: (range: DateRange | undefined) => void;
   selectedRange?: DateRange;
+  refreshToken?: number;
 }
 
 /**
@@ -30,11 +31,39 @@ export function AvailabilityCalendar({
   cabinId,
   onRangeSelect,
   selectedRange,
+  refreshToken = 0,
 }: AvailabilityCalendarProps) {
   const initialMonth = startOfMonth(new Date());
   const [currentMonth, setCurrentMonth] = useState(initialMonth);
   const maxMonth = startOfMonth(addMonths(initialMonth, 1));
-  const { availability, isLoading, error } = useAvailability(cabinId, currentMonth);
+  const { availability, isLoading, error, refetch } = useAvailability(
+    cabinId,
+    currentMonth,
+    refreshToken
+  );
+  const [isManualRefresh, setIsManualRefresh] = useState(false);
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
+
+  useEffect(() => {
+    if (!availability) return;
+    setLastUpdated(new Date());
+  }, [availability]);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      refetch();
+    }, 45000);
+    return () => clearInterval(interval);
+  }, [refetch]);
+
+  const handleManualRefresh = async () => {
+    setIsManualRefresh(true);
+    try {
+      await refetch();
+    } finally {
+      setIsManualRefresh(false);
+    }
+  };
 
   // Convertir arrays de strings a Sets de Dates para react-day-picker
   const bookedDates = availability?.booked.map((d) => parseISO(d)) || [];
@@ -201,8 +230,9 @@ export function AvailabilityCalendar({
   return (
     <div className="rounded-lg border border-dark-800 bg-dark-900 p-4">
       {/* Header con navegación de meses */}
-      <div className="mb-4 flex items-center justify-between">
-        <button
+      <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex items-center justify-between gap-2">
+          <button
           onClick={() =>
             setCurrentMonth((prev) =>
               prev.getTime() <= initialMonth.getTime() ? initialMonth : startOfMonth(addMonths(prev, -1))
@@ -231,6 +261,23 @@ export function AvailabilityCalendar({
         >
           <ChevronRight className="h-5 w-5" />
         </button>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-3 text-xs text-gray-400">
+          {lastUpdated && (
+            <span className="rounded border border-dark-700 px-2 py-1">
+              Última actualización · {format(lastUpdated, "HH:mm:ss")}
+            </span>
+          )}
+          <button
+            onClick={handleManualRefresh}
+            disabled={isManualRefresh}
+            className="inline-flex items-center gap-1 rounded border border-dark-700 px-3 py-1 text-sm text-gray-200 transition-colors hover:border-primary-500 hover:text-primary-300 disabled:opacity-50"
+          >
+            <RotateCw className={`h-4 w-4 ${isManualRefresh ? 'animate-spin' : ''}`} />
+            {isManualRefresh ? 'Actualizando…' : 'Actualizar disponibilidad'}
+          </button>
+        </div>
       </div>
 
       {/* Loading state */}

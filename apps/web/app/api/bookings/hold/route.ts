@@ -248,12 +248,14 @@ export async function POST(request: NextRequest) {
     } as any);
 
     // 10. Retornar respuesta exitosa
-    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
+    const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000').replace(/\/$/, '');
+    const paymentPath = `/pago?booking=${booking.id}`;
     const response: CreateHoldResponse = {
       success: true,
       booking,
       expiresAt: expiresAt.toISOString(),
-      redirectUrl: `${siteUrl}/pago?booking=${booking.id}`,
+      redirectUrl: paymentPath,
+      redirectAbsoluteUrl: `${siteUrl}${paymentPath}`,
     };
 
     return NextResponse.json(response, { status: 201 });

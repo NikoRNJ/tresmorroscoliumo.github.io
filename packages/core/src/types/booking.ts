@@ -34,7 +34,8 @@ export interface CreateHoldResponse {
   success: true;
   booking: Booking;
   expiresAt: string; // ISO timestamp
-  redirectUrl: string; // URL para ir a pagar
+  redirectUrl: string; // Ruta relativa para ir a pagar
+  redirectAbsoluteUrl?: string; // URL absoluta opcional para compartir
 }
 
 /**
