@@ -116,15 +116,18 @@ export async function GET(request: NextRequest) {
       const bookingDays = getDatesBetween(booking.start_date, booking.end_date);
 
       bookingDays.forEach((dayStr) => {
-        
+
         // Solo agregar si está dentro del mes consultado
         if (allDaysStr.includes(dayStr)) {
           if (booking.status === 'paid') {
             bookedDates.add(dayStr);
           } else if (booking.status === 'pending') {
-            const exp = booking.expires_at ? new Date(booking.expires_at) : null;
-            if (!exp || exp > now) {
-              pendingDates.add(dayStr);
+            // Si expires_at es null, asumimos que está expirado (o inválido), igual que en hold/route.ts
+            if (booking.expires_at) {
+              const exp = new Date(booking.expires_at);
+              if (exp > now) {
+                pendingDates.add(dayStr);
+              }
             }
           }
         }

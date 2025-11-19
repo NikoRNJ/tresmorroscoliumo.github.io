@@ -135,9 +135,12 @@ export async function POST(request: NextRequest) {
     });
 
     if (activeConflicts && activeConflicts.length > 0) {
+      // Identificar qué fechas están ocupadas
+      const conflictDates = activeConflicts.map(b => `${b.start_date} a ${b.end_date}`).join(', ');
+
       const errorResponse: BookingError = {
         success: false,
-        error: 'Las fechas seleccionadas ya no están disponibles. Por favor elige otras fechas.',
+        error: `Las fechas seleccionadas coinciden con reservas existentes (${conflictDates}). Por favor revisa el calendario.`,
         code: 'DATES_UNAVAILABLE',
       };
       return NextResponse.json(errorResponse, { status: 409 });

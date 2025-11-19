@@ -44,10 +44,10 @@ services:
       # URLs del sitio
       - key: NEXT_PUBLIC_SITE_URL
         scope: RUN_TIME
-        value: "https://tresmorroscoliumo.cl"
+        value: "https://www.tresmorroscoliumo.cl"
       - key: NEXT_PUBLIC_SITE_URL
         scope: BUILD_TIME
-        value: "https://tresmorroscoliumo.cl"
+        value: "https://www.tresmorroscoliumo.cl"
 
       - key: NEXT_PUBLIC_SITE_ENV
         scope: RUN_TIME
@@ -58,10 +58,10 @@ services:
 
       - key: PUBLIC_EXTERNAL_URL
         scope: RUN_TIME
-        value: "https://tresmorroscoliumo.cl"
+        value: "https://www.tresmorroscoliumo.cl"
       - key: PUBLIC_EXTERNAL_URL
         scope: BUILD_TIME
-        value: "https://tresmorroscoliumo.cl"
+        value: "https://www.tresmorroscoliumo.cl"
 
       - key: NEXT_PUBLIC_SITE_NAME
         scope: RUN_TIME
@@ -116,7 +116,7 @@ services:
 
       - key: FLOW_FORCE_MOCK
         scope: RUN_TIME
-        value: "true"
+        value: "false"
 
       - key: FLOW_ALLOW_MOCK_IN_PROD
         scope: RUN_TIME
@@ -125,6 +125,9 @@ services:
         scope: BUILD_TIME
         value: "true"
 
+      - key: FLOW_WEBHOOK_SECRET
+        scope: RUN_TIME
+        value: "dev-flow-webhook-secret-123"
       - key: FLOW_WEBHOOK_SECRET
         scope: BUILD_TIME
         value: "dev-flow-webhook-secret-123"
@@ -186,12 +189,12 @@ services:
       # Seguridad / panel admin
       - key: ADMIN_PASSWORD
         scope: RUN_TIME
-        value: "TresMorros2025Admin!"
+        value: "cambia-esto"
 
       - key: ADMIN_SESSION_SECRET
         scope: RUN_TIME
-        value: "TresMorrosSessionSecret2025!"
+        value: "super-session-secret"
 
       - key: CRON_SECRET
         scope: RUN_TIME
-        value: "dev-cron-secret-123"
+        value: "define-una-clave"

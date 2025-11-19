@@ -73,6 +73,12 @@ export async function sendBookingConfirmation(
       });
 
       console.error(`❌ Failed to send confirmation email for booking ${data.bookingId}:`, result.error);
+      // Check for common errors
+      if (result.error?.includes('Unauthorized')) {
+        console.error('👉 Check SENDGRID_API_KEY in .env');
+      } else if (result.error?.includes('The from address does not match a verified Sender Identity')) {
+        console.error('👉 Check SENDGRID_FROM_EMAIL in .env. It must be verified in SendGrid.');
+      }
     }
 
     return result;

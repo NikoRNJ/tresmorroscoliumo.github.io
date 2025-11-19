@@ -70,7 +70,7 @@ export async function POST(request: NextRequest) {
     if (booking.expires_at) {
       const expiresAt = parseISO(booking.expires_at);
       const now = new Date();
-      
+
       if (!isAfter(expiresAt, now)) {
         // Marcar como expirado
         await (supabaseAdmin.from('bookings') as any)
@@ -187,14 +187,19 @@ export async function POST(request: NextRequest) {
     }
 
     // 6. Crear la orden en Flow
-    const externalUrl = process.env.PUBLIC_EXTERNAL_URL || process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
-    
+    let externalUrl = process.env.PUBLIC_EXTERNAL_URL || process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
+    externalUrl = externalUrl.replace(/\/$/, ''); // Remove trailing slash
+
+    if (isProdRuntime && externalUrl.includes('localhost')) {
+      console.warn('⚠️ Flow payment created with localhost URL in production environment. Webhooks will fail.');
+    }
+
     const flowPayment = await flowClient.createPayment({
       commerceOrder: bookingId, // Usamos el booking ID como commerce order
       subject: `Reserva ${booking.cabin.title} - Tres Morros de Coliumo`,
       currency: 'CLP',
       amount: booking.amount_total,
-      email: booking.customer_email,
+      email: booking.customer_email || 'no-email@example.com',
       urlConfirmation: `${externalUrl}/api/payments/flow/webhook`,
       urlReturn: `${externalUrl}/pago/confirmacion?booking=${bookingId}`,
       optional: JSON.stringify({
@@ -230,7 +235,7 @@ export async function POST(request: NextRequest) {
     } else if (isMockFlow) {
       // Simular confirmación automática en modo mock para probar emails end-to-end
       try {
-        await sendBookingConfirmationForBooking(bookingId);
+        await sendBookingConfirmationForBooking(bookingId!);
       } catch (emailError) {
         console.error('Error sending mock confirmation email:', emailError);
       }
