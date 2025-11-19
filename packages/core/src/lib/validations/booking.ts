@@ -60,9 +60,14 @@ export const createBookingHoldSchema = z
   .refine(
     (data) => {
       const start = parseISO(data.startDate);
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      return isAfter(start, today) || start.getTime() === today.getTime();
+      // Obtener fecha actual en Chile (UTC-4/UTC-3)
+      const nowInChile = new Date().toLocaleDateString('en-CA', {
+        timeZone: 'America/Santiago',
+      });
+      const todayChile = parseISO(nowInChile);
+
+      // Comparar solo fechas (sin hora)
+      return isAfter(start, todayChile) || start.getTime() === todayChile.getTime();
     },
     {
       message: 'La fecha de inicio no puede ser en el pasado',
