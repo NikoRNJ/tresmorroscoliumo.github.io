@@ -191,7 +191,7 @@ export async function POST(request: NextRequest) {
         customer_phone: customerPhone,
         customer_notes: customerNotes || null,
         expires_at: expiresAt.toISOString(),
-      })
+      } as any)
       .select()
       .limit(1);
 
