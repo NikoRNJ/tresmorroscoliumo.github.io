@@ -60,7 +60,7 @@ workers:
     envs:
       - key: CRON_SECRET
         scope: RUN_TIME
-        value: "define-una-clave"
+        value: "TMC_Cron_Secret_Key_2025"
       - key: NEXT_PUBLIC_SITE_URL
         scope: RUN_TIME
         value: "https://www.tresmorroscoliumo.cl"
@@ -221,12 +221,12 @@ workers:
       # Seguridad / panel admin
       - key: ADMIN_PASSWORD
         scope: RUN_TIME
-        value: "cambia-esto"
+        value: "TMC_2025_Admin_Secure!"
 
       - key: ADMIN_SESSION_SECRET
         scope: RUN_TIME
-        value: "super-session-secret"
+        value: "Session_Sec_Random_String_99"
 
       - key: CRON_SECRET
         scope: RUN_TIME
-        value: "define-una-clave"
+        value: "TMC_Cron_Secret_Key_2025"
