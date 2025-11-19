@@ -60,6 +60,9 @@ class FlowClient {
       .update(dataString)
       .digest('hex');
 
+    console.log('[Flow] Signing params:', dataString);
+    console.log('[Flow] Signature:', signature);
+
     return signature;
   }
 

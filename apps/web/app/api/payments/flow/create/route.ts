@@ -201,7 +201,7 @@ export async function POST(request: NextRequest) {
       amount: booking.amount_total,
       email: booking.customer_email || 'no-email@example.com',
       urlConfirmation: `${externalUrl}/api/payments/flow/webhook`,
-      urlReturn: `${externalUrl}/pago/confirmacion?booking=${bookingId}`,
+      urlReturn: `${externalUrl}/pago/confirmacion`,
       optional: JSON.stringify({
         bookingId,
         cabinId: booking.cabin_id,

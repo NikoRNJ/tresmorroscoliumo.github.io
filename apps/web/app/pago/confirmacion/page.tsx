@@ -21,6 +21,16 @@ export default async function PaymentConfirmationPage({ searchParams }: PageProp
   const token =
     typeof searchParams?.token === 'string' ? searchParams.token : null;
 
+  if (!bookingId && token) {
+    try {
+      const { flowClient } = await import('@core/lib/flow/client');
+      const status = await flowClient.getPaymentStatus(token);
+      bookingId = status.commerceOrder;
+    } catch (e) {
+      console.error('Error fetching booking from token:', e);
+    }
+  }
+
   if (!bookingId) {
     redirect('/');
   }
