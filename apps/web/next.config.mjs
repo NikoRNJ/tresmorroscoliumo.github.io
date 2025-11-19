@@ -16,15 +16,16 @@ const nextConfig = {
       },
     ],
   },
-  
+
   // OPTIMIZACIONES DE RENDIMIENTO PARA DESARROLLO
   reactStrictMode: true,
-  
+
   // Experimental: Pre-compilar rutas comunes
   experimental: {
     optimizePackageImports: ['@sendgrid/mail', 'date-fns', 'react-day-picker'],
   },
   transpilePackages: ['@tresmorros/ui', '@tresmorros/core'],
+  output: 'standalone',
 
   async headers() {
     return [
