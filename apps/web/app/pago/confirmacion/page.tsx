@@ -16,7 +16,7 @@ interface PageProps {
 export const dynamic = 'force-dynamic';
 
 export default async function PaymentConfirmationPage({ searchParams }: PageProps) {
-  const bookingId =
+  let bookingId =
     typeof searchParams?.booking === 'string' ? searchParams.booking : null;
   const token =
     typeof searchParams?.token === 'string' ? searchParams.token : null;
