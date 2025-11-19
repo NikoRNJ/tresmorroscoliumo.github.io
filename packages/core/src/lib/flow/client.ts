@@ -48,7 +48,7 @@ class FlowClient {
     }
     // Ordenar parámetros alfabéticamente
     const sortedKeys = Object.keys(params).sort();
-    
+
     // Crear string con formato: key=value&key=value
     const dataString = sortedKeys
       .map((key) => `${key}=${params[key]}`)
@@ -83,7 +83,7 @@ class FlowClient {
         commerceOrder: params.commerceOrder,
         subject: params.subject,
         currency: params.currency,
-        amount: params.amount,
+        amount: Math.round(params.amount), // Flow requiere un entero
         email: params.email,
         urlConfirmation: params.urlConfirmation,
         urlReturn: params.urlReturn,
@@ -105,7 +105,6 @@ class FlowClient {
         method: 'POST',
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded',
-          'apiKey': this.apiKey!,
         },
         body: formData.toString(),
       });

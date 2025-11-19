@@ -35,6 +35,7 @@ export async function GET(request: NextRequest) {
     });
 
     const { cabinId, year, month } = query;
+    console.log(`[Availability] Checking for cabin ${cabinId}, ${year}-${month}`);
 
     // Verificar que la cabaña existe
     const { data: cabins, error: cabinError } = await supabaseAdmin
@@ -80,7 +81,7 @@ export async function GET(request: NextRequest) {
       >();
 
     if (bookingsError) {
-      console.error('Error fetching bookings:', bookingsError);
+      console.error('[Availability] Error fetching bookings:', bookingsError);
       return NextResponse.json(
         { error: 'Error al consultar reservas' },
         { status: 500 }
@@ -113,25 +114,28 @@ export async function GET(request: NextRequest) {
     // Procesar reservas
     const now = new Date();
     bookings?.forEach((booking) => {
-      const bookingDays = getDatesBetween(booking.start_date, booking.end_date);
+      try {
+        const bookingDays = getDatesBetween(booking.start_date, booking.end_date);
 
-      bookingDays.forEach((dayStr) => {
-
-        // Solo agregar si está dentro del mes consultado
-        if (allDaysStr.includes(dayStr)) {
-          if (booking.status === 'paid') {
-            bookedDates.add(dayStr);
-          } else if (booking.status === 'pending') {
-            // Si expires_at es null, asumimos que está expirado (o inválido), igual que en hold/route.ts
-            if (booking.expires_at) {
-              const exp = new Date(booking.expires_at);
-              if (exp > now) {
-                pendingDates.add(dayStr);
+        bookingDays.forEach((dayStr) => {
+          // Solo agregar si está dentro del mes consultado
+          if (allDaysStr.includes(dayStr)) {
+            if (booking.status === 'paid') {
+              bookedDates.add(dayStr);
+            } else if (booking.status === 'pending') {
+              // Si expires_at es null, asumimos que está expirado (o inválido), igual que en hold/route.ts
+              if (booking.expires_at) {
+                const exp = new Date(booking.expires_at);
+                if (exp > now) {
+                  pendingDates.add(dayStr);
+                }
               }
             }
           }
-        }
-      });
+        });
+      } catch (err) {
+        console.error(`[Availability] Error processing booking ${booking.id}:`, err);
+      }
     });
 
     // Procesar bloqueos administrativos
