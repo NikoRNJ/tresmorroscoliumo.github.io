@@ -4,6 +4,8 @@ import type { Cabin } from '../../types/database';
 const DEFAULT_INCLUDED_GUESTS =
   Number(process.env.NEXT_PUBLIC_DEFAULT_INCLUDED_GUESTS || 2) || 2;
 
+export const TOWEL_PRICE_CLP = 2000;
+
 /**
  * Desglose de precio de una reserva
  */
@@ -68,7 +70,7 @@ export function calculatePrice(
   const jacuzziDaysCount = jacuzziDays.length;
   const jacuzziPrice = cabin.jacuzzi_price * jacuzziDaysCount;
 
-  const towelsPrice = Math.max(0, towelsCount) * 2000;
+  const towelsPrice = Math.max(0, towelsCount) * TOWEL_PRICE_CLP;
 
   // Subtotal y total
   const subtotal = basePrice + extraPeoplePrice + jacuzziPrice + towelsPrice;

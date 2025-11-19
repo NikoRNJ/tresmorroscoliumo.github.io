@@ -182,13 +182,16 @@ export async function POST(request: NextRequest) {
         status: 'pending',
         amount_base: priceBreakdown.basePrice,
         amount_jacuzzi: priceBreakdown.jacuzziPrice,
+        amount_extra_people: priceBreakdown.extraPeoplePrice,
+        amount_towels: priceBreakdown.towelsPrice,
         amount_total: priceBreakdown.total,
+        towels_count: towelsCount ?? 0,
         customer_name: customerName,
         customer_email: customerEmail,
         customer_phone: customerPhone,
         customer_notes: customerNotes || null,
         expires_at: expiresAt.toISOString(),
-      } as any)
+      })
       .select()
       .limit(1);
 
