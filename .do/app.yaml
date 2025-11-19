@@ -38,6 +38,32 @@ services:
       pnpm --filter @tresmorros/web start --hostname 0.0.0.0 --port ${PORT:-3000}
     routes:
       - path: /
+
+workers:
+  - name: cron-worker
+    source_dir: .
+    github:
+      repo: NikoRNJ/tresmorroscoliumo.github.io
+      branch: main
+      deploy_on_push: true
+    environment_slug: node-js
+    instance_size_slug: apps-s-1vcpu-1gb
+    instance_count: 1
+    build_command: pnpm install --frozen-lockfile
+    run_command: >
+      while true; do
+        echo "[Cron] Triggering expire-holds...";
+        curl -X POST -H "x-cron-secret: ${CRON_SECRET}" ${NEXT_PUBLIC_SITE_URL}/api/jobs/expire-holds;
+        echo "\n[Cron] Done. Sleeping 5 minutes...";
+        sleep 300;
+      done
+    envs:
+      - key: CRON_SECRET
+        scope: RUN_TIME
+        value: "define-una-clave"
+      - key: NEXT_PUBLIC_SITE_URL
+        scope: RUN_TIME
+        value: "https://www.tresmorroscoliumo.cl"
     envs:
       # NODE_ENV
       - key: NODE_ENV
