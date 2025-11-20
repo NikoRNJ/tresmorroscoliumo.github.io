@@ -202,11 +202,8 @@ export async function POST(request: NextRequest) {
       email: booking.customer_email || 'no-email@example.com',
       urlConfirmation: `${externalUrl}/api/payments/flow/webhook`,
       urlReturn: `${externalUrl}/pago/confirmacion`,
-      optional: JSON.stringify({
-        bookingId,
-        cabinId: booking.cabin_id,
-        customerName: booking.customer_name,
-      }),
+      urlConfirmation: `${externalUrl}/api/payments/flow/webhook`,
+      urlReturn: `${externalUrl}/pago/confirmacion`,
     });
 
     // 7. Guardar el flow_order_id en la reserva
