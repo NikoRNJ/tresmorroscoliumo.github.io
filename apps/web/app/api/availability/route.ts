@@ -128,6 +128,8 @@ export async function GET(request: NextRequest) {
                 const exp = new Date(booking.expires_at);
                 if (exp > now) {
                   pendingDates.add(dayStr);
+                } else {
+                  console.log(`[Availability] Pending booking ${booking.id} expired at ${booking.expires_at} (Now: ${now.toISOString()})`);
                 }
               }
             }
