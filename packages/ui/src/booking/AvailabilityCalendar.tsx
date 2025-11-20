@@ -52,7 +52,7 @@ export function AvailabilityCalendar({
   useEffect(() => {
     const interval = setInterval(() => {
       refetch();
-    }, 45000);
+    }, 5000);
     return () => clearInterval(interval);
   }, [refetch]);
 
@@ -150,7 +150,7 @@ export function AvailabilityCalendar({
         if (seg.length) segments.push(seg);
         let best: string[] | null = null;
         for (const s of segments) { if (s[0] >= fromStr) { best = s; break; } }
-        if (!best && segments.length) { best = segments.sort((a,b)=>b.length - a.length)[0]; }
+        if (!best && segments.length) { best = segments.sort((a, b) => b.length - a.length)[0]; }
         if (best && best.length) {
           const start = parseISO(best[0]);
           const len = best.length;
@@ -233,34 +233,34 @@ export function AvailabilityCalendar({
       <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center justify-between gap-2">
           <button
-          onClick={() =>
-            setCurrentMonth((prev) =>
-              prev.getTime() <= initialMonth.getTime() ? initialMonth : startOfMonth(addMonths(prev, -1))
-            )
-          }
-          className="rounded-md p-2 text-gray-300 transition-colors hover:bg-dark-800 hover:text-primary-500 disabled:cursor-not-allowed disabled:opacity-40"
-          aria-label="Mes anterior"
-          disabled={currentMonth.getTime() <= initialMonth.getTime()}
-        >
-          <ChevronLeft className="h-5 w-5" />
-        </button>
+            onClick={() =>
+              setCurrentMonth((prev) =>
+                prev.getTime() <= initialMonth.getTime() ? initialMonth : startOfMonth(addMonths(prev, -1))
+              )
+            }
+            className="rounded-md p-2 text-gray-300 transition-colors hover:bg-dark-800 hover:text-primary-500 disabled:cursor-not-allowed disabled:opacity-40"
+            aria-label="Mes anterior"
+            disabled={currentMonth.getTime() <= initialMonth.getTime()}
+          >
+            <ChevronLeft className="h-5 w-5" />
+          </button>
 
-        <h3 className="text-lg font-semibold capitalize text-white">
-          {format(currentMonth, 'MMMM yyyy', { locale: es })}
-        </h3>
+          <h3 className="text-lg font-semibold capitalize text-white">
+            {format(currentMonth, 'MMMM yyyy', { locale: es })}
+          </h3>
 
-        <button
-          onClick={() =>
-            setCurrentMonth((prev) =>
-              prev.getTime() >= maxMonth.getTime() ? maxMonth : startOfMonth(addMonths(prev, 1))
-            )
-          }
-          className="rounded-md p-2 text-gray-300 transition-colors hover:bg-dark-800 hover:text-primary-500 disabled:cursor-not-allowed disabled:opacity-40"
-          aria-label="Mes siguiente"
-          disabled={currentMonth.getTime() >= maxMonth.getTime()}
-        >
-          <ChevronRight className="h-5 w-5" />
-        </button>
+          <button
+            onClick={() =>
+              setCurrentMonth((prev) =>
+                prev.getTime() >= maxMonth.getTime() ? maxMonth : startOfMonth(addMonths(prev, 1))
+              )
+            }
+            className="rounded-md p-2 text-gray-300 transition-colors hover:bg-dark-800 hover:text-primary-500 disabled:cursor-not-allowed disabled:opacity-40"
+            aria-label="Mes siguiente"
+            disabled={currentMonth.getTime() >= maxMonth.getTime()}
+          >
+            <ChevronRight className="h-5 w-5" />
+          </button>
         </div>
 
         <div className="flex flex-wrap items-center gap-3 text-xs text-gray-400">
