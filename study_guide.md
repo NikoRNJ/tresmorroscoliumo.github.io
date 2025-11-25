@@ -4,22 +4,7 @@ Esta guía está diseñada para ayudarte a entender este proyecto desde cero, as
 
 ---
 
-## 1. Tecnologías: ¿Qué hace funcionar este sitio?
-
-Un proyecto moderno como este es como un edificio. Necesitas diferentes materiales y herramientas para construirlo.
-
-### El Cimiento (Runtime & Gestión)
-*   **Node.js:** Es el motor que permite ejecutar código JavaScript fuera del navegador (en tu computadora o servidor). Es la base de todo.
-*   **pnpm:** Es el "gestor de paquetes". Imagina que necesitas herramientas pre-fabricadas (librerías) para no reinventar la rueda. `pnpm` las descarga y organiza.
-*   **Turbo (Turborepo):** Este proyecto es un **Monorepo**. Significa que hay varios "sub-proyectos" (la web, la lógica, la base de datos) en una sola carpeta gigante. `Turbo` ayuda a manejar esto eficientemente, para que no tengas que abrir 5 terminales distintas.
-
-### La Estructura (Frontend)
-*   **React:** Es una librería para construir interfaces de usuario. En lugar de escribir HTML estático, creas "Componentes" (piezas de lego) como `<Boton />` o `<Calendario />` que tienen su propia lógica y estilo.
-*   **Next.js:** Es un "framework" construido sobre React. React solo se encarga de la vista, pero Next.js te da todo lo demás: navegación entre páginas, optimización de imágenes y la capacidad de renderizar la página en el servidor antes de enviarla al usuario (mejor velocidad).
-*   **Tailwind CSS:** Es para los estilos. En lugar de escribir archivos `.css` largos, usas clases directas en el HTML como `class="bg-red-500 text-white"`. Es rápido y mantiene el diseño consistente.
-
-### El Lenguaje
-*   **TypeScript:** Es JavaScript con "superpoderes". Lo explicaremos a fondo más adelante.
+c
 
 ---
 

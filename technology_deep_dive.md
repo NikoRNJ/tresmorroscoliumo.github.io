@@ -1,4 +1,4 @@
-# Guía de Estudio Profunda: Tecnologías del Proyecto
+  # Guía de Estudio Profunda: Tecnologías del Proyecto
 
 Esta guía profundiza en cada tecnología clave del proyecto. Está diseñada para que entiendas el "por qué" y el "cómo", y te da plantillas de código para que puedas empezar tus propios proyectos.
 
