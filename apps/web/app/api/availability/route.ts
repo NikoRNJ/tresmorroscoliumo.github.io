@@ -5,7 +5,6 @@ import { endOfMonth, eachDayOfInterval, format } from 'date-fns';
 
 // Needs to stay dynamic because we depend on query params for cabin/month filtering.
 export const dynamic = 'force-dynamic';
-export const revalidate = 0;
 
 /**
  * GET /api/availability

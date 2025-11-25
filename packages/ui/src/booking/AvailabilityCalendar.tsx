@@ -65,15 +65,22 @@ export function AvailabilityCalendar({
     }
   };
 
+  // Helper para parsear fechas como local midnight (evita problemas de timezone)
+  const parseDateLocal = (dateStr: string) => {
+    if (!dateStr) return new Date();
+    const [y, m, d] = dateStr.split('-').map(Number);
+    return new Date(y, m - 1, d);
+  };
+
   // Convertir arrays de strings a Sets de Dates para react-day-picker
-  const bookedDates = availability?.booked.map((d) => parseISO(d)) || [];
-  const pendingDates = availability?.pending.map((d) => parseISO(d)) || [];
-  const blockedDates = availability?.blocked.map((d) => parseISO(d)) || [];
-  const availableDates = availability?.available.map((d) => parseISO(d)) || [];
+  const bookedDates = availability?.booked.map(parseDateLocal) || [];
+  const pendingDates = availability?.pending.map(parseDateLocal) || [];
+  const blockedDates = availability?.blocked.map(parseDateLocal) || [];
+  const availableDates = availability?.available.map(parseDateLocal) || [];
   const arrivalMarkers = availability?.arrivals ?? [];
   const departureMarkers = availability?.departures ?? [];
-  const arrivalDates = arrivalMarkers.map((marker) => parseISO(marker.date));
-  const departureDates = departureMarkers.map((marker) => parseISO(marker.date));
+  const arrivalDates = arrivalMarkers.map((marker) => parseDateLocal(marker.date));
+  const departureDates = departureMarkers.map((marker) => parseDateLocal(marker.date));
   const checkpointMap = useMemo(() => {
     const map = new Map<string, { type: 'arrival' | 'departure'; label: string }>();
     const formatLabel = (prefix: string, time: string, status: string) => {
