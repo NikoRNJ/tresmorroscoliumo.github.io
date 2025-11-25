@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase/server';
 import { availabilityQuerySchema, getDatesBetween } from '@/lib/validations/booking';
-import { endOfMonth, eachDayOfInterval, format } from 'date-fns';
+import { endOfMonth, eachDayOfInterval, format, isAfter, parseISO } from 'date-fns';
 
 // Needs to stay dynamic because we depend on query params for cabin/month filtering.
 export const dynamic = 'force-dynamic';
@@ -125,11 +125,14 @@ export async function GET(request: NextRequest) {
             } else if (booking.status === 'pending') {
               // Si expires_at es null, asumimos que está expirado (o inválido), igual que en hold/route.ts
               if (booking.expires_at) {
-                const exp = new Date(booking.expires_at);
-                if (exp > now) {
+                const expiresAt = parseISO(booking.expires_at);
+                const isExpired = !isAfter(expiresAt, now);
+
+                if (!isExpired) {
                   pendingDates.add(dayStr);
+                  console.log(`[Availability] Pending booking ${booking.id} is ACTIVE. Expires: ${booking.expires_at}, Now: ${now.toISOString()}`);
                 } else {
-                  console.log(`[Availability] Pending booking ${booking.id} expired at ${booking.expires_at} (Now: ${now.toISOString()})`);
+                  console.log(`[Availability] Pending booking ${booking.id} EXPIRED at ${booking.expires_at} (Now: ${now.toISOString()})`);
                 }
               }
             }
@@ -179,7 +182,7 @@ export async function GET(request: NextRequest) {
       const isExpiredPending =
         booking.status === 'pending' &&
         booking.expires_at !== null &&
-        new Date(booking.expires_at) <= now;
+        !isAfter(parseISO(booking.expires_at), now);
 
       if (isExpiredPending) {
         return;
