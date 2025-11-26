@@ -125,7 +125,25 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(errorResponse, { status: 500 });
     }
 
-    // Filtrar holds expirados
+    // Filtrar holds expirados y actualizarlos en la BD para liberar el espacio
+    const expiredConflicts = conflictingBookings?.filter((booking) => {
+      if (booking.status === 'pending' && booking.expires_at) {
+        return !isAfter(parseISO(booking.expires_at), new Date()); // Hold expirado
+      }
+      return false;
+    });
+
+    if (expiredConflicts && expiredConflicts.length > 0) {
+      console.log(`[Hold] Found ${expiredConflicts.length} expired holds. Cleaning up...`);
+      const expiredIds = expiredConflicts.map(b => b.id);
+
+      // Actualizar estado a 'expired' para liberar la restricción de la BD
+      await supabaseAdmin
+        .from('bookings')
+        .update({ status: 'expired' })
+        .in('id', expiredIds);
+    }
+
     const activeConflicts = conflictingBookings?.filter((booking) => {
       if (booking.status === 'paid') return true; // Reservas pagadas siempre cuentan
       if (booking.status === 'pending' && booking.expires_at) {
