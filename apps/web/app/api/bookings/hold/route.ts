@@ -138,8 +138,8 @@ export async function POST(request: NextRequest) {
       const expiredIds = expiredConflicts.map(b => b.id);
 
       // Actualizar estado a 'expired' para liberar la restricción de la BD
-      await supabaseAdmin
-        .from('bookings')
+      await (supabaseAdmin
+        .from('bookings') as any)
         .update({ status: 'expired' })
         .in('id', expiredIds);
     }
