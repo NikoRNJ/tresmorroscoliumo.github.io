@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { sanitizeErrorMessage, createSafeErrorResponse } from '@core/lib/utils/http';
+import { sanitizeErrorMessage, createSafeErrorResponse, isProductionEnvironment } from '@core/lib/utils/http';
 
 describe('HTTP Error Sanitization', () => {
   const originalEnv = process.env;
@@ -11,6 +11,26 @@ describe('HTTP Error Sanitization', () => {
 
   afterEach(() => {
     process.env = originalEnv;
+  });
+
+  describe('isProductionEnvironment', () => {
+    it('returns true when NEXT_PUBLIC_SITE_ENV is production', () => {
+      process.env.NEXT_PUBLIC_SITE_ENV = 'production';
+      process.env.NODE_ENV = 'development';
+      expect(isProductionEnvironment()).toBe(true);
+    });
+
+    it('returns true when NODE_ENV is production', () => {
+      process.env.NEXT_PUBLIC_SITE_ENV = '';
+      process.env.NODE_ENV = 'production';
+      expect(isProductionEnvironment()).toBe(true);
+    });
+
+    it('returns false in development', () => {
+      process.env.NEXT_PUBLIC_SITE_ENV = '';
+      process.env.NODE_ENV = 'development';
+      expect(isProductionEnvironment()).toBe(false);
+    });
   });
 
   describe('sanitizeErrorMessage', () => {

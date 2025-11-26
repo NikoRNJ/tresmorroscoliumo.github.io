@@ -63,6 +63,30 @@ export function buildHttpError<T = unknown>(
 }
 
 /**
+ * Verifica si el entorno actual es producción.
+ * Considera tanto NEXT_PUBLIC_SITE_ENV como NODE_ENV.
+ */
+export function isProductionEnvironment(): boolean {
+  const siteEnv = (process.env.NEXT_PUBLIC_SITE_ENV || '').toLowerCase();
+  const nodeEnv = (process.env.NODE_ENV || '').toLowerCase();
+  return siteEnv === 'production' || nodeEnv === 'production';
+}
+
+/**
+ * Patrones de error seguros para mostrar al usuario en producción.
+ * Estos errores son de negocio y no exponen información sensible.
+ */
+const SAFE_ERROR_PATTERNS: RegExp[] = [
+  /fechas.*no.*disponibles/i,
+  /reserva.*no.*encontrada/i,
+  /reserva.*expirad[ao]/i,
+  /datos.*inv[áa]lidos/i,
+  /email.*inv[áa]lido/i,
+  /capacidad.*m[áa]xim[ao]/i,
+  /tiempo.*para.*pagar.*expir[óo]/i,
+];
+
+/**
  * Sanitiza mensajes de error para evitar exponer información sensible en producción.
  * 
  * En desarrollo, retorna el mensaje original para facilitar debugging.
@@ -78,8 +102,7 @@ export function sanitizeErrorMessage(
   safeUserMessage: string = 'Ha ocurrido un error. Por favor intenta nuevamente.',
   allowedErrorCodes: string[] = []
 ): string {
-  const isProdRuntime = 
-    (process.env.NEXT_PUBLIC_SITE_ENV || process.env.NODE_ENV || '').toLowerCase() === 'production';
+  const isProdRuntime = isProductionEnvironment();
 
   // En desarrollo, mostrar el mensaje real para debugging
   if (!isProdRuntime) {
@@ -100,18 +123,8 @@ export function sanitizeErrorMessage(
       return error.message;
     }
 
-    // Lista de patrones de error seguros para mostrar al usuario
-    const safeErrorPatterns = [
-      /fechas.*no.*disponibles/i,
-      /reserva.*no.*encontrada/i,
-      /reserva.*expirad[ao]/i,
-      /datos.*inv[áa]lidos/i,
-      /email.*inv[áa]lido/i,
-      /capacidad.*m[áa]xim[ao]/i,
-      /tiempo.*para.*pagar.*expir[óo]/i,
-    ];
-
-    for (const pattern of safeErrorPatterns) {
+    // Verificar si el mensaje coincide con patrones seguros
+    for (const pattern of SAFE_ERROR_PATTERNS) {
       if (pattern.test(error.message)) {
         return error.message;
       }
