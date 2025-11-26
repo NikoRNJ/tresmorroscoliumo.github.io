@@ -62,3 +62,98 @@ export function buildHttpError<T = unknown>(
   return new HttpResponseError(message, response.status, snippet, payload ?? undefined);
 }
 
+/**
+ * Sanitiza mensajes de error para evitar exponer información sensible en producción.
+ * 
+ * En desarrollo, retorna el mensaje original para facilitar debugging.
+ * En producción, retorna un mensaje genérico a menos que sea un error "seguro".
+ * 
+ * @param error - El error a sanitizar
+ * @param safeUserMessage - Mensaje genérico para mostrar al usuario en producción
+ * @param allowedErrorCodes - Códigos de error que son seguros para mostrar al usuario
+ * @returns Mensaje sanitizado seguro para mostrar al usuario
+ */
+export function sanitizeErrorMessage(
+  error: unknown,
+  safeUserMessage: string = 'Ha ocurrido un error. Por favor intenta nuevamente.',
+  allowedErrorCodes: string[] = []
+): string {
+  const isProdRuntime = 
+    (process.env.NEXT_PUBLIC_SITE_ENV || process.env.NODE_ENV || '').toLowerCase() === 'production';
+
+  // En desarrollo, mostrar el mensaje real para debugging
+  if (!isProdRuntime) {
+    if (error instanceof Error) {
+      return error.message;
+    }
+    if (typeof error === 'string') {
+      return error;
+    }
+    return safeUserMessage;
+  }
+
+  // En producción, solo mostrar mensajes seguros
+  if (error instanceof Error) {
+    // Verificar si es un código de error permitido
+    const errorWithCode = error as Error & { code?: string };
+    if (errorWithCode.code && allowedErrorCodes.includes(errorWithCode.code)) {
+      return error.message;
+    }
+
+    // Lista de patrones de error seguros para mostrar al usuario
+    const safeErrorPatterns = [
+      /fechas.*no.*disponibles/i,
+      /reserva.*no.*encontrada/i,
+      /reserva.*expirad[ao]/i,
+      /datos.*inv[áa]lidos/i,
+      /email.*inv[áa]lido/i,
+      /capacidad.*m[áa]xim[ao]/i,
+      /tiempo.*para.*pagar.*expir[óo]/i,
+    ];
+
+    for (const pattern of safeErrorPatterns) {
+      if (pattern.test(error.message)) {
+        return error.message;
+      }
+    }
+  }
+
+  // Si no es un error seguro, retornar mensaje genérico
+  return safeUserMessage;
+}
+
+/**
+ * Crea una respuesta de error estandarizada para API routes.
+ * Sanitiza automáticamente el mensaje en producción.
+ * 
+ * @param error - El error original
+ * @param status - Código de estado HTTP
+ * @param options - Opciones adicionales
+ * @returns Objeto con error sanitizado listo para NextResponse.json()
+ */
+export function createSafeErrorResponse(
+  error: unknown,
+  status: number,
+  options: {
+    code?: string;
+    safeMessage?: string;
+    allowedCodes?: string[];
+  } = {}
+): { error: string; code?: string } {
+  const sanitizedMessage = sanitizeErrorMessage(
+    error,
+    options.safeMessage || 'Ha ocurrido un error interno.',
+    options.allowedCodes || []
+  );
+
+  const response: { error: string; code?: string } = {
+    error: sanitizedMessage,
+  };
+
+  if (options.code) {
+    response.code = options.code;
+  }
+
+  return response;
+}
+

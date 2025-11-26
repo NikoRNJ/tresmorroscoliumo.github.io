@@ -106,18 +106,53 @@ export async function POST(request: NextRequest) {
     if (paymentStatus.status === FlowPaymentStatusCode.PAID) {
       // PAGO EXITOSO
       
-      // Actualizar la reserva a 'paid'
-      const { error: updateError } = await (supabaseAdmin.from('bookings') as any)
+      // IDEMPOTENCIA: Verificar si la reserva ya está pagada para evitar procesamiento duplicado
+      if (booking.status === 'paid') {
+        console.log(`ℹ️ Webhook received for already paid booking ${bookingId} - ignoring duplicate`);
+        
+        // Log del evento duplicado para auditoría
+        await (supabaseAdmin.from('api_events') as any).insert({
+          event_type: 'payment_webhook_duplicate',
+          event_source: 'flow',
+          booking_id: bookingId,
+          payload: paymentStatus,
+          status: 'success',
+        });
+        
+        return NextResponse.json({ success: true, status: 'already_paid' });
+      }
+
+      // Actualizar la reserva a 'paid' con condición de idempotencia
+      // Solo actualiza si el estado actual es 'pending' (optimistic locking)
+      const { data: updatedBookings, error: updateError } = await (supabaseAdmin.from('bookings') as any)
         .update({
           status: 'paid',
           paid_at: new Date().toISOString(),
           flow_payment_data: paymentStatus,
         })
-        .eq('id', bookingId);
+        .eq('id', bookingId)
+        .eq('status', 'pending') // Solo actualiza si aún está pending
+        .select('id')
+        .limit(1);
 
       if (updateError) {
         console.error('Error updating booking to paid:', updateError);
         return NextResponse.json({ error: 'Database error' }, { status: 500 });
+      }
+
+      // Si no se actualizó ninguna fila, puede que haya sido procesada por otro webhook concurrente
+      if (!updatedBookings || updatedBookings.length === 0) {
+        console.log(`⚠️ Booking ${bookingId} was not updated - possibly already processed by concurrent webhook`);
+        
+        await (supabaseAdmin.from('api_events') as any).insert({
+          event_type: 'payment_webhook_concurrent',
+          event_source: 'flow',
+          booking_id: bookingId,
+          payload: paymentStatus,
+          status: 'success',
+        });
+        
+        return NextResponse.json({ success: true, status: 'concurrent_update' });
       }
 
       // Log del evento exitoso
