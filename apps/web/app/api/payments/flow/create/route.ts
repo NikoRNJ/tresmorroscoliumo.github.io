@@ -207,6 +207,9 @@ export async function POST(request: NextRequest) {
     });
 
     // 7. Guardar el flow_order_id en la reserva
+    // IMPORTANTE: NO marcamos como 'paid' aquí. El estado solo cambia cuando:
+    // - Flow real: el webhook /api/payments/flow/webhook confirma el pago
+    // - Mock: el usuario confirma en /pago/mock-gateway
     const bookingUpdate: Record<string, unknown> = {
       flow_order_id: String(flowPayment.flowOrder),
       flow_payment_data: {
@@ -217,11 +220,6 @@ export async function POST(request: NextRequest) {
       },
     };
 
-    if (isMockFlow) {
-      bookingUpdate.status = 'paid';
-      bookingUpdate.paid_at = new Date().toISOString();
-    }
-
     const { error: updateError } = await (supabaseAdmin.from('bookings') as any)
       .update(bookingUpdate)
       .eq('id', bookingId);
@@ -229,13 +227,6 @@ export async function POST(request: NextRequest) {
     if (updateError) {
       console.error('Error updating booking with flow order:', updateError);
       // No retornamos error porque la orden ya se creó en Flow
-    } else if (isMockFlow) {
-      // Simular confirmación automática en modo mock para probar emails end-to-end
-      try {
-        await sendBookingConfirmationForBooking(bookingId!);
-      } catch (emailError) {
-        console.error('Error sending mock confirmation email:', emailError);
-      }
     }
 
     // 8. Log del evento
@@ -251,20 +242,6 @@ export async function POST(request: NextRequest) {
       },
       status: 'success',
     });
-
-    if (isMockFlow) {
-      await (supabaseAdmin.from('api_events') as any).insert({
-        event_type: 'flow_payment_mock_paid',
-        event_source: 'system',
-        booking_id: bookingId,
-        payload: {
-          flowOrder: flowPayment.flowOrder,
-          token: flowPayment.token,
-          amount: booking.amount_total,
-        },
-        status: 'success',
-      });
-    }
 
     // 9. Retornar la URL de pago
     return NextResponse.json({

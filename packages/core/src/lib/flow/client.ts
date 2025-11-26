@@ -196,19 +196,33 @@ class FlowClient {
     const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
     const mockToken = `mock-${params.commerceOrder}-${Date.now()}`;
 
+    // Redirigir a la pasarela mock en lugar de directamente a confirmación
+    // El usuario debe "completar" el pago en la pasarela mock
     return {
-      url: `${siteUrl}/pago/confirmacion?booking=${params.commerceOrder}&mockFlow=1`,
+      url: `${siteUrl}/pago/mock-gateway?booking=${params.commerceOrder}&token=${mockToken}`,
       token: mockToken,
       flowOrder: Date.now(),
     };
   }
 
   private createMockPaymentStatus(token: string): FlowPaymentStatus {
+    // Extraer bookingId del token mock: "mock-UUID-timestamp" → "UUID"
+    let bookingId = token;
+    if (token.startsWith('mock-')) {
+      const parts = token.split('-');
+      // UUID tiene formato: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx (5 partes con guiones)
+      // Token mock: mock-UUID-timestamp, así que extraemos las partes del UUID
+      if (parts.length >= 7) {
+        // parts[0] = 'mock', parts[1-5] = UUID parts, parts[6] = timestamp
+        bookingId = parts.slice(1, 6).join('-');
+      }
+    }
+
     return {
       flowOrder: Date.now(),
-      commerceOrder: token,
+      commerceOrder: bookingId,
       requestDate: new Date().toISOString(),
-      status: FlowPaymentStatusCode.PAID,
+      status: FlowPaymentStatusCode.PENDING, // Por defecto PENDING hasta que se confirme
       subject: 'Mock Flow payment',
       currency: 'CLP',
       amount: 0,
