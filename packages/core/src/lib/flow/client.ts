@@ -123,7 +123,8 @@ class FlowClient {
       }
 
       const data: FlowPaymentResponse = await response.json();
-      return data;
+      const urlWithToken = data.token ? `${data.url}?token=${data.token}` : data.url;
+      return { ...data, url: urlWithToken };
     } catch (error) {
       console.error('Error creating Flow payment:', error);
       throw error;

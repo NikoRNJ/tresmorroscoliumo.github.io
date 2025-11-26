@@ -3,6 +3,7 @@ import * as Sentry from '@sentry/nextjs'
 import { supabaseAdmin } from '@/lib/supabase/server'
 import { flowClient } from '@/lib/flow/client'
 import { FlowPaymentStatusCode } from '@/types/flow'
+import { isAfter, parseISO } from 'date-fns'
 
 export async function POST(request: NextRequest) {
   try {
@@ -45,6 +46,44 @@ export async function POST(request: NextRequest) {
     const status = await flowClient.getPaymentStatus(effectiveToken)
     const id = bookingId || status.commerceOrder
     if (!id) return NextResponse.json({ error: 'bookingId no encontrado' }, { status: 400 })
+
+    const { data: bookings, error: fetchError } = await supabaseAdmin
+      .from('bookings')
+      .select('*')
+      .eq('id', id)
+      .limit(1)
+
+    const booking = bookings?.[0] as { status: string; expires_at: string | null; flow_payment_data?: any } | undefined
+
+    if (fetchError || !booking) {
+      return NextResponse.json({ error: 'Booking no encontrada' }, { status: 404 })
+    }
+
+    // Idempotencia: si ya está pagada y coincide token/order, responder success
+    if (booking.status === 'paid') {
+      const storedToken = typeof booking.flow_payment_data?.token === 'string' ? booking.flow_payment_data.token : null
+      const storedOrder = typeof booking.flow_payment_data?.flowOrder === 'number' ? booking.flow_payment_data.flowOrder : null
+      if ((storedToken && storedToken === effectiveToken) || (storedOrder && storedOrder === status?.flowOrder)) {
+        return NextResponse.json({ success: true, status: 'paid' })
+      }
+      return NextResponse.json({ error: 'Booking ya pagada' }, { status: 409 })
+    }
+
+    // No permitir confirmar pagos de bookings canceladas/expiradas
+    if (booking.status === 'canceled' || booking.status === 'expired') {
+      return NextResponse.json({ error: 'Booking no vigente' }, { status: 410 })
+    }
+
+    if (booking.expires_at && !isAfter(parseISO(booking.expires_at), new Date())) {
+      await (supabaseAdmin.from('bookings') as any)
+        .update({ status: 'expired' })
+        .eq('id', id)
+
+      return NextResponse.json(
+        { error: 'Hold expirado, genera una nueva reserva' },
+        { status: 410 }
+      )
+    }
 
     const code = status?.status
     if (typeof code === 'number' && code !== FlowPaymentStatusCode.PAID) {
