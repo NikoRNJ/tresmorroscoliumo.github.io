@@ -14,27 +14,48 @@ const mockConfirmSchema = z.object({
 
 /**
  * POST /api/payments/flow/mock-confirm
- * 
+ *
  * Endpoint para confirmar/cancelar un pago en modo mock.
- * Este endpoint SOLO funciona cuando Flow está en modo mock.
- * 
- * Simula lo que haría el webhook de Flow en modo real:
- * - action: 'pay' → marca la reserva como 'paid' y envía email de confirmación
- * - action: 'cancel' → marca la reserva como 'canceled'
+ * Solo accesible cuando Flow está en mock y con header secreto.
  */
 export async function POST(request: NextRequest) {
   try {
-    // 1. Validar que estamos en modo mock
+    // 1. Validar modo mock y entorno
     const flowApiKey = (process.env.FLOW_API_KEY || '').trim();
     const flowSecretKey = (process.env.FLOW_SECRET_KEY || '').trim();
     const flowBaseUrl = (process.env.FLOW_BASE_URL || '').trim();
     const forceMock = String(process.env.FLOW_FORCE_MOCK || '').toLowerCase() === 'true';
+    const allowMockInProd = String(process.env.FLOW_ALLOW_MOCK_IN_PROD || '').toLowerCase() === 'true';
+    const runtimeEnv = (process.env.NEXT_PUBLIC_SITE_ENV || process.env.NODE_ENV || '').toLowerCase();
+    const mockSecret = (process.env.FLOW_MOCK_SECRET || '').trim();
     const isMockFlow = !flowApiKey || !flowSecretKey || !flowBaseUrl || forceMock;
 
     if (!isMockFlow) {
       return NextResponse.json(
         { error: 'Este endpoint solo está disponible en modo mock' },
         { status: 403 }
+      );
+    }
+
+    if (runtimeEnv === 'production' && !allowMockInProd) {
+      return NextResponse.json(
+        { error: 'Mock de Flow deshabilitado en producción' },
+        { status: 403 }
+      );
+    }
+
+    if (!mockSecret) {
+      return NextResponse.json(
+        { error: 'FLOW_MOCK_SECRET no configurado' },
+        { status: 500 }
+      );
+    }
+
+    const providedSecret = request.headers.get('x-mock-secret');
+    if (providedSecret !== mockSecret) {
+      return NextResponse.json(
+        { error: 'No autorizado' },
+        { status: 401 }
       );
     }
 
@@ -76,7 +97,6 @@ export async function POST(request: NextRequest) {
 
     // 6. Procesar según la acción
     if (action === 'pay') {
-      // Marcar como pagado
       const { error: updateError } = await (supabaseAdmin.from('bookings') as any)
         .update({
           status: 'paid',
@@ -92,7 +112,6 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      // Log del evento
       await (supabaseAdmin.from('api_events') as any).insert({
         event_type: 'flow_mock_payment_confirmed',
         event_source: 'mock',
@@ -105,12 +124,10 @@ export async function POST(request: NextRequest) {
         status: 'success',
       });
 
-      // Enviar email de confirmación
       try {
         await sendBookingConfirmationForBooking(bookingId);
       } catch (emailError) {
         console.error('Error sending confirmation email:', emailError);
-        // No fallamos la operación por error de email
       }
 
       return NextResponse.json({
@@ -118,9 +135,7 @@ export async function POST(request: NextRequest) {
         message: 'Pago mock confirmado exitosamente',
         status: 'paid',
       });
-
     } else if (action === 'cancel') {
-      // Marcar como cancelado
       const { error: updateError } = await (supabaseAdmin.from('bookings') as any)
         .update({
           status: 'canceled',
@@ -136,7 +151,6 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      // Log del evento
       await (supabaseAdmin.from('api_events') as any).insert({
         event_type: 'flow_mock_payment_cancelled',
         event_source: 'mock',
@@ -157,7 +171,6 @@ export async function POST(request: NextRequest) {
     }
 
     return NextResponse.json({ error: 'Acción no válida' }, { status: 400 });
-
   } catch (error) {
     console.error('Error in mock-confirm:', error);
 

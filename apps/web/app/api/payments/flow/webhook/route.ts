@@ -4,18 +4,15 @@ import { supabaseAdmin } from '@/lib/supabase/server';
 import { flowClient } from '@/lib/flow/client';
 import { FlowPaymentStatusCode } from '@/types/flow';
 import { sendBookingConfirmationForBooking } from '@/lib/email/service';
+import { isAfter, parseISO } from 'date-fns';
 import type { Database } from '@/types/database';
 
 type Booking = Database['public']['Tables']['bookings']['Row'];
 
 /**
  * POST /api/payments/flow/webhook
- * 
+ *
  * Webhook llamado por Flow cuando se completa un pago
- * Flow envía: { token: string, s: string (signature) }
- * 
- * IMPORTANTE: Este endpoint debe ser público y accesible desde internet
- * Flow lo llamará automáticamente después de cada pago
  */
 export async function POST(request: NextRequest) {
   try {
@@ -49,10 +46,7 @@ export async function POST(request: NextRequest) {
     }
 
     // 2. Validar la firma del webhook
-    const isValidSignature = flowClient.validateWebhookSignature(
-      payloadForSignature,
-      signature
-    );
+    const isValidSignature = flowClient.validateWebhookSignature(payloadForSignature, signature);
 
     if (!isValidSignature) {
       console.error('Invalid webhook signature');
@@ -102,11 +96,67 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Booking not found' }, { status: 404 });
     }
 
+    const now = new Date();
+
+    // Evitar reprocesar pagos ya aplicados
+    if (booking.status === 'paid') {
+      const storedPayment = booking.flow_payment_data as any;
+      const storedToken = typeof storedPayment?.token === 'string' ? storedPayment.token : null;
+      const storedOrderId =
+        typeof storedPayment?.flowOrder === 'number'
+          ? String(storedPayment.flowOrder)
+          : booking.flow_order_id;
+
+      if ((storedToken && storedToken === token) || (storedOrderId && String(paymentStatus.flowOrder) === storedOrderId)) {
+        return NextResponse.json({ success: true, status: 'paid' });
+      }
+
+      await (supabaseAdmin.from('api_events') as any).insert({
+        event_type: 'payment_ignored_already_paid',
+        event_source: 'flow',
+        booking_id: bookingId,
+        payload: paymentStatus,
+        status: 'success',
+      });
+
+      return NextResponse.json({ error: 'Booking ya pagada' }, { status: 409 });
+    }
+
+    // No aceptar pagos de reservas canceladas/expiradas
+    if (booking.status === 'canceled' || booking.status === 'expired') {
+      await (supabaseAdmin.from('api_events') as any).insert({
+        event_type: 'payment_rejected_invalid_state',
+        event_source: 'flow',
+        booking_id: bookingId,
+        payload: { paymentStatus, bookingStatus: booking.status },
+        status: 'error',
+        error_message: 'Booking no vigente',
+      });
+      return NextResponse.json({ error: 'Booking no vigente' }, { status: 410 });
+    }
+
+    if (booking.expires_at && !isAfter(parseISO(booking.expires_at), now)) {
+      await (supabaseAdmin.from('bookings') as any)
+        .update({ status: 'expired' })
+        .eq('id', bookingId);
+
+      await (supabaseAdmin.from('api_events') as any).insert({
+        event_type: 'payment_rejected_expired_hold',
+        event_source: 'flow',
+        booking_id: bookingId,
+        payload: { paymentStatus, expiredAt: booking.expires_at },
+        status: 'error',
+        error_message: 'Hold expirado',
+      });
+
+      return NextResponse.json(
+        { error: 'El tiempo para pagar ha expirado. Por favor crea una nueva reserva.' },
+        { status: 410 }
+      );
+    }
+
     // 5. Procesar según el estado del pago
     if (paymentStatus.status === FlowPaymentStatusCode.PAID) {
-      // PAGO EXITOSO
-      
-      // Actualizar la reserva a 'paid'
       const { error: updateError } = await (supabaseAdmin.from('bookings') as any)
         .update({
           status: 'paid',
@@ -120,7 +170,6 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: 'Database error' }, { status: 500 });
       }
 
-      // Log del evento exitoso
       await (supabaseAdmin.from('api_events') as any).insert({
         event_type: 'payment_success',
         event_source: 'flow',
@@ -129,23 +178,16 @@ export async function POST(request: NextRequest) {
         status: 'success',
       });
 
-      console.log(`✅ Payment successful for booking ${bookingId}`);
-
-      // Enviar email de confirmación (manejado internamente)
       await sendBookingConfirmationForBooking(bookingId);
 
       return NextResponse.json({ success: true, status: 'paid' });
     } else if (paymentStatus.status === FlowPaymentStatusCode.REJECTED) {
-      // PAGO RECHAZADO
-      
-      // Actualizar estado (pero mantener el hold por si quiere reintentar)
       await (supabaseAdmin.from('bookings') as any)
         .update({
           flow_payment_data: paymentStatus,
         })
         .eq('id', bookingId);
 
-      // Log del evento
       await (supabaseAdmin.from('api_events') as any).insert({
         event_type: 'payment_rejected',
         event_source: 'flow',
@@ -155,12 +197,8 @@ export async function POST(request: NextRequest) {
         error_message: 'Payment rejected by bank',
       });
 
-      console.log(`❌ Payment rejected for booking ${bookingId}`);
-
       return NextResponse.json({ success: true, status: 'rejected' });
     } else if (paymentStatus.status === FlowPaymentStatusCode.CANCELLED) {
-      // PAGO CANCELADO POR EL USUARIO
-      
       await (supabaseAdmin.from('bookings') as any)
         .update({
           status: 'canceled',
@@ -177,12 +215,8 @@ export async function POST(request: NextRequest) {
         status: 'success',
       });
 
-      console.log(`🚫 Payment cancelled for booking ${bookingId}`);
-
       return NextResponse.json({ success: true, status: 'cancelled' });
     } else {
-      // PENDIENTE u otro estado
-      
       await (supabaseAdmin.from('api_events') as any).insert({
         event_type: 'payment_pending',
         event_source: 'flow',
@@ -211,8 +245,6 @@ export async function POST(request: NextRequest) {
 
 /**
  * GET /api/payments/flow/webhook
- * 
- * Flow puede hacer un GET para verificar que el webhook está activo
  */
 export async function GET() {
   return NextResponse.json({

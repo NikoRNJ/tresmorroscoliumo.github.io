@@ -15,12 +15,14 @@ class FlowClient {
   private secretKey?: string;
   private baseUrl?: string;
   private configured: boolean;
+  private debug: boolean;
 
   constructor() {
     this.apiKey = (process.env.FLOW_API_KEY || '').trim() || undefined
     this.secretKey = (process.env.FLOW_SECRET_KEY || '').trim() || undefined
     this.baseUrl = (process.env.FLOW_BASE_URL || '').trim() || undefined
     const forceMock = String(process.env.FLOW_FORCE_MOCK || '').toLowerCase() === 'true'
+    this.debug = String(process.env.FLOW_DEBUG_LOGS || '').toLowerCase() === 'true'
     this.configured = Boolean(this.apiKey && this.secretKey && this.baseUrl) && !forceMock
 
     if (!this.configured) {
@@ -60,8 +62,10 @@ class FlowClient {
       .update(dataString)
       .digest('hex');
 
-    console.log('[Flow] Signing params:', dataString);
-    console.log('[Flow] Signature:', signature);
+    if (this.debug) {
+      console.log('[Flow] Signing params:', dataString);
+      console.log('[Flow] Signature:', signature);
+    }
 
     return signature;
   }
