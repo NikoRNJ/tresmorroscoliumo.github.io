@@ -360,6 +360,7 @@ export function AvailabilityCalendar({
       )}
 
       {/* Estilos personalizados para tema oscuro */}
+      {/* @ts-ignore */}
       <style jsx global>{`
         .calendar-dark .rdp {
           --rdp-cell-size: 40px;
