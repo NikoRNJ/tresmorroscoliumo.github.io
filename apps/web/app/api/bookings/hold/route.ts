@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase/server';
 import { createBookingHoldSchema, validateJacuzziDays } from '@/lib/validations/booking';
 import { calculatePrice } from '@/lib/utils/pricing';
-import { BOOKING_BASE_GUESTS, resolveMaxGuests } from '@/lib/config/booking';
+import { BOOKING_BASE_GUESTS, BOOKING_HOLD_DURATION_MINUTES, resolveMaxGuests } from '@/lib/config/booking';
 import { addMinutes, parseISO, isAfter } from 'date-fns';
 import type { CreateHoldResponse, BookingError } from '@/types/booking';
 import type { Database } from '@/types/database';
@@ -184,9 +184,9 @@ export async function POST(request: NextRequest) {
     // 7. Calcular el precio total
     const priceBreakdown = calculatePrice(cabin, startDate, endDate, partySize, jacuzziDays, towelsCount ?? 0);
 
-    // 8. Crear el hold (expires_at = now + 45 minutos)
-    const expiresAt = addMinutes(new Date(), 45);
-    console.log(`[Hold Debug] Creating hold. Now=${new Date().toISOString()}, ExpiresAt=${expiresAt.toISOString()}`);
+    // 8. Crear el hold (expires_at = now + BOOKING_HOLD_DURATION_MINUTES)
+    const expiresAt = addMinutes(new Date(), BOOKING_HOLD_DURATION_MINUTES);
+    console.log(`[Hold Debug] Creating hold. Now=${new Date().toISOString()}, ExpiresAt=${expiresAt.toISOString()}, Duration=${BOOKING_HOLD_DURATION_MINUTES}min`);
 
     const { data: bookings, error: bookingError } = await supabaseAdmin
       .from('bookings')
