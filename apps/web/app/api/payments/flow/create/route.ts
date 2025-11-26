@@ -71,6 +71,8 @@ export async function POST(request: NextRequest) {
       const expiresAt = parseISO(booking.expires_at);
       const now = new Date();
 
+      console.log(`[Payment Debug] Checking expiration. Booking=${bookingId}, Expires=${booking.expires_at}, Now=${now.toISOString()}`);
+
       if (!isAfter(expiresAt, now)) {
         // Marcar como expirado
         await (supabaseAdmin.from('bookings') as any)

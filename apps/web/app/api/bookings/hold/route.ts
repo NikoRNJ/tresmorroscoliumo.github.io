@@ -186,6 +186,7 @@ export async function POST(request: NextRequest) {
 
     // 8. Crear el hold (expires_at = now + 45 minutos)
     const expiresAt = addMinutes(new Date(), 45);
+    console.log(`[Hold Debug] Creating hold. Now=${new Date().toISOString()}, ExpiresAt=${expiresAt.toISOString()}`);
 
     const { data: bookings, error: bookingError } = await supabaseAdmin
       .from('bookings')

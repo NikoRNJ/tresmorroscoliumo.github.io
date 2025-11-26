@@ -116,17 +116,20 @@ export async function GET(request: NextRequest) {
     bookings?.forEach((booking) => {
       try {
         const bookingDays = getDatesBetween(booking.start_date, booking.end_date);
-
         bookingDays.forEach((dayStr) => {
           // Solo agregar si está dentro del mes consultado
           if (allDaysStr.includes(dayStr)) {
             if (booking.status === 'paid') {
               bookedDates.add(dayStr);
+              console.log(`[Availability] Booking ${booking.id} is PAID. Marking as booked.`);
             } else if (booking.status === 'pending') {
               // Si expires_at es null, asumimos que está expirado (o inválido), igual que en hold/route.ts
               if (booking.expires_at) {
                 const expiresAt = parseISO(booking.expires_at);
                 const isExpired = !isAfter(expiresAt, now);
+
+                // LOGGING FOR DEBUGGING
+                console.log(`[Availability Debug] Booking ${booking.id}: Status=${booking.status}, Expires=${booking.expires_at}, Now=${now.toISOString()}, IsExpired=${isExpired}`);
 
                 if (!isExpired) {
                   pendingDates.add(dayStr);
@@ -134,6 +137,9 @@ export async function GET(request: NextRequest) {
                 } else {
                   console.log(`[Availability] Pending booking ${booking.id} EXPIRED at ${booking.expires_at} (Now: ${now.toISOString()})`);
                 }
+              } else {
+                console.log(`[Availability Warning] Booking ${booking.id} is pending but has NO expires_at. Treating as PENDING (Yellow) to be safe.`);
+                pendingDates.add(dayStr);
               }
             }
           }
