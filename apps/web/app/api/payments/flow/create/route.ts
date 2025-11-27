@@ -188,12 +188,27 @@ export async function POST(request: NextRequest) {
       booking.flow_payment_data = null;
     }
 
-    // 6. Crear la orden en Flow
-    let externalUrl = process.env.PUBLIC_EXTERNAL_URL || process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
-    externalUrl = externalUrl.replace(/\/$/, ''); // Remove trailing slash
-
-    if (isProdRuntime && externalUrl.includes('localhost')) {
-      console.warn('⚠️ Flow payment created with localhost URL in production environment. Webhooks will fail.');
+    // 6. Resolver URL externa a partir de NEXT_PUBLIC_SITE_URL (ngrok en dev, dominio en prod)
+    const siteBase = process.env.NEXT_PUBLIC_SITE_URL;
+    if (!siteBase) {
+      return NextResponse.json(
+        { error: 'NEXT_PUBLIC_SITE_URL no configurada' },
+        { status: 500 }
+      );
+    }
+    let externalUrl = siteBase;
+    try {
+      const parsed = new URL(siteBase);
+      if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
+        throw new Error('Protocol must be http/https');
+      }
+      externalUrl = parsed.toString().replace(/\/$/, '');
+    } catch (err) {
+      console.error('Invalid NEXT_PUBLIC_SITE_URL:', err);
+      return NextResponse.json(
+        { error: 'NEXT_PUBLIC_SITE_URL inválida, revisa el .env' },
+        { status: 500 }
+      );
     }
 
     const flowPayment = await flowClient.createPayment({
@@ -202,8 +217,9 @@ export async function POST(request: NextRequest) {
       currency: 'CLP',
       amount: booking.amount_total,
       email: booking.customer_email || 'no-email@example.com',
-      urlConfirmation: `${externalUrl}/api/payments/flow/webhook`,
+      urlConfirmation: `${externalUrl}/api/flow/confirmation`,
       urlReturn: `${externalUrl}/pago/confirmacion`,
+      optional: JSON.stringify({ bookingId }),
     });
 
     // 7. Guardar el flow_order_id en la reserva

@@ -9,51 +9,19 @@ import type { Database } from '@/types/database';
 
 type Booking = Database['public']['Tables']['bookings']['Row'];
 
-/**
- * POST /api/payments/flow/webhook
- *
- * Webhook llamado por Flow cuando se completa un pago
- */
 export async function POST(request: NextRequest) {
   try {
-    const runtimeEnv = (process.env.NEXT_PUBLIC_SITE_ENV || process.env.NODE_ENV || '').toLowerCase();
-    const isProdRuntime = runtimeEnv === 'production';
-    const isMockFlow = !flowClient.isConfigured();
-    const allowMockInProd = (process.env.FLOW_ALLOW_MOCK_IN_PROD || '').toLowerCase() === 'true';
-
-    if (isProdRuntime && isMockFlow && !allowMockInProd) {
-      const errorMessage = 'Flow webhook recibió una llamada pero Flow está deshabilitado/mode mock en producción.';
-      await (supabaseAdmin.from('api_events') as any).insert({
-        event_type: 'flow_payment_error',
-        event_source: 'flow',
-        payload: { reason: 'webhook_on_mock', runtimeEnv },
-        status: 'error',
-        error_message: errorMessage,
-      });
-      Sentry.captureMessage(errorMessage, { level: 'error', extra: { runtimeEnv } });
-      return NextResponse.json({ error: 'Flow no está configurado' }, { status: 503 });
-    }
-
-    // 1. Parsear el body (Flow envía form-urlencoded)
     const formData = await request.formData();
     const rawPayload = Object.fromEntries(formData.entries()) as Record<string, string>;
     const { s: signature, ...payloadForSignature } = rawPayload;
     const token = payloadForSignature.token;
 
     if (!token || !signature) {
-      console.error('Missing token or signature in webhook');
-      return NextResponse.json({ error: 'Invalid webhook data' }, { status: 400 });
+      return NextResponse.json({ error: 'Missing token or signature' }, { status: 400 });
     }
 
-    // 2. Validar la firma del webhook
     const isValidSignature = flowClient.validateWebhookSignature(payloadForSignature, signature);
-
     if (!isValidSignature) {
-      console.error('Invalid webhook signature');
-      Sentry.captureMessage('Invalid Flow webhook signature', {
-        level: 'warning',
-        extra: { payload: payloadForSignature },
-      });
       await (supabaseAdmin.from('api_events') as any).insert({
         event_type: 'webhook_invalid_signature',
         event_source: 'flow',
@@ -64,14 +32,22 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid signature' }, { status: 401 });
     }
 
-    // 3. Consultar el estado del pago en Flow
-    const paymentStatus = await flowClient.getPaymentStatus(token);
+    let paymentStatus;
+    try {
+      paymentStatus = await flowClient.getPaymentStatus(token);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Flow getStatus error';
+      await (supabaseAdmin.from('api_events') as any).insert({
+        event_type: 'flow_get_status_error',
+        event_source: 'flow',
+        payload: { token, error: message },
+        status: 'error',
+        error_message: message,
+      });
+      return NextResponse.json({ success: false }, { status: 200 });
+    }
 
-    console.log('Flow payment status:', paymentStatus);
-
-    // 4. Buscar la reserva por commerceOrder (nuestro bookingId)
     const bookingId = paymentStatus.commerceOrder;
-
     const { data: bookings, error: bookingError } = await supabaseAdmin
       .from('bookings')
       .select('*')
@@ -81,11 +57,6 @@ export async function POST(request: NextRequest) {
     const booking = bookings?.[0] as Booking | undefined;
 
     if (bookingError || !booking) {
-      console.error('Booking not found for Flow order:', paymentStatus.flowOrder);
-      Sentry.captureMessage('Flow webhook booking not found', {
-        level: 'warning',
-        extra: { paymentStatus },
-      });
       await (supabaseAdmin.from('api_events') as any).insert({
         event_type: 'webhook_booking_not_found',
         event_source: 'flow',
@@ -98,31 +69,19 @@ export async function POST(request: NextRequest) {
 
     const now = new Date();
 
-    // Evitar reprocesar pagos ya aplicados
+    // Idempotencia: si ya está pagado con el mismo token/order
     if (booking.status === 'paid') {
-      const storedPayment = booking.flow_payment_data as any;
-      const storedToken = typeof storedPayment?.token === 'string' ? storedPayment.token : null;
-      const storedOrderId =
-        typeof storedPayment?.flowOrder === 'number'
-          ? String(storedPayment.flowOrder)
-          : booking.flow_order_id;
-
-      if ((storedToken && storedToken === token) || (storedOrderId && String(paymentStatus.flowOrder) === storedOrderId)) {
+      const stored = booking.flow_payment_data as any;
+      const storedToken = typeof stored?.token === 'string' ? stored.token : null;
+      const storedOrder =
+        typeof stored?.flowOrder === 'number' ? String(stored.flowOrder) : booking.flow_order_id;
+      if ((storedToken && storedToken === token) || (storedOrder && storedOrder === String(paymentStatus.flowOrder))) {
         return NextResponse.json({ success: true, status: 'paid' });
       }
-
-      await (supabaseAdmin.from('api_events') as any).insert({
-        event_type: 'payment_ignored_already_paid',
-        event_source: 'flow',
-        booking_id: bookingId,
-        payload: paymentStatus,
-        status: 'success',
-      });
-
-      return NextResponse.json({ error: 'Booking ya pagada' }, { status: 409 });
+      return NextResponse.json({ error: 'Already paid' }, { status: 409 });
     }
 
-    // No aceptar pagos de reservas canceladas/expiradas
+    // No aceptar pagos de bookings canceladas/expiradas
     if (booking.status === 'canceled' || booking.status === 'expired') {
       await (supabaseAdmin.from('api_events') as any).insert({
         event_type: 'payment_rejected_invalid_state',
@@ -150,12 +109,12 @@ export async function POST(request: NextRequest) {
       });
 
       return NextResponse.json(
-        { error: 'El tiempo para pagar ha expirado. Por favor crea una nueva reserva.' },
+        { error: 'Hold expirado. Crea una nueva reserva.' },
         { status: 410 }
       );
     }
 
-    // 5. Procesar según el estado del pago
+    // Procesar estado
     if (paymentStatus.status === FlowPaymentStatusCode.PAID) {
       const { error: updateError } = await (supabaseAdmin.from('bookings') as any)
         .update({
@@ -166,8 +125,7 @@ export async function POST(request: NextRequest) {
         .eq('id', bookingId);
 
       if (updateError) {
-        console.error('Error updating booking to paid:', updateError);
-        return NextResponse.json({ error: 'Database error' }, { status: 500 });
+        return NextResponse.json({ error: 'DB error' }, { status: 500 });
       }
 
       await (supabaseAdmin.from('api_events') as any).insert({
@@ -178,10 +136,16 @@ export async function POST(request: NextRequest) {
         status: 'success',
       });
 
-      await sendBookingConfirmationForBooking(bookingId);
+      try {
+        await sendBookingConfirmationForBooking(bookingId);
+      } catch (err) {
+        Sentry.captureException(err, { tags: { scope: 'email_confirmation' }, extra: { bookingId } });
+      }
 
       return NextResponse.json({ success: true, status: 'paid' });
-    } else if (paymentStatus.status === FlowPaymentStatusCode.REJECTED) {
+    }
+
+    if (paymentStatus.status === FlowPaymentStatusCode.REJECTED) {
       await (supabaseAdmin.from('bookings') as any)
         .update({
           flow_payment_data: paymentStatus,
@@ -198,7 +162,9 @@ export async function POST(request: NextRequest) {
       });
 
       return NextResponse.json({ success: true, status: 'rejected' });
-    } else if (paymentStatus.status === FlowPaymentStatusCode.CANCELLED) {
+    }
+
+    if (paymentStatus.status === FlowPaymentStatusCode.CANCELLED) {
       await (supabaseAdmin.from('bookings') as any)
         .update({
           status: 'canceled',
@@ -216,40 +182,24 @@ export async function POST(request: NextRequest) {
       });
 
       return NextResponse.json({ success: true, status: 'cancelled' });
-    } else {
-      await (supabaseAdmin.from('api_events') as any).insert({
-        event_type: 'payment_pending',
-        event_source: 'flow',
-        booking_id: bookingId,
-        payload: paymentStatus,
-        status: 'success',
-      });
-
-      return NextResponse.json({ success: true, status: 'pending' });
     }
-  } catch (error) {
-    console.error('Error processing Flow webhook:', error);
-    Sentry.captureException(error, { tags: { scope: 'flow_payment_error', action: 'webhook' } });
 
     await (supabaseAdmin.from('api_events') as any).insert({
-      event_type: 'webhook_error',
+      event_type: 'payment_pending',
       event_source: 'flow',
-      payload: { error: error instanceof Error ? error.message : 'Unknown error' },
-      status: 'error',
-      error_message: error instanceof Error ? error.message : 'Unknown error',
+      booking_id: bookingId,
+      payload: paymentStatus,
+      status: 'success',
     });
 
+    return NextResponse.json({ success: true, status: 'pending' });
+  } catch (error) {
+    console.error('Flow confirmation webhook error:', error);
+    Sentry.captureException(error, { tags: { scope: 'flow_webhook_error' } });
     return NextResponse.json({ error: 'Internal error' }, { status: 500 });
   }
 }
 
-/**
- * GET /api/payments/flow/webhook
- */
 export async function GET() {
-  return NextResponse.json({
-    status: 'ok',
-    service: 'Flow webhook endpoint',
-    timestamp: new Date().toISOString(),
-  });
+  return NextResponse.json({ status: 'ok' });
 }

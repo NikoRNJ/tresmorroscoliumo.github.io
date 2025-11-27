@@ -36,7 +36,7 @@ Plataforma integral para la gestión de reservas, comunicación con huéspedes y
    El API `/api/bookings/hold` crea un registro “pending”. Si alguien intenta reservar las mismas fechas, se devuelve 409 con un mensaje claro y el calendario se actualiza.
 3. **Pago con Flow/Webpay**  
    - `pnpm test:e2e` activa el modo mock (`FLOW_FORCE_MOCK=true`).  
-   - Webhook `/api/payments/flow/webhook` cambia la reserva a “paid”, guarda la traza y envía el correo de confirmación.
+   - Webhook `/api/flow/confirmation` cambia la reserva a "paid", guarda la traza y envía el correo de confirmación.
 4. **Emails**  
    - Contacto general: `/api/contact`  
    - Eventos especiales: `/api/events/special`  
@@ -183,7 +183,7 @@ tres-morros/
 
 | Variable | Uso |
 | --- | --- |
-| `NEXT_PUBLIC_SITE_URL` / `PUBLIC_EXTERNAL_URL` | URL base y callbacks usados en emails / Flow. |
+| `NEXT_PUBLIC_SITE_URL` | URL base y callbacks usados en emails / Flow (ngrok en dev, dominio real en prod). |
 | `NEXT_PUBLIC_SITE_ENV` | Nombre del entorno (`development`, `staging`, `production`). |
 | `NEXT_PUBLIC_SUPABASE_URL` / `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Cliente público (reservas). |
 | `SUPABASE_SERVICE_ROLE_KEY` | Mutaciones críticas (holds, pagos, limpieza). |
@@ -197,6 +197,11 @@ tres-morros/
 | `SENTRY_DSN`, `NEXT_PUBLIC_SENTRY_DSN`, `SENTRY_AUTH_TOKEN`, `SENTRY_ORG`, `SENTRY_PROJECT` | Observabilidad (Sentry + sourcemaps). |
 
 > Plantillas disponibles en `env/example.env` y `apps/web/env.local.example`.
+
+### Flow (dev/prod)
+- En desarrollo usa `NEXT_PUBLIC_SITE_URL=https://<tu-ngrok>.ngrok-free.app`.
+- En producción solo cambia `NEXT_PUBLIC_SITE_URL` a tu dominio real `https://www.tresmorroscoliumo.cl`.
+- Endpoints: `returnUrl = ${NEXT_PUBLIC_SITE_URL}/pago/confirmacion`, `confirmationUrl = ${NEXT_PUBLIC_SITE_URL}/api/flow/confirmation`.
 
 ---
 

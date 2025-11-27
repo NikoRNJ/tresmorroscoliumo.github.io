@@ -20,6 +20,8 @@ import { CreditCard, CheckCircle, XCircle, AlertTriangle, Loader2 } from 'lucide
  */
 
 function MockGatewayContent() {
+  const siteEnv = process.env.NEXT_PUBLIC_SITE_ENV || 'development';
+  const mockAllowed = siteEnv !== 'production';
   const router = useRouter();
   const searchParams = useSearchParams();
   
@@ -30,10 +32,14 @@ function MockGatewayContent() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    if (!mockAllowed) {
+      router.replace('/');
+      return;
+    }
     if (!bookingId || !token) {
       router.push('/');
     }
-  }, [bookingId, token, router]);
+  }, [bookingId, token, router, mockAllowed]);
 
   const handlePay = async () => {
     if (!bookingId || !token) return;
@@ -101,6 +107,22 @@ function MockGatewayContent() {
       setProcessing(false);
     }
   };
+
+  if (!mockAllowed) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-900 via-blue-800 to-indigo-900">
+        <Container>
+          <div className="mx-auto max-w-lg rounded-xl bg-white p-8 text-center">
+            <AlertTriangle className="h-10 w-10 text-red-500 mx-auto mb-4" />
+            <h1 className="text-xl font-bold text-gray-900 mb-2">Mock deshabilitado</h1>
+            <p className="text-sm text-gray-600">
+              Esta pasarela de prueba no está disponible en producción.
+            </p>
+          </div>
+        </Container>
+      </div>
+    );
+  }
 
   if (!bookingId || !token) {
     return null;
