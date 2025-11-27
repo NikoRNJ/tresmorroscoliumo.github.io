@@ -17,7 +17,14 @@ export async function POST(request: NextRequest) {
     const token = payloadForSignature.token;
 
     if (!token || !signature) {
-      return NextResponse.json({ error: 'Missing token or signature' }, { status: 400 });
+      await (supabaseAdmin.from('api_events') as any).insert({
+        event_type: 'flow_webhook_missing_params',
+        event_source: 'flow',
+        payload: payloadForSignature,
+        status: 'error',
+        error_message: 'Missing token or signature',
+      });
+      return NextResponse.json({ success: false, code: 'MISSING_PARAMS' }, { status: 200 });
     }
 
     const isValidSignature = flowClient.validateWebhookSignature(payloadForSignature, signature);
@@ -29,7 +36,7 @@ export async function POST(request: NextRequest) {
         status: 'error',
         error_message: 'Invalid signature',
       });
-      return NextResponse.json({ error: 'Invalid signature' }, { status: 401 });
+      return NextResponse.json({ success: false, code: 'INVALID_SIGNATURE' }, { status: 200 });
     }
 
     let paymentStatus;
@@ -44,7 +51,7 @@ export async function POST(request: NextRequest) {
         status: 'error',
         error_message: message,
       });
-      return NextResponse.json({ success: false }, { status: 200 });
+      return NextResponse.json({ success: false, code: 'GET_STATUS_ERROR' }, { status: 200 });
     }
 
     const bookingId = paymentStatus.commerceOrder;
@@ -64,7 +71,7 @@ export async function POST(request: NextRequest) {
         status: 'error',
         error_message: 'Booking not found',
       });
-      return NextResponse.json({ error: 'Booking not found' }, { status: 404 });
+      return NextResponse.json({ success: false, code: 'BOOKING_NOT_FOUND' }, { status: 200 });
     }
 
     const now = new Date();
@@ -76,9 +83,9 @@ export async function POST(request: NextRequest) {
       const storedOrder =
         typeof stored?.flowOrder === 'number' ? String(stored.flowOrder) : booking.flow_order_id;
       if ((storedToken && storedToken === token) || (storedOrder && storedOrder === String(paymentStatus.flowOrder))) {
-        return NextResponse.json({ success: true, status: 'paid' });
+        return NextResponse.json({ success: true, status: 'paid', code: 'ALREADY_PAID' }, { status: 200 });
       }
-      return NextResponse.json({ error: 'Already paid' }, { status: 409 });
+      return NextResponse.json({ success: false, code: 'ALREADY_PAID_MISMATCH' }, { status: 200 });
     }
 
     // No aceptar pagos de bookings canceladas/expiradas
@@ -91,7 +98,7 @@ export async function POST(request: NextRequest) {
         status: 'error',
         error_message: 'Booking no vigente',
       });
-      return NextResponse.json({ error: 'Booking no vigente' }, { status: 410 });
+      return NextResponse.json({ success: false, code: 'INVALID_BOOKING_STATE' }, { status: 200 });
     }
 
     if (booking.expires_at && !isAfter(parseISO(booking.expires_at), now)) {
@@ -108,10 +115,7 @@ export async function POST(request: NextRequest) {
         error_message: 'Hold expirado',
       });
 
-      return NextResponse.json(
-        { error: 'Hold expirado. Crea una nueva reserva.' },
-        { status: 410 }
-      );
+      return NextResponse.json({ success: false, code: 'HOLD_EXPIRED' }, { status: 200 });
     }
 
     // Procesar estado
@@ -125,7 +129,7 @@ export async function POST(request: NextRequest) {
         .eq('id', bookingId);
 
       if (updateError) {
-        return NextResponse.json({ error: 'DB error' }, { status: 500 });
+        return NextResponse.json({ success: false, code: 'DB_ERROR' }, { status: 200 });
       }
 
       await (supabaseAdmin.from('api_events') as any).insert({
@@ -142,7 +146,7 @@ export async function POST(request: NextRequest) {
         Sentry.captureException(err, { tags: { scope: 'email_confirmation' }, extra: { bookingId } });
       }
 
-      return NextResponse.json({ success: true, status: 'paid' });
+      return NextResponse.json({ success: true, status: 'paid', code: 'PAID' }, { status: 200 });
     }
 
     if (paymentStatus.status === FlowPaymentStatusCode.REJECTED) {
@@ -161,7 +165,7 @@ export async function POST(request: NextRequest) {
         error_message: 'Payment rejected by bank',
       });
 
-      return NextResponse.json({ success: true, status: 'rejected' });
+      return NextResponse.json({ success: true, status: 'rejected', code: 'REJECTED' }, { status: 200 });
     }
 
     if (paymentStatus.status === FlowPaymentStatusCode.CANCELLED) {
@@ -181,7 +185,7 @@ export async function POST(request: NextRequest) {
         status: 'success',
       });
 
-      return NextResponse.json({ success: true, status: 'cancelled' });
+      return NextResponse.json({ success: true, status: 'cancelled', code: 'CANCELLED' }, { status: 200 });
     }
 
     await (supabaseAdmin.from('api_events') as any).insert({
@@ -192,11 +196,11 @@ export async function POST(request: NextRequest) {
       status: 'success',
     });
 
-    return NextResponse.json({ success: true, status: 'pending' });
+    return NextResponse.json({ success: true, status: 'pending', code: 'PENDING' }, { status: 200 });
   } catch (error) {
     console.error('Flow confirmation webhook error:', error);
     Sentry.captureException(error, { tags: { scope: 'flow_webhook_error' } });
-    return NextResponse.json({ error: 'Internal error' }, { status: 500 });
+    return NextResponse.json({ success: false, code: 'INTERNAL_ERROR' }, { status: 200 });
   }
 }
 
