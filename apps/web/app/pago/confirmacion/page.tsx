@@ -33,12 +33,12 @@ export default function PaymentConfirmationPage() {
             avisaremos por correo.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button asChild>
-              <Link href="/">Volver al inicio</Link>
-            </Button>
-            <Button variant="outline" asChild>
-              <Link href="/pago">Ir a pagar</Link>
-            </Button>
+            <Link href="/" className="w-full sm:w-auto">
+              <Button className="w-full">Volver al inicio</Button>
+            </Link>
+            <Link href="/pago" className="w-full sm:w-auto">
+              <Button variant="outline" className="w-full">Ir a pagar</Button>
+            </Link>
           </div>
         </>
       );
@@ -63,12 +63,12 @@ export default function PaymentConfirmationPage() {
           </p>
         </div>
         <div className="flex flex-col sm:flex-row gap-4 justify-center">
-          <Button asChild>
-            <Link href="/">Volver al inicio</Link>
-          </Button>
-          <Button variant="outline" asChild>
-            <Link href="/pago">Ver otra reserva</Link>
-          </Button>
+          <Link href="/" className="w-full sm:w-auto">
+            <Button className="w-full">Volver al inicio</Button>
+          </Link>
+          <Link href="/pago" className="w-full sm:w-auto">
+            <Button variant="outline" className="w-full">Ver otra reserva</Button>
+          </Link>
         </div>
       </>
     );
