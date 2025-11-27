@@ -2,14 +2,14 @@
 
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
-import { useMemo } from 'react';
+import { useMemo, Suspense } from 'react';
 import { Container } from '@/components/ui/Container';
 import { Button } from '@/components/ui/Button';
 import { CheckCircle, Clock, AlertTriangle } from 'lucide-react';
 
 export const dynamic = 'force-dynamic';
 
-export default function PaymentConfirmationPage() {
+function PaymentConfirmationContent() {
   const searchParams = useSearchParams();
   const token = searchParams.get('token');
 
@@ -84,5 +84,13 @@ export default function PaymentConfirmationPage() {
         </div>
       </div>
     </Container>
+  );
+}
+
+export default function PaymentConfirmationPage() {
+  return (
+    <Suspense fallback={null}>
+      <PaymentConfirmationContent />
+    </Suspense>
   );
 }
