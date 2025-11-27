@@ -87,8 +87,9 @@ export async function POST(request: NextRequest) {
 
     // Intentar RPC atómico; si no existe la función (p. ej. migración no aplicada),
     // hacer fallback a inserción directa con constraint de solape.
-    const rpcResult = await supabaseAdmin
-      .rpc('create_booking_hold_atomic', {
+    const rpcResult = await (supabaseAdmin.rpc as any)(
+      'create_booking_hold_atomic',
+      {
         p_cabin_id: cabinId,
         p_start_date: startDate,
         p_end_date: endDate,
@@ -107,8 +108,8 @@ export async function POST(request: NextRequest) {
         p_amount_extra_people: priceBreakdown.extraPeoplePrice,
         p_amount_towels: priceBreakdown.towelsPrice,
         p_amount_total: priceBreakdown.total,
-      })
-      .single();
+      }
+    ).single();
 
     if (rpcResult.error && rpcResult.error.message?.includes('create_booking_hold_atomic')) {
       // Fallback legacy insert
