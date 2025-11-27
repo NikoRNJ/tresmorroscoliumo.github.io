@@ -73,7 +73,7 @@ Plataforma integral para la gestión de reservas, comunicación con huéspedes y
    ```bash
    pnpm dev
    ```
-   Salud: <http://localhost:3000/api/health>
+   Salud: <https://www.tresmorroscoliumo.cl/api/health>
 
 ---
 

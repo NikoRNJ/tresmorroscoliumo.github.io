@@ -11,7 +11,7 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000"),
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "https://www.tresmorroscoliumo.cl"),
   title: {
     default: "Tres Morros de Coliumo - Cabañas en Coliumo",
     template: "%s | Tres Morros de Coliumo",
@@ -34,7 +34,7 @@ export const metadata: Metadata = {
   openGraph: {
     type: "website",
     locale: "es_CL",
-    url: process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000",
+    url: process.env.NEXT_PUBLIC_SITE_URL || "https://www.tresmorroscoliumo.cl",
     siteName: "Tres Morros de Coliumo",
     title: "Tres Morros de Coliumo - Cabañas en Coliumo",
     description: "Arrienda cabañas frente al mar en Coliumo. Reserva online. Desconéctate de la ciudad y disfruta la naturaleza.",

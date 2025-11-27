@@ -76,7 +76,7 @@ npm run dev
 
 ### Paso 3: Abrir en el Navegador
 
-El servidor arrancará en: **http://localhost:3000**
+El servidor arrancará en: **https://www.tresmorroscoliumo.cl** (o la URL que configures en `NEXT_PUBLIC_SITE_URL`)
 
 ---
 
@@ -85,15 +85,15 @@ El servidor arrancará en: **http://localhost:3000**
 Una vez configurado Supabase y con el servidor corriendo:
 
 ### Páginas
-- **Home:** http://localhost:3000
-- **Vegas del Coliumo:** http://localhost:3000/cabanas/vegas-del-coliumo
-- **Caleta del Medio:** http://localhost:3000/cabanas/caleta-del-medio
-- **Los Morros:** http://localhost:3000/cabanas/los-morros
+- **Home:** https://www.tresmorroscoliumo.cl
+- **Vegas del Coliumo:** https://www.tresmorroscoliumo.cl/cabanas/vegas-del-coliumo
+- **Caleta del Medio:** https://www.tresmorroscoliumo.cl/cabanas/caleta-del-medio
+- **Los Morros:** https://www.tresmorroscoliumo.cl/cabanas/los-morros
 
 ### APIs (puedes probarlas con Postman o curl)
-- **Health Check:** http://localhost:3000/api/health
-- **Listar Cabañas:** http://localhost:3000/api/cabins
-- **Detalle Cabaña:** http://localhost:3000/api/cabins/vegas-del-coliumo
+- **Health Check:** https://www.tresmorroscoliumo.cl/api/health
+- **Listar Cabañas:** https://www.tresmorroscoliumo.cl/api/cabins
+- **Detalle Cabaña:** https://www.tresmorroscoliumo.cl/api/cabins/vegas-del-coliumo
 
 ---
 

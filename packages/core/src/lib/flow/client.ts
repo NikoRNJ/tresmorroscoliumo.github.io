@@ -198,7 +198,7 @@ class FlowClient {
   }
 
   private createMockPayment(params: FlowPaymentParams): FlowPaymentResponse {
-    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.tresmorroscoliumo.cl';
     const mockToken = `mock-${params.commerceOrder}-${Date.now()}`;
 
     // Redirigir a la pasarela mock en lugar de directamente a confirmación

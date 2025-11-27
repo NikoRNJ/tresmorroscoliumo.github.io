@@ -195,7 +195,7 @@ export async function POST(request: NextRequest) {
       status: 'success',
     } as any);
 
-    const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000').replace(/\/$/, '');
+    const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL || 'https://www.tresmorroscoliumo.cl').replace(/\/$/, '');
     const paymentPath = `/pago?booking=${booking.id}`;
     const response: CreateHoldResponse = {
       success: true,
