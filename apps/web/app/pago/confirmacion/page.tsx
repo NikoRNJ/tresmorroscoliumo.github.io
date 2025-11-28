@@ -98,7 +98,7 @@ function PaymentConfirmationContent() {
     return () => {
       cancelled = true;
     };
-  }, [token, bookingId]);
+  }, [token, bookingId, bookingIdForRetry]);
 
   const status = useMemo(() => state.kind, [state.kind]);
 
@@ -188,10 +188,10 @@ function PaymentConfirmationContent() {
 
     const errorMessage =
       state.kind === 'rejected' ||
-      state.kind === 'cancelled' ||
-      state.kind === 'expired' ||
-      state.kind === 'invalid' ||
-      state.kind === 'error'
+        state.kind === 'cancelled' ||
+        state.kind === 'expired' ||
+        state.kind === 'invalid' ||
+        state.kind === 'error'
         ? state.message
         : 'No pudimos confirmar el pago. Intenta nuevamente.';
 

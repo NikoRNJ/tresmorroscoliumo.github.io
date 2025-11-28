@@ -3,6 +3,7 @@ import * as Sentry from '@sentry/nextjs';
 import { supabaseAdmin } from '@/lib/supabase/server';
 import { flowClient } from '@/lib/flow/client';
 import { FlowPaymentStatusCode } from '@/types/flow';
+import type { Database } from '@/types/database';
 
 export async function POST(request: NextRequest) {
     let params: Record<string, any> = {};
@@ -45,7 +46,8 @@ export async function POST(request: NextRequest) {
             .from('bookings')
             .select('*')
             .eq('id', bookingId)
-            .limit(1);
+            .limit(1)
+            .returns<Database['public']['Tables']['bookings']['Row'][]>();
 
         const booking = bookings?.[0];
 
