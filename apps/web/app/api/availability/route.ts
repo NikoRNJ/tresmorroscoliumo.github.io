@@ -73,8 +73,8 @@ export async function GET(request: NextRequest) {
       }
     } catch (rpcError) {
       // Fallback si la función RPC no existe: expirar manualmente
-      const { count } = await supabaseAdmin
-        .from('bookings')
+      // Usamos (as any) para evitar error de tipo 'never' en build
+      const { count } = await (supabaseAdmin.from('bookings') as any)
         .update({ status: 'expired' })
         .eq('cabin_id', cabinId)
         .eq('status', 'pending')
