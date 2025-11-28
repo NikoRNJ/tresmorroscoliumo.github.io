@@ -248,9 +248,9 @@ export async function POST(request: NextRequest) {
       currency: 'CLP',
       amount: booking.amount_total,
       email: booking.customer_email || 'no-email@example.com',
-      urlConfirmation: `${externalUrl}/api/flow/confirmation`,
+      urlConfirmation: `${externalUrl}/api/payments/flow/webhook`,
       // Endpoint dedicado que redirige a /pago/confirmacion con token para evitar POST directo a la página
-      urlReturn: `${externalUrl}/api/flow/return`,
+      urlReturn: `${externalUrl}/api/payments/flow/return`,
       optional: JSON.stringify({ bookingId }),
     });
 
