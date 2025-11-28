@@ -16,6 +16,7 @@ class FlowClient {
   private baseUrl?: string;
   private configured: boolean;
   private debug: boolean;
+  private httpTimeoutMs: number;
 
   constructor() {
     this.apiKey = (process.env.FLOW_API_KEY || '').trim() || undefined
@@ -24,6 +25,8 @@ class FlowClient {
     const forceMock = String(process.env.FLOW_FORCE_MOCK || '').toLowerCase() === 'true'
     this.debug = String(process.env.FLOW_DEBUG_LOGS || '').toLowerCase() === 'true'
     this.configured = Boolean(this.apiKey && this.secretKey && this.baseUrl) && !forceMock
+    const timeoutFromEnv = Number(process.env.FLOW_HTTP_TIMEOUT_MS || '')
+    this.httpTimeoutMs = Number.isFinite(timeoutFromEnv) && timeoutFromEnv > 0 ? timeoutFromEnv : 12000
 
     if (!this.configured) {
       console.warn('[Flow] Modo mock de Flow activo (credenciales no configuradas o FORCED).')
@@ -70,6 +73,22 @@ class FlowClient {
     return signature;
   }
 
+  private async fetchWithTimeout(input: RequestInfo | URL, init: RequestInit = {}) {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), this.httpTimeoutMs);
+    try {
+      const response = await fetch(input, { ...init, signal: controller.signal });
+      return response;
+    } catch (err) {
+      if (err instanceof Error && err.name === 'AbortError') {
+        throw new Error('Flow request timeout');
+      }
+      throw err;
+    } finally {
+      clearTimeout(timeout);
+    }
+  }
+
   /**
    * Crear una orden de pago en Flow
    * 
@@ -103,17 +122,17 @@ class FlowClient {
       // Crear URLSearchParams para el POST
       const formData = new URLSearchParams();
       Object.entries(paymentParams).forEach(([key, value]) => {
-        formData.append(key, String(value));
-      });
-      formData.append('s', signature);
+      formData.append(key, String(value));
+    });
+    formData.append('s', signature);
 
-      // Hacer request a Flow
-      const response = await fetch(`${this.baseUrl}/payment/create`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-        },
-        body: formData.toString(),
+    // Hacer request a Flow con timeout
+    const response = await this.fetchWithTimeout(`${this.baseUrl}/payment/create`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      body: formData.toString(),
       });
 
       if (!response.ok) {
@@ -157,7 +176,7 @@ class FlowClient {
       url.searchParams.append('token', token);
       url.searchParams.append('s', signature);
 
-      const response = await fetch(url.toString(), {
+      const response = await this.fetchWithTimeout(url.toString(), {
         method: 'GET',
       });
 
