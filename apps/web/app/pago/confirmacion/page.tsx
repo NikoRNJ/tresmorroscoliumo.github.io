@@ -176,15 +176,13 @@ function PaymentConfirmationContent() {
     }
 
     const errorMessage =
-      state.kind === 'rejected'
+      state.kind === 'rejected' ||
+      state.kind === 'cancelled' ||
+      state.kind === 'expired' ||
+      state.kind === 'invalid' ||
+      state.kind === 'error'
         ? state.message
-        : state.kind === 'cancelled'
-          ? state.message
-          : state.kind === 'expired'
-            ? state.message
-            : state.kind === 'invalid'
-              ? state.message
-              : state.message;
+        : 'No pudimos confirmar el pago. Intenta nuevamente.';
 
     return (
       <>
