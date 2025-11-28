@@ -127,35 +127,45 @@ workers:
       # Flow (sandbox)
       - key: FLOW_API_KEY
         scope: RUN_TIME
-        value: "7E3D3FDF-8C70-4EA0-B30D-789129DLAB01"
+        value: "7DAA6E3F-1804-4FBD-999C-805C6988LCB6"
       - key: FLOW_API_KEY
         scope: BUILD_TIME
-        value: "7E3D3FDF-8C70-4EA0-B30D-789129DLAB01"
+        value: "7DAA6E3F-1804-4FBD-999C-805C6988LCB6"
 
       - key: FLOW_SECRET_KEY
         scope: RUN_TIME
-        value: "726eb20964ce8450daaf31f01998561ae8c3f7b8"
+        value: "76930528c3ce6accbc89187dc50960f932ee864c"
       - key: FLOW_SECRET_KEY
         scope: BUILD_TIME
-        value: "726eb20964ce8450daaf31f01998561ae8c3f7b8"
+        value: "76930528c3ce6accbc89187dc50960f932ee864c"
 
       - key: FLOW_BASE_URL
         scope: RUN_TIME
-        value: "https://sandbox.flow.cl/api"
+        value: "https://www.flow.cl/api"
       - key: FLOW_BASE_URL
         scope: BUILD_TIME
-        value: "https://sandbox.flow.cl/api"
+        value: "https://www.flow.cl/api"
 
       - key: FLOW_FORCE_MOCK
         scope: RUN_TIME
         value: "false"
+      - key: FLOW_FORCE_MOCK
+        scope: BUILD_TIME
+        value: "false"
 
       - key: FLOW_ALLOW_MOCK_IN_PROD
         scope: RUN_TIME
-        value: "true"
+        value: "false"
       - key: FLOW_ALLOW_MOCK_IN_PROD
         scope: BUILD_TIME
-        value: "true"
+        value: "false"
+
+      - key: FLOW_ALLOW_SANDBOX_IN_PROD
+        scope: RUN_TIME
+        value: "false"
+      - key: FLOW_ALLOW_SANDBOX_IN_PROD
+        scope: BUILD_TIME
+        value: "false"
 
       - key: FLOW_WEBHOOK_SECRET
         scope: RUN_TIME
