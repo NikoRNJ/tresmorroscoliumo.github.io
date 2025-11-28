@@ -2,11 +2,10 @@ import { defineConfig } from 'vitest/config';
 import tsconfigPaths from 'vite-tsconfig-paths';
 
 export default defineConfig({
-  plugins: [tsconfigPaths()],
+  plugins: [tsconfigPaths({ projects: ['./tsconfig.json', './apps/web/tsconfig.json'] })],
   test: {
     globals: true,
     environment: 'node',
     include: ['tests/**/*.test.ts'],
   },
 });
-
