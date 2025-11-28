@@ -36,12 +36,13 @@ if (isProdEnv && flowForceMock && allowMockInProd) {
   console.warn('⚠️ FLOW_FORCE_MOCK=true en producción (modo mock habilitado explícitamente).');
 }
 
-if (isProdEnv && !flowForceMock && !allowSandboxInProd && flowBaseUrl.includes('sandbox.flow.cl')) {
-  console.error(
-    'OJO: FLOW_BASE_URL apunta a sandbox pero el entorno es produccion.\n' +
-      '   Usa https://www.flow.cl/api y credenciales de produccion o define FLOW_ALLOW_SANDBOX_IN_PROD=true bajo tu propio riesgo.'
-  );
-  process.exit(1);
+if (isProdEnv && !flowForceMock && flowBaseUrl.includes('sandbox.flow.cl')) {
+  if (!allowSandboxInProd) {
+    console.warn(
+      'OJO: FLOW_BASE_URL apunta a sandbox pero el entorno es produccion.\n' +
+        '   Usa https://www.flow.cl/api y credenciales de produccion o define FLOW_ALLOW_SANDBOX_IN_PROD=true bajo tu propio riesgo.'
+    );
+  }
 }
 
 const needsRealFlow = !flowForceMock || (isProdEnv && !allowMockInProd);
