@@ -22,7 +22,7 @@ export async function POST(request: NextRequest) {
       if (savedToken) effectiveToken = savedToken
     }
 
-    if (!effectiveToken) return NextResponse.json({ success: false, code: 'TOKEN_REQUIRED', message: 'token requerido' }, { status: 400 })
+    if (!effectiveToken) return NextResponse.json({ success: false, code: 'TOKEN_REQUIRED', message: 'token requerido', bookingId: bookingId ?? null }, { status: 400 })
 
     const runtimeEnv = (process.env.NEXT_PUBLIC_SITE_ENV || process.env.NODE_ENV || '').toLowerCase()
     const isProdRuntime = runtimeEnv === 'production'
@@ -40,7 +40,7 @@ export async function POST(request: NextRequest) {
         error_message: errorMessage,
       })
       Sentry.captureMessage(errorMessage, { level: 'error', extra: { token, bookingId } })
-      return NextResponse.json({ success: false, code: 'FLOW_MOCK_IN_PROD', message: 'Servicio de pagos no disponible' }, { status: 503 })
+      return NextResponse.json({ success: false, code: 'FLOW_MOCK_IN_PROD', message: 'Servicio de pagos no disponible', bookingId: bookingId ?? null }, { status: 503 })
     }
 
     const status = await flowClient.getPaymentStatus(effectiveToken)
@@ -55,11 +55,11 @@ export async function POST(request: NextRequest) {
         status: 'error',
         error_message: 'Token no corresponde al booking informado',
       })
-      return NextResponse.json({ success: false, code: 'BOOKING_TOKEN_MISMATCH', message: 'El token no corresponde a la reserva' }, { status: 409 })
+      return NextResponse.json({ success: false, code: 'BOOKING_TOKEN_MISMATCH', message: 'El token no corresponde a la reserva', bookingId: flowBookingId }, { status: 409 })
     }
 
     const id = flowBookingId || bookingId
-    if (!id) return NextResponse.json({ success: false, code: 'BOOKING_ID_MISSING', message: 'bookingId no encontrado' }, { status: 400 })
+    if (!id) return NextResponse.json({ success: false, code: 'BOOKING_ID_MISSING', message: 'bookingId no encontrado', bookingId: null }, { status: 400 })
 
     const { data: bookings, error: fetchError } = await supabaseAdmin
       .from('bookings')
@@ -70,7 +70,7 @@ export async function POST(request: NextRequest) {
     const booking = bookings?.[0] as { status: string; expires_at: string | null; flow_payment_data?: any } | undefined
 
     if (fetchError || !booking) {
-      return NextResponse.json({ success: false, code: 'BOOKING_NOT_FOUND', message: 'Booking no encontrada' }, { status: 404 })
+      return NextResponse.json({ success: false, code: 'BOOKING_NOT_FOUND', message: 'Booking no encontrada', bookingId: id }, { status: 404 })
     }
 
     // Idempotencia: si ya está pagada y coincide token/order, responder success
@@ -78,14 +78,14 @@ export async function POST(request: NextRequest) {
       const storedToken = typeof booking.flow_payment_data?.token === 'string' ? booking.flow_payment_data.token : null
       const storedOrder = typeof booking.flow_payment_data?.flowOrder === 'number' ? booking.flow_payment_data.flowOrder : null
       if ((storedToken && storedToken === effectiveToken) || (storedOrder && storedOrder === status?.flowOrder)) {
-        return NextResponse.json({ success: true, status: 'paid', code: 'PAID', message: 'Pago confirmado' })
+        return NextResponse.json({ success: true, status: 'paid', code: 'PAID', message: 'Pago confirmado', bookingId: id })
       }
-      return NextResponse.json({ success: false, code: 'ALREADY_PAID_MISMATCH', message: 'La reserva ya está pagada con otro token/orden' }, { status: 409 })
+      return NextResponse.json({ success: false, code: 'ALREADY_PAID_MISMATCH', message: 'La reserva ya está pagada con otro token/orden', bookingId: id }, { status: 409 })
     }
 
     // No permitir confirmar pagos de bookings canceladas/expiradas
     if (booking.status === 'canceled' || booking.status === 'expired') {
-      return NextResponse.json({ success: false, code: 'INVALID_BOOKING_STATE', message: 'Booking no vigente' }, { status: 410 })
+      return NextResponse.json({ success: false, code: 'INVALID_BOOKING_STATE', message: 'Booking no vigente', bookingId: id }, { status: 410 })
     }
 
     if (booking.expires_at && !isAfter(parseISO(booking.expires_at), new Date())) {
@@ -94,7 +94,7 @@ export async function POST(request: NextRequest) {
         .eq('id', id)
 
       return NextResponse.json(
-        { success: false, code: 'HOLD_EXPIRED', message: 'Hold expirado, genera una nueva reserva' },
+        { success: false, code: 'HOLD_EXPIRED', message: 'Hold expirado, genera una nueva reserva', bookingId: id },
         { status: 410 }
       )
     }
@@ -105,7 +105,7 @@ export async function POST(request: NextRequest) {
         .update({ status: 'paid', paid_at: new Date().toISOString(), flow_payment_data: status })
         .eq('id', id)
 
-      if (error) return NextResponse.json({ success: false, code: 'DB_ERROR', message: 'No se pudo guardar el pago' }, { status: 500 })
+      if (error) return NextResponse.json({ success: false, code: 'DB_ERROR', message: 'No se pudo guardar el pago', bookingId: id }, { status: 500 })
 
       await (supabaseAdmin.from('api_events') as any).insert({
         event_type: 'payment_confirm_manual',
@@ -115,7 +115,7 @@ export async function POST(request: NextRequest) {
         status: 'success',
       })
 
-      return NextResponse.json({ success: true, status: 'paid', code: 'PAID', message: 'Pago confirmado' })
+      return NextResponse.json({ success: true, status: 'paid', code: 'PAID', message: 'Pago confirmado', bookingId: id })
     }
 
     if (code === FlowPaymentStatusCode.REJECTED) {
@@ -132,7 +132,7 @@ export async function POST(request: NextRequest) {
         error_message: 'Payment rejected by bank',
       })
 
-      return NextResponse.json({ success: false, status: 'rejected', code: 'REJECTED', message: 'Pago rechazado por el emisor' }, { status: 200 })
+      return NextResponse.json({ success: false, status: 'rejected', code: 'REJECTED', message: 'Pago rechazado por el emisor', bookingId: id }, { status: 200 })
     }
 
     if (code === FlowPaymentStatusCode.CANCELLED) {
@@ -149,7 +149,7 @@ export async function POST(request: NextRequest) {
         error_message: 'Payment cancelled by user - order cleared',
       })
 
-      return NextResponse.json({ success: false, status: 'cancelled', code: 'CANCELLED', message: 'Pago cancelado. Puedes intentar nuevamente.' }, { status: 200 })
+      return NextResponse.json({ success: false, status: 'cancelled', code: 'CANCELLED', message: 'Pago cancelado. Puedes intentar nuevamente.', bookingId: id }, { status: 200 })
     }
 
     await (supabaseAdmin.from('api_events') as any).insert({
@@ -160,11 +160,11 @@ export async function POST(request: NextRequest) {
       status: 'pending',
     })
     return NextResponse.json(
-      { success: false, status: 'pending', code: 'PENDING', message: 'Pago en proceso, reintenta en unos segundos' },
+      { success: false, status: 'pending', code: 'PENDING', message: 'Pago en proceso, reintenta en unos segundos', bookingId: id },
       { status: 202 }
     )
   } catch (e) {
     Sentry.captureException(e, { tags: { scope: 'flow_payment_error', action: 'manual_confirm' } })
-    return NextResponse.json({ success: false, code: 'INTERNAL_ERROR', message: 'Error al confirmar el pago' }, { status: 500 })
+    return NextResponse.json({ success: false, code: 'INTERNAL_ERROR', message: 'Error al confirmar el pago', bookingId: null }, { status: 500 })
   }
 }

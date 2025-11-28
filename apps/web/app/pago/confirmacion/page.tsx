@@ -13,6 +13,7 @@ function PaymentConfirmationContent() {
   const searchParams = useSearchParams();
   const token = searchParams.get('token');
   const bookingId = searchParams.get('booking');
+  const [bookingIdForRetry, setBookingIdForRetry] = useState<string | null>(() => bookingId);
 
   type ViewState =
     | { kind: 'missing' }
@@ -48,6 +49,11 @@ function PaymentConfirmationContent() {
           throw new Error(`Respuesta inesperada del servidor (status ${res.status})`);
         }
         if (cancelled) return;
+
+        const bookingFromResponse = typeof data?.bookingId === 'string' ? data.bookingId : null;
+        if (bookingFromResponse && bookingFromResponse !== bookingIdForRetry) {
+          setBookingIdForRetry(bookingFromResponse);
+        }
 
         if (data.success) {
           setState({ kind: 'paid', message: data.message ?? 'Pago confirmado' });
@@ -114,7 +120,7 @@ function PaymentConfirmationContent() {
             <Link href="/" className="w-full sm:w-auto">
               <Button className="w-full">Volver al inicio</Button>
             </Link>
-            <Link href="/pago" className="w-full sm:w-auto">
+            <Link href={bookingIdForRetry ? `/pago?booking=${bookingIdForRetry}` : '/pago'} className="w-full sm:w-auto">
               <Button variant="outline" className="w-full">Ir a pagar</Button>
             </Link>
           </div>
@@ -208,7 +214,7 @@ function PaymentConfirmationContent() {
         <p className="mb-4 text-lg text-gray-300">{errorMessage}</p>
         {renderToken()}
         <div className="flex flex-col sm:flex-row gap-4 justify-center">
-          <Link href="/pago" className="w-full sm:w-auto">
+          <Link href={bookingIdForRetry ? `/pago?booking=${bookingIdForRetry}` : '/pago'} className="w-full sm:w-auto">
             <Button className="w-full">Intentar otro pago</Button>
           </Link>
           <Link href="/" className="w-full sm:w-auto">
