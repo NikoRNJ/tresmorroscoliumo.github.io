@@ -59,6 +59,32 @@ export async function GET(request: NextRequest) {
     const startDateStr = format(startDate, 'yyyy-MM-dd');
     const endDateStr = format(endDate, 'yyyy-MM-dd');
 
+    // IMPORTANTE: Expirar holds vencidos ANTES de consultar disponibilidad
+    // Esto mantiene la base de datos limpia y evita inconsistencias
+    // entre lo que muestra el calendario y lo que permite reservar
+    try {
+      const { data: expiredCount } = await (supabaseAdmin.rpc as any)(
+        'expire_stale_holds_for_cabin',
+        { p_cabin_id: cabinId }
+      );
+      
+      if (expiredCount && expiredCount > 0) {
+        console.log(`[Availability] Expired ${expiredCount} stale holds for cabin ${cabinId}`);
+      }
+    } catch (rpcError) {
+      // Fallback si la función RPC no existe: expirar manualmente
+      const { count } = await supabaseAdmin
+        .from('bookings')
+        .update({ status: 'expired' })
+        .eq('cabin_id', cabinId)
+        .eq('status', 'pending')
+        .lt('expires_at', new Date().toISOString());
+      
+      if (count && count > 0) {
+        console.log(`[Availability] Expired ${count} stale holds via fallback for cabin ${cabinId}`);
+      }
+    }
+
     // Obtener todas las reservas que afectan este mes
     // (reservas que empiezan antes del fin del mes Y terminan después del inicio del mes)
     const { data: bookings, error: bookingsError } = await supabaseAdmin

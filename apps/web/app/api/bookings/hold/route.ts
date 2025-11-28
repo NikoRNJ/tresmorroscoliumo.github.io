@@ -112,7 +112,19 @@ export async function POST(request: NextRequest) {
     ).single();
 
     if (rpcResult.error && rpcResult.error.message?.includes('create_booking_hold_atomic')) {
-      // Fallback legacy insert
+      // Fallback: la función RPC no existe, usar inserción directa
+      
+      // CRÍTICO: Expirar holds vencidos ANTES de insertar para evitar
+      // conflictos con el constraint bookings_no_overlap
+      await supabaseAdmin
+        .from('bookings')
+        .update({ status: 'expired' })
+        .eq('cabin_id', cabinId)
+        .eq('status', 'pending')
+        .lt('expires_at', new Date().toISOString())
+        .lt('start_date', endDate)
+        .gt('end_date', startDate);
+
       const legacyInsert = await supabaseAdmin
         .from('bookings')
         .insert({
