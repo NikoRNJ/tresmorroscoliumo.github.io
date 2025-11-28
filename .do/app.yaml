@@ -38,6 +38,130 @@ services:
       pnpm --filter @tresmorros/web start --hostname 0.0.0.0 --port ${PORT:-3000}
     routes:
       - path: /
+    envs:
+      # NODE_ENV
+      - key: NODE_ENV
+        scope: RUN_AND_BUILD_TIME
+        value: production
+
+      # URLs del sitio
+      - key: NEXT_PUBLIC_SITE_URL
+        scope: RUN_AND_BUILD_TIME
+        value: "https://www.tresmorroscoliumo.cl"
+
+      - key: NEXT_PUBLIC_SITE_ENV
+        scope: RUN_AND_BUILD_TIME
+        value: "production"
+
+      - key: PUBLIC_EXTERNAL_URL
+        scope: RUN_AND_BUILD_TIME
+        value: "https://www.tresmorroscoliumo.cl"
+
+      - key: NEXT_PUBLIC_SITE_NAME
+        scope: RUN_AND_BUILD_TIME
+        value: "Tres Morros de Coliumo"
+
+      # Supabase
+      - key: NEXT_PUBLIC_SUPABASE_URL
+        scope: RUN_AND_BUILD_TIME
+        value: "https://tfztguqsdeolxxskumjg.supabase.co"
+
+      - key: NEXT_PUBLIC_SUPABASE_ANON_KEY
+        scope: RUN_AND_BUILD_TIME
+        value: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRmenRndXFzZGVvbHh4c2t1bWpnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI4MjU2NDEsImV4cCI6MjA3ODQwMTY0MX0.rJPmNYxQRtTCKruCtyif7_qk6oJEQ29eluKmkfa-CLA"
+
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        scope: RUN_AND_BUILD_TIME
+        value: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRmenRndXFzZGVvbHh4c2t1bWpnIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2MjgyNTY0MSwiZXhwIjoyMDc4NDAxNjQxfQ.6BEnoFAhzJyaMZ5iCayHIQyTMLFFnwdwbbMJ2vcrlO8"
+
+      # ===========================================================
+      # FLOW SANDBOX - CREDENCIALES 
+      # IMPORTANTE: Las credenciales de Flow deben configurarse
+      # directamente desde el Panel de DigitalOcean para mayor seguridad.
+      # Apps -> tres-morros-app -> Settings -> App-Level Environment Variables
+      # ===========================================================
+      - key: FLOW_API_KEY
+        scope: RUN_AND_BUILD_TIME
+        type: SECRET
+        value: "CONFIGURAR_DESDE_PANEL_DIGITALOCEAN"
+
+      - key: FLOW_SECRET_KEY
+        scope: RUN_AND_BUILD_TIME
+        type: SECRET
+        value: "CONFIGURAR_DESDE_PANEL_DIGITALOCEAN"
+
+      - key: FLOW_BASE_URL
+        scope: RUN_AND_BUILD_TIME
+        value: "https://sandbox.flow.cl/api"
+
+      - key: FLOW_FORCE_MOCK
+        scope: RUN_AND_BUILD_TIME
+        value: "false"
+
+      - key: FLOW_ALLOW_MOCK_IN_PROD
+        scope: RUN_AND_BUILD_TIME
+        value: "false"
+
+      # CRÍTICO: Habilita sandbox en producción para pruebas
+      - key: FLOW_ALLOW_SANDBOX_IN_PROD
+        scope: RUN_AND_BUILD_TIME
+        value: "true"
+
+      - key: FLOW_WEBHOOK_SECRET
+        scope: RUN_AND_BUILD_TIME
+        value: "dev-flow-webhook-secret-123"
+
+      # Observabilidad / Sentry
+      - key: SENTRY_DSN
+        scope: RUN_TIME
+        value: ""
+      - key: NEXT_PUBLIC_SENTRY_DSN
+        scope: RUN_TIME
+        value: ""
+      - key: NEXT_PUBLIC_SENTRY_TRACES_SAMPLE_RATE
+        scope: RUN_TIME
+        value: "0.1"
+      - key: NEXT_PUBLIC_SENTRY_REPLAYS_SESSION_SAMPLE_RATE
+        scope: RUN_TIME
+        value: "0"
+      - key: NEXT_PUBLIC_SENTRY_REPLAYS_ON_ERROR_SAMPLE_RATE
+        scope: RUN_TIME
+        value: "1"
+      - key: SENTRY_TRACES_SAMPLE_RATE
+        scope: RUN_TIME
+        value: "0.1"
+      - key: SENTRY_PROFILES_SAMPLE_RATE
+        scope: RUN_TIME
+        value: "0.1"
+
+      # SendGrid
+      - key: SENDGRID_API_KEY
+        scope: RUN_AND_BUILD_TIME
+        type: SECRET
+        value: "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"
+
+      - key: SENDGRID_FROM_EMAIL
+        scope: RUN_AND_BUILD_TIME
+        value: "nicolas.saavedra5@virginiogomez.cl"
+
+      - key: SENDGRID_FROM_NAME
+        scope: RUN_AND_BUILD_TIME
+        value: "Tres Morros de Coliumo"
+
+      # Seguridad / panel admin
+      - key: ADMIN_PASSWORD
+        scope: RUN_TIME
+        type: SECRET
+        value: "TMC_2025_Admin_Secure!"
+
+      - key: ADMIN_SESSION_SECRET
+        scope: RUN_TIME
+        type: SECRET
+        value: "Session_Sec_Random_String_99"
+
+      - key: CRON_SECRET
+        scope: RUN_TIME
+        value: "TMC_Cron_Secret_Key_2025"
 
 workers:
   - name: cron-worker
@@ -64,179 +188,3 @@ workers:
       - key: NEXT_PUBLIC_SITE_URL
         scope: RUN_TIME
         value: "https://www.tresmorroscoliumo.cl"
-    envs:
-      # NODE_ENV
-      - key: NODE_ENV
-        scope: RUN_TIME
-        value: production
-      - key: NODE_ENV
-        scope: BUILD_TIME
-        value: production
-
-      # URLs del sitio
-      - key: NEXT_PUBLIC_SITE_URL
-        scope: RUN_TIME
-        value: "https://www.tresmorroscoliumo.cl"
-      - key: NEXT_PUBLIC_SITE_URL
-        scope: BUILD_TIME
-        value: "https://www.tresmorroscoliumo.cl"
-
-      - key: NEXT_PUBLIC_SITE_ENV
-        scope: RUN_TIME
-        value: "production"
-      - key: NEXT_PUBLIC_SITE_ENV
-        scope: BUILD_TIME
-        value: "production"
-
-      - key: PUBLIC_EXTERNAL_URL
-        scope: RUN_TIME
-        value: "https://www.tresmorroscoliumo.cl"
-      - key: PUBLIC_EXTERNAL_URL
-        scope: BUILD_TIME
-        value: "https://www.tresmorroscoliumo.cl"
-
-      - key: NEXT_PUBLIC_SITE_NAME
-        scope: RUN_TIME
-        value: "Tres Morros de Coliumo"
-      - key: NEXT_PUBLIC_SITE_NAME
-        scope: BUILD_TIME
-        value: "Tres Morros de Coliumo"
-
-      # Supabase
-      - key: NEXT_PUBLIC_SUPABASE_URL
-        scope: RUN_TIME
-        value: "https://tfztguqsdeolxxskumjg.supabase.co"
-      - key: NEXT_PUBLIC_SUPABASE_URL
-        scope: BUILD_TIME
-        value: "https://tfztguqsdeolxxskumjg.supabase.co"
-
-      - key: NEXT_PUBLIC_SUPABASE_ANON_KEY
-        scope: RUN_TIME
-        value: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRmenRndXFzZGVvbHh4c2t1bWpnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI4MjU2NDEsImV4cCI6MjA3ODQwMTY0MX0.rJPmNYxQRtTCKruCtyif7_qk6oJEQ29eluKmkfa-CLA"
-      - key: NEXT_PUBLIC_SUPABASE_ANON_KEY
-        scope: BUILD_TIME
-        value: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRmenRndXFzZGVvbHh4c2t1bWpnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI4MjU2NDEsImV4cCI6MjA3ODQwMTY0MX0.rJPmNYxQRtTCKruCtyif7_qk6oJEQ29eluKmkfa-CLA"
-
-      - key: SUPABASE_SERVICE_ROLE_KEY
-        scope: RUN_TIME
-        value: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRmenRndXFzZGVvbHh4c2t1bWpnIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2MjgyNTY0MSwiZXhwIjoyMDc4NDAxNjQxfQ.6BEnoFAhzJyaMZ5iCayHIQyTMLFFnwdwbbMJ2vcrlO8"
-      - key: SUPABASE_SERVICE_ROLE_KEY
-        scope: BUILD_TIME
-        value: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRmenRndXFzZGVvbHh4c2t1bWpnIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2MjgyNTY0MSwiZXhwIjoyMDc4NDAxNjQxfQ.6BEnoFAhzJyaMZ5iCayHIQyTMLFFnwdwbbMJ2vcrlO8"
-
-      # Flow (sandbox)
-      - key: FLOW_API_KEY
-        scope: RUN_TIME
-        value: "7DAA6E3F-1804-4FBD-999C-805C6988LCB6"
-      - key: FLOW_API_KEY
-        scope: BUILD_TIME
-        value: "7DAA6E3F-1804-4FBD-999C-805C6988LCB6"
-
-      - key: FLOW_SECRET_KEY
-        scope: RUN_TIME
-        value: "76930528c3ce6accbc89187dc50960f932ee864c"
-      - key: FLOW_SECRET_KEY
-        scope: BUILD_TIME
-        value: "76930528c3ce6accbc89187dc50960f932ee864c"
-
-      - key: FLOW_BASE_URL
-        scope: RUN_TIME
-        value: "https://www.flow.cl/api"
-      - key: FLOW_BASE_URL
-        scope: BUILD_TIME
-        value: "https://www.flow.cl/api"
-
-      - key: FLOW_FORCE_MOCK
-        scope: RUN_TIME
-        value: "false"
-      - key: FLOW_FORCE_MOCK
-        scope: BUILD_TIME
-        value: "false"
-
-      - key: FLOW_ALLOW_MOCK_IN_PROD
-        scope: RUN_TIME
-        value: "false"
-      - key: FLOW_ALLOW_MOCK_IN_PROD
-        scope: BUILD_TIME
-        value: "false"
-
-      - key: FLOW_ALLOW_SANDBOX_IN_PROD
-        scope: RUN_TIME
-        value: "false"
-      - key: FLOW_ALLOW_SANDBOX_IN_PROD
-        scope: BUILD_TIME
-        value: "false"
-
-      - key: FLOW_WEBHOOK_SECRET
-        scope: RUN_TIME
-        value: "dev-flow-webhook-secret-123"
-      - key: FLOW_WEBHOOK_SECRET
-        scope: BUILD_TIME
-        value: "dev-flow-webhook-secret-123"
-
-      # Observabilidad / Sentry
-      - key: SENTRY_DSN
-        scope: RUN_TIME
-        value: ""
-      - key: NEXT_PUBLIC_SENTRY_DSN
-        scope: RUN_TIME
-        value: ""
-      - key: NEXT_PUBLIC_SENTRY_TRACES_SAMPLE_RATE
-        scope: RUN_TIME
-        value: "0.1"
-      - key: NEXT_PUBLIC_SENTRY_REPLAYS_SESSION_SAMPLE_RATE
-        scope: RUN_TIME
-        value: "0"
-      - key: NEXT_PUBLIC_SENTRY_REPLAYS_ON_ERROR_SAMPLE_RATE
-        scope: RUN_TIME
-        value: "1"
-      - key: SENTRY_TRACES_SAMPLE_RATE
-        scope: RUN_TIME
-        value: "0.1"
-      - key: SENTRY_PROFILES_SAMPLE_RATE
-        scope: RUN_TIME
-        value: "0.1"
-      - key: SENTRY_AUTH_TOKEN
-        scope: BUILD_TIME
-        value: ""
-      - key: SENTRY_ORG
-        scope: BUILD_TIME
-        value: ""
-      - key: SENTRY_PROJECT
-        scope: BUILD_TIME
-        value: ""
-
-      # SendGrid
-      - key: SENDGRID_API_KEY
-        scope: RUN_TIME
-        value: "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"
-      - key: SENDGRID_API_KEY
-        scope: BUILD_TIME
-        value: "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"
-
-      - key: SENDGRID_FROM_EMAIL
-        scope: RUN_TIME
-        value: "nicolas.saavedra5@virginiogomez.cl"
-      - key: SENDGRID_FROM_EMAIL
-        scope: BUILD_TIME
-        value: "nicolas.saavedra5@virginiogomez.cl"
-
-      - key: SENDGRID_FROM_NAME
-        scope: RUN_TIME
-        value: "Tres Morros de Coliumo"
-      - key: SENDGRID_FROM_NAME
-        scope: BUILD_TIME
-        value: "Tres Morros de Coliumo"
-
-      # Seguridad / panel admin
-      - key: ADMIN_PASSWORD
-        scope: RUN_TIME
-        value: "TMC_2025_Admin_Secure!"
-
-      - key: ADMIN_SESSION_SECRET
-        scope: RUN_TIME
-        value: "Session_Sec_Random_String_99"
-
-      - key: CRON_SECRET
-        scope: RUN_TIME
-        value: "TMC_Cron_Secret_Key_2025"
