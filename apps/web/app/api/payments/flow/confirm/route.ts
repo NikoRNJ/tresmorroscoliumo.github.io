@@ -137,7 +137,7 @@ export async function POST(request: NextRequest) {
 
     if (code === FlowPaymentStatusCode.CANCELLED) {
       await (supabaseAdmin.from('bookings') as any)
-        .update({ status: 'canceled', canceled_at: new Date().toISOString(), flow_payment_data: status })
+        .update({ flow_payment_data: status, flow_order_id: null })
         .eq('id', id)
 
       await (supabaseAdmin.from('api_events') as any).insert({
@@ -145,11 +145,11 @@ export async function POST(request: NextRequest) {
         event_source: 'flow',
         booking_id: id,
         payload: status,
-        status: 'error',
-        error_message: 'Payment cancelled by user',
+        status: 'success',
+        error_message: 'Payment cancelled by user - order cleared',
       })
 
-      return NextResponse.json({ success: false, status: 'cancelled', code: 'CANCELLED', message: 'Pago cancelado' }, { status: 200 })
+      return NextResponse.json({ success: false, status: 'cancelled', code: 'CANCELLED', message: 'Pago cancelado. Puedes intentar nuevamente.' }, { status: 200 })
     }
 
     await (supabaseAdmin.from('api_events') as any).insert({

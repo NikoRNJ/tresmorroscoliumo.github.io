@@ -138,8 +138,8 @@ export async function POST(request: NextRequest) {
     } else if (action === 'cancel') {
       const { error: updateError } = await (supabaseAdmin.from('bookings') as any)
         .update({
-          status: 'canceled',
-          canceled_at: new Date().toISOString(),
+          flow_order_id: null,
+          flow_payment_data: { token, status: 4, cancelled_at: new Date().toISOString() },
         })
         .eq('id', bookingId);
 
@@ -158,14 +158,14 @@ export async function POST(request: NextRequest) {
         payload: {
           token,
           action: 'cancel',
-          canceled_at: new Date().toISOString(),
+          cancelled_at: new Date().toISOString(),
         },
         status: 'success',
       });
 
       return NextResponse.json({
         success: true,
-        message: 'Pago mock cancelado',
+        message: 'Pago mock cancelado. Puedes intentar nuevamente.',
         status: 'canceled',
       });
     }

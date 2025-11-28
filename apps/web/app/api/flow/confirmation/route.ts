@@ -174,9 +174,8 @@ export async function POST(request: NextRequest) {
     if (paymentStatus.status === FlowPaymentStatusCode.CANCELLED) {
       await (supabaseAdmin.from('bookings') as any)
         .update({
-          status: 'canceled',
-          canceled_at: new Date().toISOString(),
           flow_payment_data: paymentStatus,
+          flow_order_id: null,
         })
         .eq('id', bookingId);
 
@@ -185,12 +184,12 @@ export async function POST(request: NextRequest) {
         event_source: 'flow',
         booking_id: bookingId,
         payload: paymentStatus,
-        status: 'error',
-        error_message: 'Payment cancelled by user',
+        status: 'success',
+        error_message: 'Payment cancelled by user - order cleared',
       });
 
       return NextResponse.json(
-        { success: false, status: 'cancelled', code: 'CANCELLED', message: 'Pago cancelado' },
+        { success: false, status: 'cancelled', code: 'CANCELLED', message: 'Pago cancelado. Puedes intentar nuevamente.' },
         { status: 200 }
       );
     }
