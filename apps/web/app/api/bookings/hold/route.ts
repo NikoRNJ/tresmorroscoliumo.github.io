@@ -116,8 +116,7 @@ export async function POST(request: NextRequest) {
       
       // CRÍTICO: Expirar holds vencidos ANTES de insertar para evitar
       // conflictos con el constraint bookings_no_overlap
-      await supabaseAdmin
-        .from('bookings')
+      await (supabaseAdmin.from('bookings') as any)
         .update({ status: 'expired' })
         .eq('cabin_id', cabinId)
         .eq('status', 'pending')
