@@ -37,4 +37,12 @@ describe('FlowClient signature and webhook validation', () => {
     const valid = client.validateWebhookSignature(params as any, bad)
     expect(valid).toBe(false)
   })
+
+  it('returns false when webhook signature length is unexpected', () => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const client = new (flowClient as any).constructor()
+    const params = { token: 'tok-123', apiKey: API_KEY }
+    const valid = client.validateWebhookSignature(params as any, 'short')
+    expect(valid).toBe(false)
+  })
 })

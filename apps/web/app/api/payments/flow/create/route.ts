@@ -90,6 +90,9 @@ export async function POST(request: NextRequest) {
     const runtimeEnv = (process.env.NEXT_PUBLIC_SITE_ENV || process.env.NODE_ENV || '').toLowerCase();
     const isProdRuntime = runtimeEnv === 'production';
     const allowMockInProd = (process.env.FLOW_ALLOW_MOCK_IN_PROD || '').toLowerCase() === 'true';
+    const allowSandboxInProd = (process.env.FLOW_ALLOW_SANDBOX_IN_PROD || '').toLowerCase() === 'true';
+    const flowBaseUrl = (process.env.FLOW_BASE_URL || '').toLowerCase();
+    const baseLooksSandbox = flowBaseUrl.includes('sandbox.flow.cl');
 
     if (isProdRuntime && isMockFlow && !allowMockInProd) {
       const errorMessage = 'Flow está en modo mock en un entorno marcado como producción.';
@@ -113,6 +116,34 @@ export async function POST(request: NextRequest) {
         {
           error:
             'El servicio de pagos no está disponible en este momento. Intenta nuevamente en unos minutos.',
+        },
+        { status: 503 }
+      );
+    }
+
+    if (isProdRuntime && baseLooksSandbox && !allowSandboxInProd) {
+      const errorMessage = 'Flow apunta a sandbox pero el entorno esta marcado como produccion.';
+      const extra = {
+        bookingId,
+        runtimeEnv,
+        flowBaseUrl: process.env.FLOW_BASE_URL,
+      };
+
+      await (supabaseAdmin.from('api_events') as any).insert({
+        event_type: 'flow_payment_error',
+        event_source: 'flow',
+        booking_id: bookingId,
+        payload: extra,
+        status: 'error',
+        error_message: errorMessage,
+      });
+
+      Sentry.captureMessage(errorMessage, { level: 'error', extra });
+
+      return NextResponse.json(
+        {
+          error:
+            'La pasarela de pago esta configurada para sandbox en produccion. Actualiza las credenciales de Flow.',
         },
         { status: 503 }
       );

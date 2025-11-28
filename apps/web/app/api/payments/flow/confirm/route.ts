@@ -44,7 +44,21 @@ export async function POST(request: NextRequest) {
     }
 
     const status = await flowClient.getPaymentStatus(effectiveToken)
-    const id = bookingId || status.commerceOrder
+    const flowBookingId = status?.commerceOrder
+
+    if (bookingId && flowBookingId && bookingId !== flowBookingId) {
+      await (supabaseAdmin.from('api_events') as any).insert({
+        event_type: 'flow_payment_error',
+        event_source: 'flow',
+        booking_id: bookingId,
+        payload: { flowBookingId, token: effectiveToken },
+        status: 'error',
+        error_message: 'Token no corresponde al booking informado',
+      })
+      return NextResponse.json({ success: false, code: 'BOOKING_TOKEN_MISMATCH', message: 'El token no corresponde a la reserva' }, { status: 409 })
+    }
+
+    const id = flowBookingId || bookingId
     if (!id) return NextResponse.json({ success: false, code: 'BOOKING_ID_MISSING', message: 'bookingId no encontrado' }, { status: 400 })
 
     const { data: bookings, error: fetchError } = await supabaseAdmin

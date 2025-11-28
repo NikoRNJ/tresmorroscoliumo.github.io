@@ -21,6 +21,8 @@ const isProdEnv =
 
 const flowForceMock = normalize(process.env.FLOW_FORCE_MOCK).toLowerCase() === 'true';
 const allowMockInProd = toBool(process.env.FLOW_ALLOW_MOCK_IN_PROD);
+const allowSandboxInProd = toBool(process.env.FLOW_ALLOW_SANDBOX_IN_PROD);
+const flowBaseUrl = normalize(process.env.FLOW_BASE_URL).toLowerCase();
 
 if (isProdEnv && flowForceMock && !allowMockInProd) {
   console.error(
@@ -32,6 +34,14 @@ if (isProdEnv && flowForceMock && !allowMockInProd) {
 
 if (isProdEnv && flowForceMock && allowMockInProd) {
   console.warn('⚠️ FLOW_FORCE_MOCK=true en producción (modo mock habilitado explícitamente).');
+}
+
+if (isProdEnv && !flowForceMock && !allowSandboxInProd && flowBaseUrl.includes('sandbox.flow.cl')) {
+  console.error(
+    'OJO: FLOW_BASE_URL apunta a sandbox pero el entorno es produccion.\n' +
+      '   Usa https://www.flow.cl/api y credenciales de produccion o define FLOW_ALLOW_SANDBOX_IN_PROD=true bajo tu propio riesgo.'
+  );
+  process.exit(1);
 }
 
 const needsRealFlow = !flowForceMock || (isProdEnv && !allowMockInProd);
@@ -101,5 +111,4 @@ if (missingOptionals.length > 0) {
 }
 
 console.log('✅ Variables críticas presentes. Continuando con el build...');
-
 

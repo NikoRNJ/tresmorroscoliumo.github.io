@@ -191,10 +191,27 @@ class FlowClient {
     const expectedSignature = this.sign(paramsWithoutSignature);
 
     // Comparar de forma segura (timing-safe)
-    return crypto.timingSafeEqual(
-      Buffer.from(expectedSignature),
-      Buffer.from(receivedSignature)
-    );
+    const expected = Buffer.from(expectedSignature);
+    const received = Buffer.from(receivedSignature);
+
+    if (expected.length !== received.length) {
+      if (this.debug) {
+        console.warn('[Flow] Firma con longitud inesperada', {
+          expectedLength: expected.length,
+          receivedLength: received.length,
+        });
+      }
+      return false;
+    }
+
+    try {
+      return crypto.timingSafeEqual(expected, received);
+    } catch (err) {
+      if (this.debug) {
+        console.warn('[Flow] Error comparando firmas', err);
+      }
+      return false;
+    }
   }
 
   private createMockPayment(params: FlowPaymentParams): FlowPaymentResponse {
