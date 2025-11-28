@@ -41,7 +41,12 @@ function PaymentConfirmationContent() {
           headers: { 'content-type': 'application/json' },
           body: JSON.stringify({ token, bookingId }),
         });
-        const data = await res.json();
+        let data: any;
+        try {
+          data = await res.json();
+        } catch {
+          throw new Error(`Respuesta inesperada del servidor (status ${res.status})`);
+        }
         if (cancelled) return;
 
         if (data.success) {
@@ -229,7 +234,21 @@ function PaymentConfirmationContent() {
 
 export default function PaymentConfirmationPage() {
   return (
-    <Suspense fallback={null}>
+    <Suspense
+      fallback={
+        <Container className="py-16">
+          <div className="mx-auto max-w-2xl text-center">
+            <div className="mb-6 flex justify-center">
+              <div className="rounded-full bg-blue-950 border border-blue-800 p-4">
+                <Clock className="h-12 w-12 text-blue-500 animate-spin" />
+              </div>
+            </div>
+            <h1 className="mb-4 text-3xl font-bold text-white">Cargando</h1>
+            <p className="text-gray-300">Estamos cargando la confirmación de tu pago.</p>
+          </div>
+        </Container>
+      }
+    >
       <PaymentConfirmationContent />
     </Suspense>
   );
