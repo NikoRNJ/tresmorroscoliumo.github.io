@@ -60,13 +60,13 @@ export async function POST(request: NextRequest) {
         if (status.status === FlowPaymentStatusCode.PAID) {
             // Solo actualizar si no estaba pagada ya
             if (booking.status !== 'paid') {
-                const { error: updateError } = await supabaseAdmin
-                    .from('bookings')
+                const { error: updateError } = await (supabaseAdmin
+                    .from('bookings') as any)
                     .update({
                         status: 'paid',
                         paid_at: new Date().toISOString(),
-                        flow_payment_data: status as any,
-                    } as any)
+                        flow_payment_data: status,
+                    })
                     .eq('id', bookingId);
 
                 if (updateError) {
@@ -75,7 +75,7 @@ export async function POST(request: NextRequest) {
                 }
 
                 // Registrar evento
-                await supabaseAdmin.from('api_events').insert({
+                await (supabaseAdmin.from('api_events') as any).insert({
                     event_type: 'payment_confirm_webhook',
                     event_source: 'flow',
                     booking_id: bookingId,
@@ -84,12 +84,12 @@ export async function POST(request: NextRequest) {
                 });
             }
         } else if (status.status === FlowPaymentStatusCode.REJECTED) {
-            await supabaseAdmin
-                .from('bookings')
+            await (supabaseAdmin
+                .from('bookings') as any)
                 .update({ flow_payment_data: status })
                 .eq('id', bookingId);
 
-            await supabaseAdmin.from('api_events').insert({
+            await (supabaseAdmin.from('api_events') as any).insert({
                 event_type: 'payment_rejected_webhook',
                 event_source: 'flow',
                 booking_id: bookingId,
@@ -99,8 +99,8 @@ export async function POST(request: NextRequest) {
             });
         } else if (status.status === FlowPaymentStatusCode.CANCELLED) {
             // Si se cancela, limpiamos la orden para permitir reintentar
-            await supabaseAdmin
-                .from('bookings')
+            await (supabaseAdmin
+                .from('bookings') as any)
                 .update({
                     flow_payment_data: status,
                     flow_order_id: null
