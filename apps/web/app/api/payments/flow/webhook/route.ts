@@ -66,7 +66,7 @@ export async function POST(request: NextRequest) {
                         status: 'paid',
                         paid_at: new Date().toISOString(),
                         flow_payment_data: status as any,
-                    })
+                    } as any)
                     .eq('id', bookingId);
 
                 if (updateError) {
