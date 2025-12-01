@@ -7,7 +7,6 @@
     "node": "20.18.x"
   },
   "scripts": {
-    "prebuild": "pnpm check:env",
     "dev": "pnpm --filter @tresmorros/web dev",
     "build": "pnpm --filter @tresmorros/web build",
     "start": "pnpm --filter @tresmorros/web start",
