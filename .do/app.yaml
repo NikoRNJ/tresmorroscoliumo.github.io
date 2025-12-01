@@ -33,7 +33,7 @@ services:
       timeout_seconds: 10
       success_threshold: 1
       failure_threshold: 3
-    build_command: pnpm install --frozen-lockfile && pnpm build
+    build_command: pnpm install --frozen-lockfile && CHECK_ENV_SKIP=true pnpm build
     run_command: >
       pnpm --filter @tresmorros/web start --hostname 0.0.0.0 --port ${PORT:-3000}
     routes:
