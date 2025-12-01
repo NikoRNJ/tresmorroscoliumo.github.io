@@ -75,24 +75,21 @@ services:
         value: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRmenRndXFzZGVvbHh4c2t1bWpnIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2MjgyNTY0MSwiZXhwIjoyMDc4NDAxNjQxfQ.6BEnoFAhzJyaMZ5iCayHIQyTMLFFnwdwbbMJ2vcrlO8"
 
       # ===========================================================
-      # FLOW SANDBOX - CREDENCIALES 
-      # IMPORTANTE: Las credenciales de Flow deben configurarse
-      # directamente desde el Panel de DigitalOcean para mayor seguridad.
-      # Apps -> tres-morros-app -> Settings -> App-Level Environment Variables
+      # FLOW PRODUCCIÓN - CREDENCIALES REALES
       # ===========================================================
       - key: FLOW_API_KEY
         scope: RUN_AND_BUILD_TIME
         type: SECRET
-        value: "CONFIGURAR_DESDE_PANEL_DIGITALOCEAN"
+        value: "7DAA6E3F-1804-4FBD-999C-805C6988LCB6"
 
       - key: FLOW_SECRET_KEY
         scope: RUN_AND_BUILD_TIME
         type: SECRET
-        value: "CONFIGURAR_DESDE_PANEL_DIGITALOCEAN"
+        value: "76930528c3ce6accbc89187dc50960f932ee864c"
 
       - key: FLOW_BASE_URL
         scope: RUN_AND_BUILD_TIME
-        value: "https://sandbox.flow.cl/api"
+        value: "https://www.flow.cl/api"
 
       - key: FLOW_FORCE_MOCK
         scope: RUN_AND_BUILD_TIME
@@ -102,14 +99,13 @@ services:
         scope: RUN_AND_BUILD_TIME
         value: "false"
 
-      # CRÍTICO: Habilita sandbox en producción para pruebas
       - key: FLOW_ALLOW_SANDBOX_IN_PROD
         scope: RUN_AND_BUILD_TIME
-        value: "true"
+        value: "false"
 
       - key: FLOW_WEBHOOK_SECRET
         scope: RUN_AND_BUILD_TIME
-        value: "dev-flow-webhook-secret-123"
+        value: "tresmorros-webhook-secret-prod-2025"
 
       # Observabilidad / Sentry
       - key: SENTRY_DSN
