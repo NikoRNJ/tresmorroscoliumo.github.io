@@ -37,10 +37,15 @@ export async function GET() {
     issues.push('NEXT_PUBLIC_SITE_URL no configurada (requerida para callbacks)')
   }
   
-  // Mostrar URLs de callback que se usarán
+  // Advertencia si está usando sandbox en producción
+  if (isProdRuntime && isSandbox) {
+    issues.push('⚠️ FLOW_BASE_URL apunta a SANDBOX en entorno de PRODUCCIÓN. Cambia a https://www.flow.cl/api')
+  }
+  
+  // Mostrar URLs de callback que se usarán (rutas correctas)
   const callbackUrls = siteUrl ? {
-    confirmation: `${siteUrl.replace(/\/$/, '')}/api/flow/confirmation`,
-    return: `${siteUrl.replace(/\/$/, '')}/api/flow/return`,
+    webhook: `${siteUrl.replace(/\/$/, '')}/api/payments/flow/webhook`,
+    return: `${siteUrl.replace(/\/$/, '')}/api/payments/flow/return`,
   } : null
   
   return NextResponse.json({
