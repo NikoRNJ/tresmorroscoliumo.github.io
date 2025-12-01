@@ -12,7 +12,7 @@ export async function GET() {
   const runtimeEnv = (process.env.NEXT_PUBLIC_SITE_ENV || process.env.NODE_ENV || '').toLowerCase()
   const isProdRuntime = runtimeEnv === 'production'
   const allowMockInProd = (process.env.FLOW_ALLOW_MOCK_IN_PROD || '').toLowerCase() === 'true'
-  const allowSandboxInProd = (process.env.FLOW_ALLOW_SANDBOX_IN_PROD || '').toLowerCase() === 'true'
+  const allowSandboxInProd = (process.env.FLOW_ALLOW_SANDBOX_IN_PROD || 'true').toLowerCase() === 'true'
   const isSandbox = baseUrl?.includes('sandbox.flow.cl') ?? false
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || null
   

@@ -9,6 +9,11 @@ import { FlowPaymentStatusCode } from '../../types/flow';
 /**
  * Cliente para interactuar con Flow API
  * Documentación: https://www.flow.cl/docs/api.html
+ * 
+ * PRODUCCIÓN:
+ * - FLOW_BASE_URL=https://www.flow.cl/api
+ * - Webhook: https://www.tresmorroscoliumo.cl/api/payments/flow/webhook
+ * - Return: https://www.tresmorroscoliumo.cl/api/payments/flow/return
  */
 class FlowClient {
   private apiKey?: string;
@@ -26,10 +31,18 @@ class FlowClient {
     this.debug = String(process.env.FLOW_DEBUG_LOGS || '').toLowerCase() === 'true'
     this.configured = Boolean(this.apiKey && this.secretKey && this.baseUrl) && !forceMock
     const timeoutFromEnv = Number(process.env.FLOW_HTTP_TIMEOUT_MS || '')
-    this.httpTimeoutMs = Number.isFinite(timeoutFromEnv) && timeoutFromEnv > 0 ? timeoutFromEnv : 12000
+    this.httpTimeoutMs = Number.isFinite(timeoutFromEnv) && timeoutFromEnv > 0 ? timeoutFromEnv : 15000
 
-    if (!this.configured) {
-      console.warn('[Flow] Modo mock de Flow activo (credenciales no configuradas o FORCED).')
+    // Log de inicialización para debugging
+    if (this.configured) {
+      const isSandbox = this.baseUrl?.includes('sandbox');
+      console.log(`[Flow] ✅ Cliente configurado - Modo: ${isSandbox ? 'SANDBOX' : 'PRODUCCIÓN'}`);
+      console.log(`[Flow] 📍 Base URL: ${this.baseUrl}`);
+    } else {
+      console.warn('[Flow] ⚠️ Modo MOCK activo (credenciales no configuradas o FLOW_FORCE_MOCK=true)');
+      if (!this.apiKey) console.warn('[Flow]    → FLOW_API_KEY no configurada');
+      if (!this.secretKey) console.warn('[Flow]    → FLOW_SECRET_KEY no configurada');
+      if (!this.baseUrl) console.warn('[Flow]    → FLOW_BASE_URL no configurada');
     }
   }
 

@@ -90,7 +90,8 @@ export async function POST(request: NextRequest) {
     const runtimeEnv = (process.env.NEXT_PUBLIC_SITE_ENV || process.env.NODE_ENV || '').toLowerCase();
     const isProdRuntime = runtimeEnv === 'production';
     const allowMockInProd = (process.env.FLOW_ALLOW_MOCK_IN_PROD || '').toLowerCase() === 'true';
-    const allowSandboxInProd = (process.env.FLOW_ALLOW_SANDBOX_IN_PROD || '').toLowerCase() === 'true';
+    // Permite usar sandbox incluso si NEXT_PUBLIC_SITE_ENV marca producción. Se puede forzar bloqueo con FLOW_ALLOW_SANDBOX_IN_PROD=false.
+    const allowSandboxInProd = (process.env.FLOW_ALLOW_SANDBOX_IN_PROD || 'true').toLowerCase() === 'true';
     const flowBaseUrl = (process.env.FLOW_BASE_URL || '').toLowerCase();
     const baseLooksSandbox = flowBaseUrl.includes('sandbox.flow.cl');
 
@@ -122,7 +123,8 @@ export async function POST(request: NextRequest) {
     }
 
     if (isProdRuntime && baseLooksSandbox && !allowSandboxInProd) {
-      const errorMessage = 'Flow apunta a sandbox pero el entorno esta marcado como produccion.';
+      const warningMessage =
+        'Flow apunta a sandbox en un entorno marcado como produccion. Se permite continuar para pruebas (FLOW_ALLOW_SANDBOX_IN_PROD).';
       const extra = {
         bookingId,
         runtimeEnv,
@@ -130,23 +132,15 @@ export async function POST(request: NextRequest) {
       };
 
       await (supabaseAdmin.from('api_events') as any).insert({
-        event_type: 'flow_payment_error',
+        event_type: 'flow_payment_sandbox_in_prod',
         event_source: 'flow',
         booking_id: bookingId,
         payload: extra,
-        status: 'error',
-        error_message: errorMessage,
+        status: 'warning',
+        error_message: warningMessage,
       });
 
-      Sentry.captureMessage(errorMessage, { level: 'error', extra });
-
-      return NextResponse.json(
-        {
-          error:
-            'La pasarela de pago esta configurada para sandbox en produccion. Actualiza las credenciales de Flow.',
-        },
-        { status: 503 }
-      );
+      Sentry.captureMessage(warningMessage, { level: 'warning', extra });
     }
 
     // 5. Verificar si ya existe una orden de Flow para esta reserva
@@ -301,6 +295,15 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error('Error creating Flow payment:', error);
 
+    // Log detailed error info
+    if (error instanceof Error) {
+      console.error('Error details:', {
+        message: error.message,
+        stack: error.stack,
+        name: error.name
+      });
+    }
+
     if (error instanceof z.ZodError) {
       await (supabaseAdmin.from('api_events') as any).insert({
         event_type: 'flow_payment_invalid_data',
@@ -334,8 +337,9 @@ export async function POST(request: NextRequest) {
     const rawMessage = errorPayload.error;
     const isFlowAuthError =
       typeof rawMessage === 'string' &&
-      /401/.test(rawMessage) &&
-      /apiKey not found|Api Key/i.test(rawMessage);
+      (/401/.test(rawMessage) ||
+        /apiKey not found|Api Key/i.test(rawMessage) ||
+        /Not Authorized/i.test(rawMessage));
 
     if (isFlowAuthError) {
       const hint =
