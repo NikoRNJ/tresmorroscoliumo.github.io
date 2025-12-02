@@ -110,7 +110,7 @@ CREATE TABLE IF NOT EXISTS bookings (
   
   -- Timestamps
   created_at TIMESTAMPTZ DEFAULT now(),
-  expires_at TIMESTAMPTZ, -- Para holds temporales de 20 minutos
+  expires_at TIMESTAMPTZ, -- Para holds temporales de 45 minutos (tiempo para completar pago)
   paid_at TIMESTAMPTZ,
   canceled_at TIMESTAMPTZ
 );
@@ -132,9 +132,9 @@ ALTER TABLE bookings
   )
   WHERE status IN ('pending', 'paid');
 
-COMMENT ON TABLE bookings IS 'Reservas de cabañas (incluye pending holds y confirmadas)';
-COMMENT ON COLUMN bookings.status IS 'pending=hold temporal, paid=confirmada, expired=hold expirado, canceled=cancelada';
-COMMENT ON COLUMN bookings.expires_at IS 'Momento en que expira el hold (20 min desde creación)';
+COMMENT ON TABLE bookings IS 'Reservas de cabañas (incluye pending holds y confirmadas). Los holds tienen 45 min para completar pago antes de expirar.';
+COMMENT ON COLUMN bookings.status IS 'pending=hold temporal (45 min), paid=confirmada, expired=hold expirado, canceled=cancelada';
+COMMENT ON COLUMN bookings.expires_at IS 'Momento en que expira el hold (45 min desde creación). IMPORTANTE: El constraint bookings_no_overlap no considera expires_at, por eso los holds vencidos deben actualizarse a status=expired antes de crear nuevas reservas.';
 COMMENT ON COLUMN bookings.jacuzzi_days IS 'Array de fechas ISO donde se solicita jacuzzi: ["2025-12-25", "2025-12-26"]';
 
 -- ==============================================
