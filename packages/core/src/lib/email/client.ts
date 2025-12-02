@@ -7,12 +7,27 @@ import type { EmailSendResult } from '../../types/email';
  * Usa @emailjs/nodejs (versión servidor) para proteger las credenciales.
  * Conectado a Gmail a través del servicio de EmailJS.
  * 
- * CONFIGURACIÓN REQUERIDA EN EMAILJS DASHBOARD:
- * 1. Crear cuenta en https://emailjs.com
- * 2. Email Services -> Add New Service -> Gmail
- * 3. Email Templates -> Create New Template
- * 4. Account -> API Keys (Public Key + Private Key)
+ * VARIABLES DE ENTORNO REQUERIDAS:
+ * - EMAILJS_PUBLIC_KEY: Clave pública de EmailJS
+ * - EMAILJS_PRIVATE_KEY: Clave privada de EmailJS (encriptar en DigitalOcean)
+ * - EMAILJS_SERVICE_ID: ID del servicio de Gmail en EmailJS
+ * - EMAILJS_TEMPLATE_ID: ID del template de email en EmailJS
+ * 
+ * OPCIONALES:
+ * - EMAILJS_FROM_NAME: Nombre del remitente (default: "Tres Morros de Coliumo")
+ * - EMAILJS_FROM_EMAIL: Email del remitente para logs
+ * - EMAILJS_MAX_RETRIES: Número de reintentos (default: 3)
  */
+
+/**
+ * Lista de variables de entorno requeridas
+ */
+const REQUIRED_ENV_VARS = [
+  'EMAILJS_PUBLIC_KEY',
+  'EMAILJS_PRIVATE_KEY', 
+  'EMAILJS_SERVICE_ID',
+  'EMAILJS_TEMPLATE_ID',
+] as const;
 
 /**
  * Interfaz para los datos del email
@@ -23,6 +38,23 @@ export interface EmailData {
   text?: string;
   html?: string;
   from?: { email: string; name: string };
+}
+
+/**
+ * Validar que todas las variables de entorno requeridas estén presentes
+ * @returns Array de variables faltantes
+ */
+function validateEnvVars(): string[] {
+  const missing: string[] = [];
+  
+  for (const varName of REQUIRED_ENV_VARS) {
+    const value = process.env[varName];
+    if (!value || value.trim() === '' || value.includes('tu_')) {
+      missing.push(varName);
+    }
+  }
+  
+  return missing;
 }
 
 /**
@@ -37,35 +69,51 @@ class EmailClient {
   private fromName: string = 'Tres Morros de Coliumo';
 
   constructor() {
-    // Lazy initialization
+    // Lazy initialization - no hacer nada aquí
   }
 
-  private initialize() {
+  /**
+   * Inicialización lazy del cliente
+   * Solo se ejecuta una vez cuando se necesita
+   */
+  private initialize(): void {
     if (this.initialized) return;
 
-    const publicKey = process.env.EMAILJS_PUBLIC_KEY;
-    const privateKey = process.env.EMAILJS_PRIVATE_KEY;
-    const serviceId = process.env.EMAILJS_SERVICE_ID;
-    const templateId = process.env.EMAILJS_TEMPLATE_ID;
-    const fromName = process.env.EMAILJS_FROM_NAME || 'Tres Morros de Coliumo';
-
     console.log('🔧 [EmailJS] Initializing client...');
-    console.log('   Public Key present:', !!publicKey);
-    console.log('   Private Key present:', !!privateKey);
-    console.log('   Service ID:', serviceId || 'MISSING');
-    console.log('   Template ID:', templateId || 'MISSING');
-    console.log('   From Name:', fromName);
 
-    if (!publicKey || !privateKey || !serviceId || !templateId) {
-      console.warn('⚠️ [EmailJS] Missing required configuration. Emails will not be sent.');
-      console.warn('   Required: EMAILJS_PUBLIC_KEY, EMAILJS_PRIVATE_KEY, EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID');
+    // 1. VALIDACIÓN: Verificar que todas las variables existan
+    const missingVars = validateEnvVars();
+    
+    if (missingVars.length > 0) {
+      console.error('❌ [EmailJS] CONFIGURATION ERROR - Missing environment variables:');
+      missingVars.forEach(varName => {
+        console.error(`   ❌ ${varName} is MISSING or invalid`);
+      });
+      console.error('');
+      console.error('   👉 Configure these variables in DigitalOcean App Platform:');
+      console.error('      Settings → App-Level Environment Variables');
+      console.error('');
       this.isConfigured = false;
       this.initialized = true;
       return;
     }
 
+    // 2. SEGURIDAD: Obtener valores de process.env (nunca hardcodeados)
+    const publicKey = process.env.EMAILJS_PUBLIC_KEY!;
+    const privateKey = process.env.EMAILJS_PRIVATE_KEY!;
+    const serviceId = process.env.EMAILJS_SERVICE_ID!;
+    const templateId = process.env.EMAILJS_TEMPLATE_ID!;
+    const fromName = process.env.EMAILJS_FROM_NAME || 'Tres Morros de Coliumo';
+
+    // Log de configuración (sin mostrar claves completas)
+    console.log('   ✓ EMAILJS_PUBLIC_KEY:', publicKey.substring(0, 8) + '...');
+    console.log('   ✓ EMAILJS_PRIVATE_KEY:', '***' + privateKey.slice(-4));
+    console.log('   ✓ EMAILJS_SERVICE_ID:', serviceId);
+    console.log('   ✓ EMAILJS_TEMPLATE_ID:', templateId);
+    console.log('   ✓ From Name:', fromName);
+
     try {
-      // Inicializar EmailJS con las claves
+      // 3. Inicializar EmailJS SDK
       emailjs.init({
         publicKey: publicKey,
         privateKey: privateKey,
@@ -78,8 +126,9 @@ class EmailClient {
       this.initialized = true;
 
       console.log('✅ [EmailJS] Client initialized successfully');
-    } catch (error) {
-      console.error('❌ [EmailJS] Error initializing:', error);
+      console.log('');
+    } catch (error: any) {
+      console.error('❌ [EmailJS] Failed to initialize SDK:', error?.message || error);
       this.isConfigured = false;
       this.initialized = true;
     }
@@ -121,14 +170,16 @@ class EmailClient {
 
     const mode: EmailSendResult['mode'] = this.isConfigured ? 'live' : 'mock';
 
+    // Verificar configuración
     if (!this.isConfigured) {
-      console.warn('⚠️ [EmailJS] Not configured. Email not sent:', {
-        to: this.resolveRecipient(mailData.to),
-        subject: mailData.subject,
-      });
+      const missingVars = validateEnvVars();
+      console.error('⚠️ [EmailJS] Cannot send email - client not configured');
+      if (missingVars.length > 0) {
+        console.error('   Missing variables:', missingVars.join(', '));
+      }
       return {
         success: false,
-        error: 'EMAILJS_NOT_CONFIGURED',
+        error: `EMAILJS_NOT_CONFIGURED: Missing ${missingVars.join(', ')}`,
         mode,
       };
     }
@@ -140,21 +191,22 @@ class EmailClient {
       console.error('❌ [EmailJS] No recipient email provided');
       return {
         success: false,
-        error: 'NO_RECIPIENT',
+        error: 'NO_RECIPIENT_EMAIL',
         mode,
       };
     }
 
     const maxAttempts = Math.max(1, Number(process.env.EMAILJS_MAX_RETRIES || 3));
-    let lastError: unknown = null;
+    let lastError: any = null;
 
     for (let attempt = 1; attempt <= maxAttempts; attempt++) {
       try {
-        console.log(`📧 [EmailJS] Attempt ${attempt}/${maxAttempts} - Sending to: ${recipientEmail}`);
+        console.log(`📧 [EmailJS] Attempt ${attempt}/${maxAttempts}`);
+        console.log(`   To: ${recipientEmail}`);
         console.log(`   Subject: ${mailData.subject}`);
 
         // Preparar los parámetros del template
-        // Estos nombres deben coincidir con las variables en tu template de EmailJS
+        // IMPORTANTE: Estos nombres DEBEN coincidir con las variables en tu template de EmailJS
         const templateParams = {
           to_email: recipientEmail,
           to_name: recipientName,
@@ -162,25 +214,26 @@ class EmailClient {
           subject: mailData.subject,
           message: mailData.text || '',
           message_html: mailData.html || mailData.text || '',
-          // Variables adicionales que podrías necesitar
           reply_to: process.env.EMAILJS_REPLY_TO || recipientEmail,
         };
 
+        // Enviar email
         const response = await emailjs.send(
           this.serviceId,
           this.templateId,
           templateParams
         );
 
-        console.log(`✅ [EmailJS] Email sent successfully to ${recipientEmail}`, {
-          status: response.status,
-          text: response.text,
-          attempts: attempt,
-        });
+        // ÉXITO
+        console.log(`✅ [EmailJS] Email sent successfully!`);
+        console.log(`   Recipient: ${recipientEmail}`);
+        console.log(`   Status: ${response.status}`);
+        console.log(`   Response: ${response.text}`);
+        console.log(`   Attempts: ${attempt}`);
 
         return {
           success: true,
-          messageId: `emailjs-${Date.now()}`,
+          messageId: `emailjs-${Date.now()}-${response.status}`,
           attempts: attempt,
           mode,
         };
@@ -188,50 +241,63 @@ class EmailClient {
       } catch (error: any) {
         lastError = error;
 
-        // DEBUGGING COMPLETO para logs
-        console.error(`❌ [EmailJS] Error sending email (attempt ${attempt}/${maxAttempts})`);
+        // MANEJO DE ERRORES ROBUSTO
+        console.error(`❌ [EmailJS] Send failed (attempt ${attempt}/${maxAttempts})`);
         
-        // Extraer información del error de forma segura
-        if (error) {
-          console.error('📋 [EmailJS] Error Status:', error.status || 'N/A');
-          console.error('📋 [EmailJS] Error Text:', error.text || error.message || 'Unknown');
-          
-          // Si el error tiene más propiedades, mostrarlas
-          if (typeof error === 'object') {
-            console.error('📋 [EmailJS] Full Error:', JSON.stringify(error, null, 2));
-          }
-
-          // Diagnóstico específico
-          const status = error.status;
-          if (status === 401 || status === 403) {
-            console.error('🔴 [EmailJS] ERROR AUTHENTICATION');
-            console.error('   👉 Verifica EMAILJS_PUBLIC_KEY y EMAILJS_PRIVATE_KEY');
-            console.error('   👉 Asegúrate de que las claves sean correctas en EmailJS Dashboard');
-          } else if (status === 400) {
-            console.error('🔴 [EmailJS] ERROR BAD REQUEST');
-            console.error('   👉 Verifica EMAILJS_SERVICE_ID y EMAILJS_TEMPLATE_ID');
-            console.error('   👉 Revisa que las variables del template coincidan');
-          } else if (status === 422) {
-            console.error('🔴 [EmailJS] ERROR VALIDATION');
-            console.error('   👉 El template tiene variables requeridas faltantes');
-          }
-        } else {
-          console.error('📋 [EmailJS] Raw error:', error);
+        // Extraer información del error de forma segura (evita errores de TypeScript)
+        const errorStatus = error?.status ?? error?.code ?? 'UNKNOWN';
+        const errorText = error?.text ?? error?.message ?? 'No error message available';
+        
+        console.error(`   Status: ${errorStatus}`);
+        console.error(`   Message: ${errorText}`);
+        
+        // Log completo del error para debugging
+        try {
+          const errorDetails = JSON.stringify(error, Object.getOwnPropertyNames(error), 2);
+          console.error(`   Full Error: ${errorDetails}`);
+        } catch {
+          console.error(`   Raw Error:`, error);
         }
 
+        // Diagnóstico específico por código de error
+        if (errorStatus === 401 || errorStatus === 403) {
+          console.error('');
+          console.error('🔴 AUTHENTICATION ERROR');
+          console.error('   → Check EMAILJS_PUBLIC_KEY is correct');
+          console.error('   → Check EMAILJS_PRIVATE_KEY is correct');
+          console.error('   → Verify keys in EmailJS Dashboard → Account → API Keys');
+        } else if (errorStatus === 400) {
+          console.error('');
+          console.error('🔴 BAD REQUEST ERROR');
+          console.error('   → Check EMAILJS_SERVICE_ID exists in EmailJS Dashboard');
+          console.error('   → Check EMAILJS_TEMPLATE_ID exists in EmailJS Dashboard');
+        } else if (errorStatus === 422) {
+          console.error('');
+          console.error('🔴 TEMPLATE VALIDATION ERROR');
+          console.error('   → Your template requires variables that are missing');
+          console.error('   → Check template variables match: to_email, to_name, from_name, subject, message_html');
+        } else if (errorStatus === 429) {
+          console.error('');
+          console.error('🔴 RATE LIMIT ERROR');
+          console.error('   → You have exceeded the EmailJS rate limit');
+          console.error('   → Free tier: 200 emails/month');
+        }
+
+        // Retry con backoff
         if (attempt < maxAttempts) {
-          const waitMs = attempt * 500;
-          console.log(`⏳ [EmailJS] Waiting ${waitMs}ms before retry...`);
+          const waitMs = attempt * 1000;
+          console.log(`⏳ [EmailJS] Retrying in ${waitMs}ms...`);
           await new Promise((resolve) => setTimeout(resolve, waitMs));
         }
       }
     }
 
+    // Todos los intentos fallaron
+    const finalErrorMessage = lastError?.text ?? lastError?.message ?? 'Email send failed after all retries';
+    
     return {
       success: false,
-      error: lastError instanceof Error 
-        ? lastError.message 
-        : (lastError as any)?.text || 'Unknown error sending email',
+      error: finalErrorMessage,
       attempts: maxAttempts,
       mode,
     };
@@ -239,7 +305,6 @@ class EmailClient {
 
   /**
    * Obtener configuración del remitente por defecto
-   * (Mantiene compatibilidad con el código existente)
    */
   getDefaultFrom() {
     this.initialize();
@@ -250,7 +315,7 @@ class EmailClient {
   }
 
   /**
-   * Verificar si EmailJS está listo
+   * Verificar si EmailJS está listo para enviar emails
    */
   isReady(): boolean {
     this.initialize();
