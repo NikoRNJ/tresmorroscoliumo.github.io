@@ -5,7 +5,7 @@ export const galleryCollections: GalleryCollection[] = [
     id: 'exteriores',
     label: 'EXTERIORES',
     images: [
-      { src: '/images/exterior/IMG_1210.jpeg', alt: 'Vista exterior de las cabañas' },
+      { src: '/images/cabins/vegas-del-coliumo/1.jpg', alt: 'Cabaña Vegas del Coliumo' },
       { src: '/images/exterior/IMG_1215.jpeg', alt: 'Entorno natural de Coliumo' },
       { src: '/images/exterior/IMG_1216.jpeg', alt: 'Área exterior con vista al mar' },
       { src: '/images/exterior/IMG_1217.jpeg', alt: 'Fachada de las cabañas' },
