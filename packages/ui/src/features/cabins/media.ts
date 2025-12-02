@@ -19,7 +19,7 @@ const cabinGalleryMap = {
     { src: '/images/cabins/caleta-del-medio/4.jpg', alt: 'Terraza de Caleta del Medio' },
   ],
   'vegas-del-coliumo': [
-    { src: '/images/cabins/vegas-del-coliumo/1.jpg', alt: 'Entrada a Vegas del Coliumo' },
+    { src: '/images/cabins/vegas-del-coliumo/IMG_1210.jpeg', alt: 'Cartel de bienvenida a Vegas del Coliumo' },
     { src: '/images/cabins/vegas-del-coliumo/2.jpg', alt: 'Zona de estar de Vegas del Coliumo' },
     { src: '/images/cabins/vegas-del-coliumo/3.jpg', alt: 'Ambiente nocturno en Vegas del Coliumo' },
     { src: '/images/cabins/vegas-del-coliumo/4.jpg', alt: 'Terraza con vista al mar en Vegas del Coliumo' },
