@@ -1,5 +1,5 @@
 import sgMail from '@sendgrid/mail';
-import type { MailDataRequired, ResponseError } from '@sendgrid/mail';
+import type { MailDataRequired } from '@sendgrid/mail';
 import type { EmailSendResult } from '../../types/email';
 
 /**
@@ -152,15 +152,17 @@ class EmailClient {
         // DEBUGGING COMPLETO para DigitalOcean logs
         console.error(`❌ [SendGrid] Error sending email (attempt ${attempt}/${maxAttempts})`);
         
-        // Extraer el detalle del error de SendGrid
-        const sgError = error as ResponseError;
-        if (sgError.response) {
-          console.error('📋 [SendGrid] Response Status:', sgError.response.statusCode);
-          console.error('📋 [SendGrid] Response Headers:', JSON.stringify(sgError.response.headers, null, 2));
-          console.error('📋 [SendGrid] Response Body:', JSON.stringify(sgError.response.body, null, 2));
+        // Extraer el detalle del error de SendGrid (usando any para evitar errores de tipos)
+        const sgError = error as any;
+        if (sgError?.response) {
+          const response = sgError.response as any;
+          const statusCode = response?.statusCode as number | undefined;
+          
+          console.error('📋 [SendGrid] Response Status:', statusCode);
+          console.error('📋 [SendGrid] Response Headers:', JSON.stringify(response?.headers, null, 2));
+          console.error('📋 [SendGrid] Response Body:', JSON.stringify(response?.body, null, 2));
           
           // Diagnóstico específico por código de error
-          const statusCode = sgError.response.statusCode;
           if (statusCode === 401) {
             console.error('🔴 [SendGrid] ERROR 401 - UNAUTHORIZED');
             console.error('   👉 La API Key es inválida o ha expirado');
