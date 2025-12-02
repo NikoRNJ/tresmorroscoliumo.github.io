@@ -4,4 +4,4 @@
  * Este archivo existe para mantener compatibilidad con los imports
  * que usan @/lib/email/client en las API routes de la app web.
  */
-export { emailClient, type EmailData } from '@tresmorros/core/lib/email/client';
+export { emailClient, type EmailData } from '@tresmorros/core';
