@@ -116,27 +116,49 @@ const nearbySpots: { name: string; description: string; distance: string; icon: 
 
 export function LocationSection() {
   return (
-    <Section padding="lg" dark>
+    <Section id="ubicacion" padding="lg" dark>
       <Container>
+        {/* ============================================
+            CONTENIDO SEO OPTIMIZADO - Sección Ubicación
+            Keywords: turismo coliumo, donde alojar coliumo, cerca de tomé
+            ============================================ */}
         <div className="text-center mb-12">
-          <h2 className="heading-secondary mb-4">
-            <span className="text-primary-500">Ubicación</span>
-          </h2>
-          <p className="text-xl text-gray-400 max-w-3xl mx-auto mb-8">
-            Coliumo, Región del Bío-Bío, Chile. Un paraíso natural entre el mar y la montaña.
+          <p className="text-sm uppercase tracking-[0.4em] text-primary-300 mb-3">
+            Turismo en Coliumo, Región del Biobío
           </p>
+          <h2 className="heading-secondary mb-4">
+            <span className="text-primary-500">Ubicación</span> Privilegiada
+          </h2>
+          
+          {/* Párrafo SEO optimizado sobre la ubicación */}
+          <div className="text-lg text-gray-300 max-w-4xl mx-auto space-y-4 mb-8">
+            <p>
+              <strong>Coliumo</strong> es una joya escondida en la costa de la <strong>Región del Biobío</strong>, 
+              a solo <strong>30 minutos de Tomé</strong> y <strong>1 hora de Concepción</strong>. Este pequeño 
+              pueblo de pescadores conserva la autenticidad del litoral chileno: caletas tradicionales, 
+              playas de arena dorada y una tranquilidad que no encontrarás en destinos masificados.
+            </p>
+            <p className="text-gray-400">
+              Nuestras cabañas están ubicadas en el sector <strong>Tres Morros</strong>, nombrado así por 
+              las tres formaciones rocosas que emergen del mar frente a la costa. Desde aquí tendrás 
+              acceso directo a <strong>playas vírgenes</strong>, <strong>restaurantes de mariscos frescos</strong>, 
+              senderos naturales y la famosa <strong>caleta de pescadores</strong> donde podrás comprar 
+              productos del mar recién capturados.
+            </p>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
           <div className="rounded-xl overflow-hidden shadow-2xl h-[400px] bg-dark-900">
             <iframe
-              src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d51094.77269237779!2d-72.97753384863282!3d-36.56899600000001!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x9669c5b1b1b1b1b1%3A0x1b1b1b1b1b1b1b1b!2sColiumo%2C%20Regi%C3%B3n%20del%20B%C3%ADo-B%C3%ADo!5e0!3m2!1ses!2scl!4v1699999999999!5m2!1ses!2scl"
+              src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3254.8!2d-72.9575!3d-36.5689!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x9669b8c3f2f2f2f3%3A0x1234567890abcdef!2sCaba%C3%B1as%20Tres%20Morros%20Coliumo!5e0!3m2!1ses-419!2scl!4v1699999999999!5m2!1ses-419!2scl"
               width="100%"
               height="100%"
               style={{ border: 0 }}
               allowFullScreen
               loading="lazy"
               referrerPolicy="no-referrer-when-downgrade"
+              title="Mapa de ubicación - Cabañas Tres Morros Coliumo"
             ></iframe>
           </div>
 
@@ -166,7 +188,9 @@ export function LocationSection() {
               <div>
                 <h3 className="text-xl font-bold text-white mb-2">Dirección</h3>
                 <p className="text-gray-400">
-                  Coliumo, Región del Bío-Bío
+                  Sector Tres Morros, Coliumo
+                  <br />
+                  Tomé, Región del Biobío
                   <br />
                   Chile
                 </p>
@@ -190,11 +214,13 @@ export function LocationSection() {
                 </svg>
               </div>
               <div>
-                <h3 className="text-xl font-bold text-white mb-2">Acceso</h3>
+                <h3 className="text-xl font-bold text-white mb-2">Cómo Llegar</h3>
                 <p className="text-gray-400">
-                  A 30 minutos de Tomé
+                  <strong>Desde Tomé:</strong> 30 min por Ruta 150
                   <br />
-                  A 1 hora de Concepción
+                  <strong>Desde Concepción:</strong> 1 hora
+                  <br />
+                  <strong>Desde Dichato:</strong> 20 min
                 </p>
               </div>
             </div>
@@ -216,25 +242,29 @@ export function LocationSection() {
                 </svg>
               </div>
               <div>
-                <h3 className="text-xl font-bold text-white mb-2">Entorno</h3>
+                <h3 className="text-xl font-bold text-white mb-2">Entorno Natural</h3>
                 <p className="text-gray-400">
-                  Playas vírgenes
+                  Playas de arena dorada
                   <br />
-                  Caleta de pescadores
+                  Caleta de pescadores artesanales
                   <br />
-                  Senderos naturales
+                  Senderos y bosque nativo
+                  <br />
+                  Vista a Los Tres Morros
                 </p>
               </div>
             </div>
           </div>
         </div>
 
+        {/* Sección de puntos cercanos */}
         <div className="mt-16">
           <div className="text-center mb-10">
-            <p className="text-sm uppercase tracking-[0.4em] text-primary-300 mb-3">Alrededores</p>
-            <h3 className="text-3xl font-semibold text-white mb-3">Puntos cercanos para disfrutar</h3>
-            <p className="text-lg text-gray-400">
-              Playas, almacenes y rutas turísticas que completan la experiencia tres morros.
+            <p className="text-sm uppercase tracking-[0.4em] text-primary-300 mb-3">Qué Hacer en Coliumo</p>
+            <h3 className="text-3xl font-semibold text-white mb-3">Puntos de Interés Cercanos</h3>
+            <p className="text-lg text-gray-400 max-w-3xl mx-auto">
+              Desde nuestras cabañas podrás explorar playas, degustar gastronomía local y 
+              conectar con la naturaleza del litoral del Biobío.
             </p>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">

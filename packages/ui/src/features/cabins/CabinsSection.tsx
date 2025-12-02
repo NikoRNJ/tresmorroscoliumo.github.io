@@ -18,14 +18,32 @@ export function CabinsSection({ cabins }: CabinsSectionProps) {
   return (
     <Section id="cabanas" padding="lg" dark>
       <Container>
+        {/* ============================================
+            CONTENIDO SEO OPTIMIZADO - Sección Cabañas
+            H2 principal con keyword "Cabañas en Coliumo"
+            ============================================ */}
         <div className="text-center mb-16">
-          <h2 className="heading-secondary mb-4">
-            Nuestras <span className="text-primary-500">Cabañas</span>
-          </h2>
-          <p className="text-xl text-gray-400 max-w-3xl mx-auto">
-            Espacios diseñados para tu comodidad y cercanía con la naturaleza. Todas nuestras
-            cabañas cuentan con capacidad para 7 personas.
+          <p className="text-sm uppercase tracking-[0.4em] text-primary-300 mb-3">
+            Arriendo de Cabañas en Coliumo
           </p>
+          <h2 className="heading-secondary mb-6">
+            Nuestras <span className="text-primary-500">Cabañas</span> Frente al Mar
+          </h2>
+          
+          {/* Párrafo SEO optimizado con keywords naturales */}
+          <div className="text-lg text-gray-300 max-w-4xl mx-auto space-y-4">
+            <p>
+              Descubre el alojamiento perfecto en <strong>Coliumo, Tomé</strong>. Nuestras tres cabañas 
+              están diseñadas para brindarte una experiencia única en la costa del <strong>Biobío</strong>: 
+              despierta con el sonido del mar, disfruta un atardecer desde tu terraza privada y 
+              relájate en nuestro <strong>jacuzzi con vista al océano</strong>.
+            </p>
+            <p className="text-gray-400">
+              Ya sea que viajes en <strong>pareja</strong>, con tu <strong>familia</strong> o un 
+              <strong> grupo de amigos</strong>, tenemos la cabaña ideal para ti. Todas incluyen 
+              cocina equipada, WiFi, estacionamiento y capacidad para hasta 7 personas.
+            </p>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
@@ -39,6 +57,13 @@ export function CabinsSection({ cabins }: CabinsSectionProps) {
             <p className="text-gray-400 text-lg">No hay cabañas disponibles en este momento.</p>
           </div>
         )}
+
+        {/* CTA secundario para conversión */}
+        <div className="text-center mt-12">
+          <p className="text-gray-400 mb-4">
+            ¿No encuentras disponibilidad? Contáctanos para fechas especiales o estadías prolongadas.
+          </p>
+        </div>
       </Container>
     </Section>
   );

@@ -6,6 +6,7 @@ Plataforma integral para la gestión de reservas, comunicación con huéspedes y
 
 ## ✨ Principales características
 
+- **SEO Local Optimizado**: Schema Markup JSON-LD (LodgingBusiness, VacationRental, LocalBusiness, FAQPage), metadata optimizada para Google, geo-coordenadas y rich snippets para búsquedas en Coliumo/Tomé/Biobío.
 - **Reservas inteligentes**: validación en tiempo real del calendario (doble chequeo antes de emitir un hold), indicación visual de check-in/out y bloqueo automático cuando otro huésped toma las fechas.
 - **Flujo de pagos**: integración con Flow/Webpay (modo sandbox y producción) con confirmaciones vía webhook y reintentos manuales seguros.
 - **Notificaciones por correo**: contacto, eventos especiales y confirmaciones de pago usando plantillas enriquecidas y SendGrid.
@@ -21,7 +22,7 @@ Plataforma integral para la gestión de reservas, comunicación con huéspedes y
 | --- | --- |
 | `apps/web` | Aplicación Next.js 14 con App Router, responsable del frontend público, APIs y panel admin. |
 | `packages/core` | Librería de dominio (auth, Supabase clients, Flow client, email service, validaciones, utilidades). |
-| `packages/ui` | Componentes React/Tailwind reutilizables (wizard de reservas, calendario, layouts, formularios). |
+| `packages/ui` | Componentes React/Tailwind reutilizables (wizard de reservas, calendario, layouts, formularios, JSON-LD SEO). |
 | `packages/database` | Esquema SQL y migraciones para Supabase/PostgreSQL. |
 
 > Alias `@/` siguen apuntando al código histórico, redirigiendo internamente a `packages/core` y `packages/ui`.
@@ -166,9 +167,11 @@ Recuerda que `node_modules/`, `.next/`, `dist/`, `Documentacion/` y otros artefa
 tres-morros/
 ├── apps/
 │   └── web/                 # Next.js (frontend + APIs + admin)
+│       └── app/layout.tsx   # Metadata SEO + JSON-LD Schema
 ├── packages/
 │   ├── core/                # Lógica de negocio (Flow, Supabase, Email, Validaciones, etc.)
 │   ├── ui/                  # Componentes UI reutilizables
+│   │   └── src/layout/JsonLd.tsx  # Schema Markup (LodgingBusiness, VacationRental, FAQ)
 │   └── database/            # SQL y migraciones
 ├── public/                  # Assets compartidos
 ├── tools/scripts/clear-bookings.mjs
@@ -245,3 +248,39 @@ Consulta `deploy/README.md` (y el spec `.do/app.yaml`) para:
 - **Correo de soporte**: contacto@tresmorroscoliumo.cl (configurable en `.env`).  
 
 Este README está pensado para presentar el proyecto a stakeholders y dejar documentado el workflow para los equipos de desarrollo y operación. Para más detalles técnicos se puede consultar `docs/technical/MONOREPO-GUIDE.md`.
+
+---
+
+## 🔍 SEO Local Implementado
+
+El sitio está optimizado para dominar búsquedas locales en Google para "cabañas en Coliumo" y términos relacionados.
+
+### Money Keywords Objetivo
+- cabañas en coliumo
+- arriendo cabañas coliumo
+- cabañas coliumo frente al mar
+- alojamiento coliumo tomé
+- cabañas con jacuzzi coliumo
+
+### Schema Markup (JSON-LD)
+Implementado en `packages/ui/src/layout/JsonLd.tsx`:
+
+| Schema | Propósito |
+| --- | --- |
+| `LodgingBusiness` | Información del negocio para Google Maps y rich snippets |
+| `LocalBusiness` | SEO local con geo-coordenadas (-36.5689, -72.9575) |
+| `VacationRental` x3 | Una por cada cabaña con amenities y capacidad |
+| `BreadcrumbList` | Navegación estructurada |
+| `FAQPage` | Preguntas frecuentes para featured snippets |
+
+### Metadata Optimizada
+```
+Title: "Cabañas en Coliumo | Arriendo Frente al Mar - Tres Morros" (59 chars)
+Description: "Arrienda cabañas en Coliumo con vista al mar y jacuzzi..." (154 chars + CTA)
+```
+
+### Checklist Post-Deploy
+- [ ] Reemplazar teléfono/email en `JsonLd.tsx`
+- [ ] Agregar código Google Search Console en `layout.tsx`
+- [ ] Subir sitemap.xml a Search Console
+- [ ] Verificar coordenadas exactas del negocio
