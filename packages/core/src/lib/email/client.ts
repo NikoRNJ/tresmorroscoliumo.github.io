@@ -1,189 +1,227 @@
-import sgMail from '@sendgrid/mail';
-import type { MailDataRequired } from '@sendgrid/mail';
+import emailjs from '@emailjs/nodejs';
 import type { EmailSendResult } from '../../types/email';
 
 /**
- * IMPORTANTE - Single Sender Verification:
- * El email verificado en SendGrid es: nicolas.saavedra5@virginiogomez.cl
- * Si usas cualquier otro email en el campo 'from', recibirás error 403 Forbidden.
+ * Cliente de EmailJS para envío de emails
+ * 
+ * Usa @emailjs/nodejs (versión servidor) para proteger las credenciales.
+ * Conectado a Gmail a través del servicio de EmailJS.
+ * 
+ * CONFIGURACIÓN REQUERIDA EN EMAILJS DASHBOARD:
+ * 1. Crear cuenta en https://emailjs.com
+ * 2. Email Services -> Add New Service -> Gmail
+ * 3. Email Templates -> Create New Template
+ * 4. Account -> API Keys (Public Key + Private Key)
  */
-const VERIFIED_SENDER_EMAIL = 'nicolas.saavedra5@virginiogomez.cl';
 
 /**
- * Cliente de SendGrid para envío de emails
- * 
- * Singleton pattern para reutilizar la configuración
- * LAZY INITIALIZATION: Solo se inicializa cuando se usa
+ * Interfaz para los datos del email
+ */
+export interface EmailData {
+  to: string | { email: string; name?: string };
+  subject: string;
+  text?: string;
+  html?: string;
+  from?: { email: string; name: string };
+}
+
+/**
+ * Cliente de EmailJS para envío de emails
+ * Singleton pattern con lazy initialization
  */
 class EmailClient {
   private isConfigured: boolean = false;
   private initialized: boolean = false;
-  private fromEmail: string = VERIFIED_SENDER_EMAIL;
+  private serviceId: string = '';
+  private templateId: string = '';
   private fromName: string = 'Tres Morros de Coliumo';
 
   constructor() {
-    // No hacer nada aquí - lazy initialization
+    // Lazy initialization
   }
 
   private initialize() {
     if (this.initialized) return;
-    
-    const apiKey = process.env.SENDGRID_API_KEY;
-    const fromEmail = process.env.SENDGRID_FROM_EMAIL || VERIFIED_SENDER_EMAIL;
-    const fromName = process.env.SENDGRID_FROM_NAME || 'Tres Morros de Coliumo';
 
-    console.log('🔧 [SendGrid] Initializing client...');
-    console.log('   API Key present:', !!apiKey);
-    console.log('   API Key prefix:', apiKey ? apiKey.substring(0, 10) + '...' : 'MISSING');
-    console.log('   From email:', fromEmail);
-    console.log('   From name:', fromName);
-    console.log('   Verified sender:', VERIFIED_SENDER_EMAIL);
+    const publicKey = process.env.EMAILJS_PUBLIC_KEY;
+    const privateKey = process.env.EMAILJS_PRIVATE_KEY;
+    const serviceId = process.env.EMAILJS_SERVICE_ID;
+    const templateId = process.env.EMAILJS_TEMPLATE_ID;
+    const fromName = process.env.EMAILJS_FROM_NAME || 'Tres Morros de Coliumo';
 
-    // Validación crítica: el email DEBE coincidir con el verificado
-    if (fromEmail !== VERIFIED_SENDER_EMAIL) {
-      console.warn(`⚠️ [SendGrid] ADVERTENCIA: SENDGRID_FROM_EMAIL (${fromEmail}) no coincide con el sender verificado (${VERIFIED_SENDER_EMAIL})`);
-      console.warn('   Esto causará error 403 Forbidden. Usando el email verificado.');
-      this.fromEmail = VERIFIED_SENDER_EMAIL;
-    }
+    console.log('🔧 [EmailJS] Initializing client...');
+    console.log('   Public Key present:', !!publicKey);
+    console.log('   Private Key present:', !!privateKey);
+    console.log('   Service ID:', serviceId || 'MISSING');
+    console.log('   Template ID:', templateId || 'MISSING');
+    console.log('   From Name:', fromName);
 
-    if (!apiKey || apiKey === 'placeholder-sendgrid-api-key') {
-      console.warn('⚠️ [SendGrid] SENDGRID_API_KEY not configured. Emails will not be sent.');
-      this.isConfigured = false;
-      this.initialized = true;
-      return;
-    }
-
-    if (!fromName) {
-      console.error('❌ [SendGrid] SENDGRID_FROM_NAME must be configured');
+    if (!publicKey || !privateKey || !serviceId || !templateId) {
+      console.warn('⚠️ [EmailJS] Missing required configuration. Emails will not be sent.');
+      console.warn('   Required: EMAILJS_PUBLIC_KEY, EMAILJS_PRIVATE_KEY, EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID');
       this.isConfigured = false;
       this.initialized = true;
       return;
     }
 
     try {
-      sgMail.setApiKey(apiKey);
-      this.isConfigured = true;
-      this.fromEmail = fromEmail === VERIFIED_SENDER_EMAIL ? fromEmail : VERIFIED_SENDER_EMAIL;
+      // Inicializar EmailJS con las claves
+      emailjs.init({
+        publicKey: publicKey,
+        privateKey: privateKey,
+      });
+
+      this.serviceId = serviceId;
+      this.templateId = templateId;
       this.fromName = fromName;
+      this.isConfigured = true;
       this.initialized = true;
 
-      console.log('✅ [SendGrid] Client initialized successfully');
-      console.log('   Will send from:', this.fromEmail);
+      console.log('✅ [EmailJS] Client initialized successfully');
     } catch (error) {
-      console.error('❌ [SendGrid] Error initializing:', error);
+      console.error('❌ [EmailJS] Error initializing:', error);
       this.isConfigured = false;
       this.initialized = true;
     }
   }
 
   /**
-   * Enviar un email
+   * Resolver el email del destinatario
+   */
+  private resolveRecipient(to: EmailData['to']): string {
+    if (typeof to === 'string') return to;
+    if (to && typeof to === 'object' && 'email' in to) {
+      return to.email;
+    }
+    return '';
+  }
+
+  /**
+   * Resolver el nombre del destinatario
+   */
+  private resolveRecipientName(to: EmailData['to']): string {
+    if (typeof to === 'string') return to.split('@')[0];
+    if (to && typeof to === 'object' && 'name' in to && to.name) {
+      return to.name;
+    }
+    if (to && typeof to === 'object' && 'email' in to) {
+      return to.email.split('@')[0];
+    }
+    return 'Cliente';
+  }
+
+  /**
+   * Enviar un email usando EmailJS
    * 
-   * @param mailData - Datos del email según SendGrid
+   * @param mailData - Datos del email
    * @returns Resultado del envío
    */
-  async send(mailData: MailDataRequired): Promise<EmailSendResult> {
+  async send(mailData: EmailData): Promise<EmailSendResult> {
     this.initialize();
 
     const mode: EmailSendResult['mode'] = this.isConfigured ? 'live' : 'mock';
 
     if (!this.isConfigured) {
-      console.warn('⚠️ SendGrid no está configurado. Emails reales no serán enviados:', {
-        to: mailData.to,
+      console.warn('⚠️ [EmailJS] Not configured. Email not sent:', {
+        to: this.resolveRecipient(mailData.to),
         subject: mailData.subject,
       });
       return {
         success: false,
-        error: 'SENDGRID_NOT_CONFIGURED',
+        error: 'EMAILJS_NOT_CONFIGURED',
         mode,
       };
     }
 
-    const resolveRecipient = (to: MailDataRequired['to']): string => {
-      if (typeof to === 'string') return to;
-      if (Array.isArray(to)) {
-        const [first] = to;
-        return first ? resolveRecipient(first as MailDataRequired['to']) : '<sin destinatario>';
-      }
-      if (to && typeof to === 'object' && 'email' in to && typeof to.email === 'string') {
-        return to.email;
-      }
-      return '<sin destinatario>';
-    };
+    const recipientEmail = this.resolveRecipient(mailData.to);
+    const recipientName = this.resolveRecipientName(mailData.to);
 
-    const maxAttempts = Math.max(
-      1,
-      Number(process.env.SENDGRID_MAX_RETRIES || 3)
-    );
+    if (!recipientEmail) {
+      console.error('❌ [EmailJS] No recipient email provided');
+      return {
+        success: false,
+        error: 'NO_RECIPIENT',
+        mode,
+      };
+    }
+
+    const maxAttempts = Math.max(1, Number(process.env.EMAILJS_MAX_RETRIES || 3));
     let lastError: unknown = null;
 
     for (let attempt = 1; attempt <= maxAttempts; attempt++) {
       try {
-        // CRÍTICO: Forzar el email verificado en el from
-        const safeMailData: MailDataRequired = {
-          ...mailData,
-          from: {
-            email: VERIFIED_SENDER_EMAIL,
-            name: this.fromName,
-          },
-        };
-
-        console.log(`📧 [SendGrid] Attempt ${attempt}/${maxAttempts} - Sending to:`, resolveRecipient(mailData.to));
-        console.log(`   From: ${VERIFIED_SENDER_EMAIL}`);
+        console.log(`📧 [EmailJS] Attempt ${attempt}/${maxAttempts} - Sending to: ${recipientEmail}`);
         console.log(`   Subject: ${mailData.subject}`);
 
-        const [response] = await sgMail.send(safeMailData);
-        const recipient = resolveRecipient(mailData.to);
-        console.log(`✅ [SendGrid] Email sent successfully to ${recipient}`, {
-          messageId: response.headers['x-message-id'],
-          statusCode: response.statusCode,
+        // Preparar los parámetros del template
+        // Estos nombres deben coincidir con las variables en tu template de EmailJS
+        const templateParams = {
+          to_email: recipientEmail,
+          to_name: recipientName,
+          from_name: this.fromName,
+          subject: mailData.subject,
+          message: mailData.text || '',
+          message_html: mailData.html || mailData.text || '',
+          // Variables adicionales que podrías necesitar
+          reply_to: process.env.EMAILJS_REPLY_TO || recipientEmail,
+        };
+
+        const response = await emailjs.send(
+          this.serviceId,
+          this.templateId,
+          templateParams
+        );
+
+        console.log(`✅ [EmailJS] Email sent successfully to ${recipientEmail}`, {
+          status: response.status,
+          text: response.text,
           attempts: attempt,
         });
 
         return {
           success: true,
-          messageId: response.headers['x-message-id'],
+          messageId: `emailjs-${Date.now()}`,
           attempts: attempt,
           mode,
         };
-      } catch (error) {
+
+      } catch (error: any) {
         lastError = error;
+
+        // DEBUGGING COMPLETO para logs
+        console.error(`❌ [EmailJS] Error sending email (attempt ${attempt}/${maxAttempts})`);
         
-        // DEBUGGING COMPLETO para DigitalOcean logs
-        console.error(`❌ [SendGrid] Error sending email (attempt ${attempt}/${maxAttempts})`);
-        
-        // Extraer el detalle del error de SendGrid (usando any para evitar errores de tipos)
-        const sgError = error as any;
-        if (sgError?.response) {
-          const response = sgError.response as any;
-          const statusCode = response?.statusCode as number | undefined;
+        // Extraer información del error de forma segura
+        if (error) {
+          console.error('📋 [EmailJS] Error Status:', error.status || 'N/A');
+          console.error('📋 [EmailJS] Error Text:', error.text || error.message || 'Unknown');
           
-          console.error('📋 [SendGrid] Response Status:', statusCode);
-          console.error('📋 [SendGrid] Response Headers:', JSON.stringify(response?.headers, null, 2));
-          console.error('📋 [SendGrid] Response Body:', JSON.stringify(response?.body, null, 2));
-          
-          // Diagnóstico específico por código de error
-          if (statusCode === 401) {
-            console.error('🔴 [SendGrid] ERROR 401 - UNAUTHORIZED');
-            console.error('   👉 La API Key es inválida o ha expirado');
-            console.error('   👉 Verifica SENDGRID_API_KEY en las variables de entorno de DigitalOcean');
-          } else if (statusCode === 403) {
-            console.error('🔴 [SendGrid] ERROR 403 - FORBIDDEN');
-            console.error('   👉 El email remitente NO está verificado en SendGrid');
-            console.error(`   👉 Email usado: ${VERIFIED_SENDER_EMAIL}`);
-            console.error('   👉 Ve a SendGrid > Settings > Sender Authentication > Single Sender Verification');
-            console.error('   👉 Asegúrate de que el email tenga el check verde (VERIFIED)');
-          } else if (statusCode === 400) {
-            console.error('🔴 [SendGrid] ERROR 400 - BAD REQUEST');
-            console.error('   👉 Revisa el formato del email (to, from, subject, content)');
+          // Si el error tiene más propiedades, mostrarlas
+          if (typeof error === 'object') {
+            console.error('📋 [EmailJS] Full Error:', JSON.stringify(error, null, 2));
+          }
+
+          // Diagnóstico específico
+          const status = error.status;
+          if (status === 401 || status === 403) {
+            console.error('🔴 [EmailJS] ERROR AUTHENTICATION');
+            console.error('   👉 Verifica EMAILJS_PUBLIC_KEY y EMAILJS_PRIVATE_KEY');
+            console.error('   👉 Asegúrate de que las claves sean correctas en EmailJS Dashboard');
+          } else if (status === 400) {
+            console.error('🔴 [EmailJS] ERROR BAD REQUEST');
+            console.error('   👉 Verifica EMAILJS_SERVICE_ID y EMAILJS_TEMPLATE_ID');
+            console.error('   👉 Revisa que las variables del template coincidan');
+          } else if (status === 422) {
+            console.error('🔴 [EmailJS] ERROR VALIDATION');
+            console.error('   👉 El template tiene variables requeridas faltantes');
           }
         } else {
-          console.error('📋 [SendGrid] Raw error:', error);
+          console.error('📋 [EmailJS] Raw error:', error);
         }
-        
+
         if (attempt < maxAttempts) {
           const waitMs = attempt * 500;
-          console.log(`⏳ [SendGrid] Waiting ${waitMs}ms before retry...`);
+          console.log(`⏳ [EmailJS] Waiting ${waitMs}ms before retry...`);
           await new Promise((resolve) => setTimeout(resolve, waitMs));
         }
       }
@@ -191,10 +229,9 @@ class EmailClient {
 
     return {
       success: false,
-      error:
-        lastError instanceof Error
-          ? lastError.message
-          : 'Unknown error sending email',
+      error: lastError instanceof Error 
+        ? lastError.message 
+        : (lastError as any)?.text || 'Unknown error sending email',
       attempts: maxAttempts,
       mode,
     };
@@ -202,17 +239,18 @@ class EmailClient {
 
   /**
    * Obtener configuración del remitente por defecto
+   * (Mantiene compatibilidad con el código existente)
    */
   getDefaultFrom() {
     this.initialize();
     return {
-      email: this.fromEmail,
+      email: process.env.EMAILJS_FROM_EMAIL || 'noreply@tresmorroscoliumo.cl',
       name: this.fromName,
     };
   }
 
   /**
-   * Verificar si SendGrid está listo
+   * Verificar si EmailJS está listo
    */
   isReady(): boolean {
     this.initialize();

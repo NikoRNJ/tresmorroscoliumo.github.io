@@ -7,8 +7,8 @@ import type { Database } from '../../types/database';
 /**
  * Servicio de emails - funciones de alto nivel
  * 
- * VERSIÓN MÍNIMA para Iteración 6
- * Solo incluye envío de confirmación de reserva
+ * Migrado de SendGrid a EmailJS
+ * Usa Gmail a través de EmailJS para evitar bloqueos de puertos en DigitalOcean
  */
 
 /**
@@ -22,7 +22,7 @@ export async function sendBookingConfirmation(
   const from = emailClient.getDefaultFrom();
 
   try {
-    // Enviar email usando SendGrid
+    // Enviar email usando EmailJS
     const result = await emailClient.send({
       to: {
         email: data.to.email,
@@ -48,7 +48,7 @@ export async function sendBookingConfirmation(
     if (result.success) {
       await (supabaseAdmin.from('api_events') as any).insert({
         event_type: 'email_sent_confirmation',
-        event_source: 'sendgrid',
+        event_source: 'emailjs',
         booking_id: data.bookingId,
         payload: {
           ...eventPayloadBase,
@@ -62,7 +62,7 @@ export async function sendBookingConfirmation(
       // Si falló, loggear error
       await (supabaseAdmin.from('api_events') as any).insert({
         event_type: 'email_error_confirmation',
-        event_source: 'sendgrid',
+        event_source: 'emailjs',
         booking_id: data.bookingId,
         payload: {
           ...eventPayloadBase,
@@ -74,10 +74,10 @@ export async function sendBookingConfirmation(
 
       console.error(`❌ Failed to send confirmation email for booking ${data.bookingId}:`, result.error);
       // Check for common errors
-      if (result.error?.includes('Unauthorized')) {
-        console.error('👉 Check SENDGRID_API_KEY in .env');
-      } else if (result.error?.includes('The from address does not match a verified Sender Identity')) {
-        console.error('👉 Check SENDGRID_FROM_EMAIL in .env. It must be verified in SendGrid.');
+      if (result.error?.includes('401') || result.error?.includes('403')) {
+        console.error('👉 Check EMAILJS_PUBLIC_KEY and EMAILJS_PRIVATE_KEY in environment variables');
+      } else if (result.error?.includes('service_id') || result.error?.includes('template_id')) {
+        console.error('👉 Check EMAILJS_SERVICE_ID and EMAILJS_TEMPLATE_ID in environment variables');
       }
     }
 
@@ -88,7 +88,7 @@ export async function sendBookingConfirmation(
     // Loggear error inesperado
     await (supabaseAdmin.from('api_events') as any).insert({
       event_type: 'email_error_confirmation',
-      event_source: 'sendgrid',
+      event_source: 'emailjs',
       booking_id: data.bookingId,
       payload: {
         error: error instanceof Error ? error.message : 'Unknown error',
