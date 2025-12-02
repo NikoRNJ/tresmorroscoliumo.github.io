@@ -43,13 +43,17 @@ export function Gallery() {
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           {currentImages.map((image, index) => (
-            <div key={index} className="relative aspect-square overflow-hidden rounded-lg group cursor-pointer">
+            <div 
+              key={index} 
+              className="relative overflow-hidden rounded-lg group cursor-pointer"
+              style={{ aspectRatio: '5/4' }}
+            >
               <Image
                 src={image.src}
                 alt={image.alt}
                 fill
                 className="object-cover transition-transform duration-500 group-hover:scale-110"
-                sizes="(max-width: 1024px) 50vw, 25vw"
+                sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 25vw"
                 priority={index < 4}
               />
               <div className="absolute inset-0 bg-gradient-to-t from-dark-950/80 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
