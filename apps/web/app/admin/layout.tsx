@@ -1,31 +1,14 @@
-import { redirect } from 'next/navigation';
-import { requireAdmin } from '@/lib/auth/admin';
-import { AdminNav } from '@/components/admin/AdminNav';
-
 /**
- * Layout del panel de administración
- * Iteración 7: Panel de Administración
+ * Layout raíz del panel de administración
+ * Este layout NO tiene protección - es solo un wrapper común
+ * 
+ * La protección de autenticación está en (protected)/layout.tsx
+ * La página de login está en (auth)/login/ sin protección
  */
-export default async function AdminLayout({
+export default function AdminRootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const isAuthenticated = await requireAdmin();
-
-  if (!isAuthenticated) {
-    redirect('/admin/login');
-  }
-
-  return (
-    <div className="flex min-h-screen bg-gray-50">
-      {/* Sidebar */}
-      <AdminNav />
-
-      {/* Main content */}
-      <div className="flex-1">
-        <main className="p-8">{children}</main>
-      </div>
-    </div>
-  );
+  return <>{children}</>;
 }
