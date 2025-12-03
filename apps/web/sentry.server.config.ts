@@ -42,5 +42,3 @@ if (!shouldInitServerSentry || !dsn) {
       console.error('[Sentry] No se pudo inicializar en server:', error);
     });
 }
-
-
