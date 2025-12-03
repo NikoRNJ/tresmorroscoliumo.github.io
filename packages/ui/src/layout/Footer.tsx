@@ -63,17 +63,17 @@ export function Footer() {
               </li>
               <li className="flex items-center gap-2">
                 <Phone className="h-4 w-4 flex-shrink-0 text-primary-500" />
-                <a href="tel:+56912345678" className="hover:text-primary-500 transition-colors">
-                  +56 9 1234 5678
+                <a href="tel:+56988661405" className="hover:text-primary-500 transition-colors">
+                  +56 9 8866 1405
                 </a>
               </li>
               <li className="flex items-center gap-2">
                 <Mail className="h-4 w-4 flex-shrink-0 text-primary-500" />
                 <a
-                  href="mailto:contacto@tresmorroscoliumo.cl"
+                  href="mailto:cabanastresmorrosdecoliumo@gmail.com"
                   className="hover:text-primary-500 transition-colors"
                 >
-                  contacto@tresmorroscoliumo.cl
+                  cabanastresmorrosdecoliumo@gmail.com
                 </a>
               </li>
             </ul>

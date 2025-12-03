@@ -93,7 +93,7 @@ export function JsonLdSchema({ siteUrl = 'https://www.tresmorroscoliumo.cl' }: J
       '@context': 'https://schema.org',
       '@type': 'VacationRental',
       '@id': `${siteUrl}/cabanas/vegas-del-coliumo#vacationrental`,
-      name: 'Cabaña Vegas del Coliumo - Vista al Mar',
+      name: 'Cabaña Vegas de Coliumo - Vista al Mar',
       description:
         'Cabaña romántica con vista panorámica al océano Pacífico. Ideal para parejas que buscan privacidad y tranquilidad en Coliumo. Jacuzzi privado con vista al mar.',
       url: `${siteUrl}/cabanas/vegas-del-coliumo`,
@@ -265,7 +265,7 @@ export function JsonLdSchema({ siteUrl = 'https://www.tresmorroscoliumo.cl' }: J
         name: '¿Las cabañas tienen vista al mar?',
         acceptedAnswer: {
           '@type': 'Answer',
-          text: 'Sí, todas nuestras cabañas cuentan con vista al océano Pacífico. La cabaña Vegas del Coliumo ofrece vista panorámica directa, mientras que Caleta del Medio y Los Morros tienen vistas parciales y acceso a miradores cercanos.',
+          text: 'Sí, todas nuestras cabañas cuentan con vista al océano Pacífico. La cabaña Vegas de Coliumo ofrece vista panorámica directa, mientras que Caleta del Medio y Los Morros tienen vistas parciales y acceso a miradores cercanos.',
         },
       },
       {
