@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { MapPin, Phone, Mail } from 'lucide-react';
+import { MapPin, Phone, Mail, Instagram, Facebook } from 'lucide-react';
 
 /**
  * Footer del sitio con información de contacto y enlaces
@@ -7,6 +7,21 @@ import { MapPin, Phone, Mail } from 'lucide-react';
  */
 export function Footer() {
   const currentYear = new Date().getFullYear();
+
+  const socialLinks = [
+    {
+      name: 'Instagram',
+      href: 'https://www.instagram.com/cabanastresmorrosdecoliumo',
+      icon: Instagram,
+      hoverColor: 'hover:text-pink-500 hover:bg-pink-500/10',
+    },
+    {
+      name: 'Facebook',
+      href: 'https://web.facebook.com/profile.php?id=61583396638851',
+      icon: Facebook,
+      hoverColor: 'hover:text-blue-500 hover:bg-blue-500/10',
+    },
+  ];
 
   return (
     <footer className="bg-dark-900 border-t border-dark-800">
@@ -17,10 +32,25 @@ export function Footer() {
             <h3 className="mb-4 text-lg font-semibold text-white">
               Tres Morros de Coliumo
             </h3>
-            <p className="text-sm text-gray-400">
+            <p className="text-sm text-gray-400 mb-4">
               Arrienda cabañas frente al mar en Coliumo, Región del Bío-Bío.
               Disfruta de la naturaleza y la tranquilidad.
             </p>
+            {/* Redes sociales */}
+            <div className="flex items-center gap-3">
+              {socialLinks.map((social) => (
+                <a
+                  key={social.name}
+                  href={social.href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label={`Síguenos en ${social.name}`}
+                  className={`flex h-10 w-10 items-center justify-center rounded-full border border-dark-700 bg-dark-800/50 text-gray-400 transition-all duration-300 ${social.hoverColor}`}
+                >
+                  <social.icon className="h-5 w-5" />
+                </a>
+              ))}
+            </div>
           </div>
 
           {/* Columna 2: Contacto */}

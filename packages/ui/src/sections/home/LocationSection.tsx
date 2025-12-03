@@ -151,14 +151,14 @@ export function LocationSection() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
           <div className="rounded-xl overflow-hidden shadow-2xl h-[400px] bg-dark-900">
             <iframe
-              src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3254.8!2d-72.9575!3d-36.5689!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x9669b8c3f2f2f2f3%3A0x1234567890abcdef!2sCaba%C3%B1as%20Tres%20Morros%20Coliumo!5e0!3m2!1ses-419!2scl!4v1699999999999!5m2!1ses-419!2scl"
+              src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3253.4844!2d-72.9596973!3d-36.548355!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x966845869b15bdb3%3A0x242d9c2aeaf8cda6!2scaba%C3%B1as%20los%20tres%20morros%20de%20coliumo!5e0!3m2!1ses!2scl!4v1733184000000!5m2!1ses!2scl"
               width="100%"
               height="100%"
               style={{ border: 0 }}
               allowFullScreen
               loading="lazy"
               referrerPolicy="no-referrer-when-downgrade"
-              title="Mapa de ubicación - Cabañas Tres Morros Coliumo"
+              title="Mapa de ubicación - Cabañas Los Tres Morros de Coliumo"
             ></iframe>
           </div>
 

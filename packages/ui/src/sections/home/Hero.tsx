@@ -45,10 +45,10 @@ export function Hero() {
       <Container className="relative z-20 text-center">
         <h1 className="heading-primary mb-6 text-balance">
           Cabañas en Coliumo
-          <span className="block text-primary-500 mt-2">para disfrutar de la naturaleza y el mar</span>
+          <span className="block text-primary-500 mt-2">para disfrutar de la naturaleza y lugares unicos</span>
         </h1>
         <p className="text-xl md:text-2xl text-gray-300 mb-12 max-w-3xl mx-auto">
-          Vive momentos inolvidables en nuestras cabañas frente al mar en Coliumo, Región del Bío-Bío.
+          Ven a visitar coliumo para no perderte momentos inolvidables en nuestras cabañas frente al mar y vivir una experiencia con la naturaleza, Región del Bío-Bío.
           Perfectas para desconectar y reconectar con la naturaleza.
         </p>
         <div className="flex flex-col sm:flex-row gap-4 justify-center">

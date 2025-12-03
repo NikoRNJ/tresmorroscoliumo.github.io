@@ -4,6 +4,7 @@ import "../sentry.client.config";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { JsonLdSchema } from "@/components/layout/JsonLd";
+import { SocialFloatingButtons } from "@/components/layout/SocialFloatingButtons";
 
 export const viewport: Viewport = {
   width: "device-width",
@@ -142,6 +143,7 @@ export default function RootLayout({
         <Header />
         <main className="flex-1">{children}</main>
         <Footer />
+        <SocialFloatingButtons />
       </body>
     </html>
   );
