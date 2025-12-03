@@ -140,7 +140,7 @@ services:
       - key: EMAILJS_PRIVATE_KEY
         scope: RUN_AND_BUILD_TIME
         type: SECRET
-        value: "jdYOA0KSZ0m7zugc16yze"
+        value: "JdYOA0KSZ0m7zugc16yze"
 
       - key: EMAILJS_SERVICE_ID
         scope: RUN_AND_BUILD_TIME
