@@ -3,24 +3,24 @@ import { Container, Section } from '../../ui/Container';
 
 const cabinStories = [
   {
-    name: 'Vega del Coliumo',
+    name: 'Vegas del Coliumo',
     tagline: 'La abundancia del valle verde',
     description:
-      'Inspirada en las vegas fértiles donde nacen los mercados locales. Invita a reconectar con los sabores de la huerta, los frutos recolectados a mano y el ritmo pausado de la vida de campo.',
+      'Vegas de Coliumo es un sector encantador dentro de la localidad de Coliumo, en la comuna de Tomé, Región del Biobío. Reconocido por su humedal costero, este lugar destaca por su belleza natural, su tranquilidad y su enorme valor ecológico. Es un entorno ideal para quienes buscan conectar con la naturaleza, disfrutar del paisaje y vivir momentos de calma en un ambiente único.',
     image: '/images/proposito/vegasColiumo.jpg',
   },
   {
     name: 'Caleta del Medio',
     tagline: 'Memorias de pescadores artesanales',
     description:
-      'Honramos a las familias que resguardaron la bahía y compartieron su pesca. Esta cabaña abraza el murmullo del mar y es perfecta para quienes buscan amanecer con olor a sal y relatos del puerto.',
+      'Caleta del Medio es un lugar acogedor y lleno de vida local. Aquí puedes disfrutar de hermosas vistas, ver las embarcaciones artesanales y sentir la esencia tradicional de Coliumo. Un destino perfecto para pasear en familia y descubrir la auténtica cultura costera de la zona.',
     image: '/images/proposito/caletaMedio.jpg',
   },
   {
     name: 'Los Morros',
     tagline: 'Guardianes de roca y espuma',
     description:
-      'Su nombre proviene de los acantilados que vigilan la costa. Es el refugio ideal para contemplar atardeceres naranjos, sentir el viento y entender cómo el océano esculpe cada rincón de Coliumo.',
+      'Los Morros es uno de los paisajes más emblemáticos de Coliumo. Con sus formaciones rocosas y vistas panorámicas, es un lugar ideal para pasear en familia, tomar fotografías y disfrutar de la naturaleza. Un punto imperdible para quienes visitan la zona y buscan momentos tranquilos y memorables.',
     image: '/images/proposito/losmorros.jpg',
   },
 ] as const;
@@ -108,7 +108,7 @@ export function PurposeSection() {
                 <div className="absolute inset-0 bg-gradient-to-t from-dark-950 via-dark-950/70 to-dark-950/30" />
                 
                 {/* Contenido */}
-                <div className="relative z-10 p-6 h-full flex flex-col justify-end">
+                <div className="relative z-10 p-6 pt-[25%] h-full flex flex-col justify-end">
                   <div className="absolute inset-x-6 top-0 h-1 rounded-b-full bg-gradient-to-r from-primary-400 via-primary-300 to-primary-500" />
                   <div className="flex items-center justify-between mb-3">
                     <span className="text-sm uppercase tracking-[0.3em] text-primary-200 font-medium">{String(index + 1).padStart(2, '0')}</span>
