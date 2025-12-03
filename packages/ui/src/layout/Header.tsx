@@ -26,7 +26,7 @@ export function Header() {
         <div className="flex lg:flex-1">
           <Link href="/" className="-m-1.5 p-1.5 transition-opacity hover:opacity-80">
             <span className="text-xl font-bold text-primary-400">
-              Tres Morros de Coliumo
+              Cabañas Tres Morros de Coliumo
             </span>
           </Link>
         </div>

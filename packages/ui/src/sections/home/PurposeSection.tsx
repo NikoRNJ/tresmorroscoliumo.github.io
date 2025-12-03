@@ -2,16 +2,16 @@ import { Container, Section } from '../../ui/Container';
 
 const cabinStories = [
   {
-    name: 'Caleta del Medio',
-    tagline: 'Memorias de pescadores artesanales',
-    description:
-      'Honramos a las familias que resguardaron la bahía y compartieron su pesca. Esta cabaña abraza el murmullo del mar y es perfecta para quienes buscan amanecer con olor a sal y relatos del puerto.',
-  },
-  {
     name: 'Vega del Coliumo',
     tagline: 'La abundancia del valle verde',
     description:
       'Inspirada en las vegas fértiles donde nacen los mercados locales. Invita a reconectar con los sabores de la huerta, los frutos recolectados a mano y el ritmo pausado de la vida de campo.',
+  },
+  {
+    name: 'Caleta del Medio',
+    tagline: 'Memorias de pescadores artesanales',
+    description:
+      'Honramos a las familias que resguardaron la bahía y compartieron su pesca. Esta cabaña abraza el murmullo del mar y es perfecta para quienes buscan amanecer con olor a sal y relatos del puerto.',
   },
   {
     name: 'Los Morros',
@@ -49,14 +49,12 @@ export function PurposeSection() {
           <div>
             <p className="text-primary-300 uppercase tracking-[0.4em] text-sm mb-4">Nuestro propósito</p>
             <h2 className="heading-secondary mb-6 text-balance">
-              Cada cabaña lleva un nombre emblemático porque cada estancia es un relato para descubrir.
+              Nuestras tres cabañas tienen una historia que contar.
             </h2>
             <p className="text-lg text-gray-300 mb-4">
-              Queremos que cada turista se sumerja en Coliumo más allá del descanso. Al conocer la historia detrás de
-              Caleta del Medio, Vega del Coliumo y Los Morros, la experiencia se transforma en un viaje sensible que
-              conecta con la comunidad, el mar y la naturaleza.
+              Cada una guarda un origen y un estilo único, pensado para ofrecerte una experiencia distinta: descanso, conexión o momentos en familia. Elige la que más te inspire y vive su historia.
             </p>
-            <p className="text-lg text-gray-300">
+            <p className="text-lg text-gray-300 mb-4">
               Nuestro equipo diseña momentos para que desconectes de lo habitual: caminatas guiadas, conversaciones con
               artesanos y espacios creados para escuchar el viento. Así, cada propósito personal encuentra su cabaña
               ideal.

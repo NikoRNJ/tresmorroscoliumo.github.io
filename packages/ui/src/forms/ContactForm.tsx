@@ -134,18 +134,24 @@ export function ContactForm() {
           {/* Message */}
           <div>
             <label htmlFor="message" className="block text-sm font-medium text-gray-300 mb-2">
-              Mensaje *
+              Mensaje * <span className="text-gray-500 font-normal">(mínimo 10 caracteres)</span>
             </label>
             <textarea
               id="message"
               name="message"
               required
+              minLength={10}
               rows={6}
               value={formData.message}
               onChange={handleChange}
               className="w-full px-4 py-3 bg-dark-900 border border-dark-800 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent text-white placeholder-gray-500 transition-all resize-none"
               placeholder="Cuéntanos sobre tu reserva, fechas de interés, número de personas, etc."
             />
+            {formData.message.length > 0 && formData.message.length < 10 && (
+              <p className="text-sm text-yellow-500 mt-1">
+                {10 - formData.message.length} caracteres más requeridos
+              </p>
+            )}
           </div>
 
           {/* Status messages */}

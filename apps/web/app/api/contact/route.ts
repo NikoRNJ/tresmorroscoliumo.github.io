@@ -6,8 +6,8 @@ import { supabaseAdmin } from '@/lib/supabase/server'
 const contactSchema = z.object({
   name: z.string().min(2, 'El nombre debe tener al menos 2 caracteres').max(100),
   email: z.string().email('Email inválido'),
-  phone: z.string().min(8, 'El teléfono debe tener al menos 8 dígitos').max(20).regex(/^[+]?[\d\s()-]+$/, 'Formato de teléfono inválido'),
-  message: z.string().min(10, 'El mensaje debe tener al menos 10 caracteres').max(1000),
+  phone: z.string().min(6, 'El teléfono debe tener al menos 6 caracteres').max(30),
+  message: z.string().min(10, 'El mensaje debe tener al menos 10 caracteres').max(2000),
 })
 
 export async function POST(request: NextRequest) {

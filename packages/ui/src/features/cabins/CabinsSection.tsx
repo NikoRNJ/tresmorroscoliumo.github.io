@@ -2,6 +2,7 @@ import { Cabin } from '@core/types/database';
 import { Container, Section } from '../../ui/Container';
 import { CabinCard } from './CabinCard';
 import { cabinDisplayOrder } from './media';
+import { Instagram, Facebook, MessageCircle } from 'lucide-react';
 
 interface CabinsSectionProps {
   cabins: Cabin[];
@@ -57,6 +58,48 @@ export function CabinsSection({ cabins }: CabinsSectionProps) {
             <p className="text-gray-400 text-lg">No hay cabañas disponibles en este momento.</p>
           </div>
         )}
+
+        {/* Sección de Redes Sociales y WhatsApp */}
+        <div className="mt-16 text-center">
+          <p className="text-gray-400 mb-6">
+            Síguenos en redes sociales y contáctanos directamente
+          </p>
+          
+          <div className="flex items-center justify-center gap-4 flex-wrap">
+            {/* Instagram */}
+            <a
+              href="https://www.instagram.com/cabanastresmorrosdecoliumo"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-2 px-5 py-3 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-full font-medium hover:opacity-90 transition-opacity"
+            >
+              <Instagram className="h-5 w-5" />
+              <span>Instagram</span>
+            </a>
+            
+            {/* Facebook */}
+            <a
+              href="https://web.facebook.com/profile.php?id=61583396638851"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-2 px-5 py-3 bg-blue-600 text-white rounded-full font-medium hover:bg-blue-700 transition-colors"
+            >
+              <Facebook className="h-5 w-5" />
+              <span>Facebook</span>
+            </a>
+            
+            {/* WhatsApp */}
+            <a
+              href="https://wa.me/56988661405?text=Hola%2C%20me%20interesa%20reservar%20una%20caba%C3%B1a"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-2 px-5 py-3 bg-green-500 text-white rounded-full font-medium hover:bg-green-600 transition-colors"
+            >
+              <MessageCircle className="h-5 w-5" />
+              <span>WhatsApp</span>
+            </a>
+          </div>
+        </div>
 
         {/* CTA secundario para conversión */}
         <div className="text-center mt-12">
