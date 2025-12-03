@@ -3,10 +3,10 @@ import { Container, Section } from '../../ui/Container';
 
 const cabinStories = [
   {
-    name: 'Vegas del Coliumo',
-    tagline: 'La abundancia del valle verde',
+    name: 'Vegas de Coliumo',
+    tagline: 'Humedal costero y naturaleza',
     description:
-      'Vegas de Coliumo es un sector encantador dentro de la localidad de Coliumo, en la comuna de Tomé, Región del Biobío. Reconocido por su humedal costero, este lugar destaca por su belleza natural, su tranquilidad y su enorme valor ecológico. Es un entorno ideal para quienes buscan conectar con la naturaleza, disfrutar del paisaje y vivir momentos de calma en un ambiente único.',
+      'Un sector encantador dentro de la localidad de Coliumo, en la comuna de Tomé, Región del Biobío. Reconocido por su humedal costero, este lugar destaca por su belleza natural, su tranquilidad y su enorme valor ecológico. Es un entorno ideal para quienes buscan conectar con la naturaleza, disfrutar del paisaje y vivir momentos de calma en un ambiente único.',
     image: '/images/proposito/vegasColiumo.jpg',
   },
   {
