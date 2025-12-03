@@ -2,7 +2,7 @@ import { Cabin } from '@core/types/database';
 import { Container, Section } from '../../ui/Container';
 import { CabinCard } from './CabinCard';
 import { cabinDisplayOrder } from './media';
-import { Instagram, Facebook, MessageCircle } from 'lucide-react';
+import { Instagram, Facebook, MessageCircle, Mail } from 'lucide-react';
 
 interface CabinsSectionProps {
   cabins: Cabin[];
@@ -97,6 +97,15 @@ export function CabinsSection({ cabins }: CabinsSectionProps) {
             >
               <MessageCircle className="h-5 w-5" />
               <span>WhatsApp</span>
+            </a>
+            
+            {/* Gmail */}
+            <a
+              href="mailto:cabanastresmorrosdecoliumo@gmail.com"
+              className="flex items-center gap-2 px-5 py-3 bg-red-500 text-white rounded-full font-medium hover:bg-red-600 transition-colors"
+            >
+              <Mail className="h-5 w-5" />
+              <span>Gmail</span>
             </a>
           </div>
         </div>
