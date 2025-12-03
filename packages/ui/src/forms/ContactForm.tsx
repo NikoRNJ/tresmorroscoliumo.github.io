@@ -13,11 +13,15 @@ export function ContactForm() {
   });
   const [loading, setLoading] = useState(false);
   const [status, setStatus] = useState<'idle' | 'success' | 'error'>('idle');
+  const [errorMessage, setErrorMessage] = useState<string>('');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setStatus('idle');
+    setErrorMessage('');
+
+    console.log('[ContactForm] Submitting form:', formData);
 
     try {
       const response = await fetch('/api/contact', {
@@ -26,14 +30,30 @@ export function ContactForm() {
         body: JSON.stringify(formData),
       });
 
-      if (response.ok) {
+      console.log('[ContactForm] Response status:', response.status);
+      
+      const result = await response.json();
+      console.log('[ContactForm] Response body:', result);
+
+      if (response.ok && result.success) {
         setStatus('success');
         setFormData({ name: '', email: '', phone: '', message: '' });
       } else {
         setStatus('error');
+        // Mostrar mensaje de error específico si está disponible
+        if (result.details && Array.isArray(result.details)) {
+          const messages = result.details.map((d: any) => d.message).join(', ');
+          setErrorMessage(messages);
+        } else if (result.error) {
+          setErrorMessage(result.error);
+        } else {
+          setErrorMessage('Error desconocido al enviar el mensaje.');
+        }
       }
     } catch (error) {
+      console.error('[ContactForm] Fetch error:', error);
       setStatus('error');
+      setErrorMessage('Error de conexión. Verifica tu internet e intenta nuevamente.');
     } finally {
       setLoading(false);
     }
@@ -137,7 +157,9 @@ export function ContactForm() {
 
           {status === 'error' && (
             <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-lg text-red-500">
-              Hubo un error al enviar el mensaje. Por favor intenta nuevamente.
+              <p className="font-medium">Hubo un error al enviar el mensaje.</p>
+              {errorMessage && <p className="text-sm mt-1 opacity-80">{errorMessage}</p>}
+              <p className="text-sm mt-2">Por favor intenta nuevamente o contáctanos por WhatsApp.</p>
             </div>
           )}
 
