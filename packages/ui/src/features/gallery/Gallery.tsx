@@ -12,7 +12,7 @@ export function Gallery() {
   const currentImages = galleryCollections.find((tab) => tab.id === activeTab)?.images || [];
 
   return (
-    <Section padding="lg" className="bg-dark-950">
+    <Section id="galeria" padding="lg" className="bg-dark-950">
       <Container>
         <div className="text-center mb-12">
           <h2 className="heading-secondary mb-4">
