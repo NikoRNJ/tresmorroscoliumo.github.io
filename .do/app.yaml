@@ -130,19 +130,33 @@ services:
         scope: RUN_TIME
         value: "0.1"
 
-      # SendGrid
-      - key: SENDGRID_API_KEY
+      # ===========================================================
+      # EmailJS - Configuración de emails
+      # ===========================================================
+      - key: EMAILJS_PUBLIC_KEY
+        scope: RUN_AND_BUILD_TIME
+        value: "-XXVFi7EqT9YZXuaO"
+
+      - key: EMAILJS_PRIVATE_KEY
         scope: RUN_AND_BUILD_TIME
         type: SECRET
-        value: "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"
+        value: "jdYOA0KSZ0m7zugc16yze"
 
-      - key: SENDGRID_FROM_EMAIL
+      - key: EMAILJS_SERVICE_ID
         scope: RUN_AND_BUILD_TIME
-        value: "nicolas.saavedra5@virginiogomez.cl"
+        value: "service_rd6aeih"
 
-      - key: SENDGRID_FROM_NAME
+      - key: EMAILJS_TEMPLATE_ID
+        scope: RUN_AND_BUILD_TIME
+        value: "template_3qqg8li"
+
+      - key: EMAILJS_FROM_NAME
         scope: RUN_AND_BUILD_TIME
         value: "Tres Morros de Coliumo"
+
+      - key: EMAILJS_FROM_EMAIL
+        scope: RUN_AND_BUILD_TIME
+        value: "cabanastresmorrosdecoliumo@gmail.com"
 
       # Seguridad / panel admin
       - key: ADMIN_PASSWORD
