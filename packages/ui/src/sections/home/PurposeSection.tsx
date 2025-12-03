@@ -23,14 +23,24 @@ const cabinStories = [
 
 const highlights = [
   {
-    title: 'Nombres con historia',
+    title: '🏖️ Playas y Naturaleza',
     description:
-      'Cada cabaña nace de un relato real del territorio para que te desconectes de lo habitual y vivas un hospedaje con identidad.',
+      'Playas ideales para relajarte, senderos y miradores para conectar con la naturaleza y capturar fotos increíbles.',
   },
   {
-    title: 'Experiencia guiada',
+    title: '🍽️ Gastronomía Local',
     description:
-      'Te acompañamos a elegir la cabaña que refleja tu propósito de viaje: contemplar, explorar o simplemente respirar nuevos aires.',
+      'Restaurantes locales y almacenes cercanos, perfectos para conocer el sabor auténtico de la zona.',
+  },
+  {
+    title: '📍 Rincones Únicos',
+    description:
+      'Rincones poco conocidos que hacen de Coliumo un destino especial. Te compartimos nuestras recomendaciones favoritas.',
+  },
+  {
+    title: '❤️ Atención Cercana',
+    description:
+      'Siempre encontrarás a alguien dispuesto a ayudarte, responder tus dudas y guiarte para que descubras lo mejor.',
   },
 ] as const;
 
@@ -47,20 +57,20 @@ export function PurposeSection() {
       <Container className="relative">
         <div className="grid gap-12 lg:grid-cols-[1.05fr_0.95fr] items-center">
           <div>
-            <p className="text-primary-300 uppercase tracking-[0.4em] text-sm mb-4">Nuestro propósito</p>
+            <p className="text-primary-300 uppercase tracking-[0.4em] text-sm mb-4">🌿 Nuestro propósito</p>
             <h2 className="heading-secondary mb-6 text-balance">
-              Nuestras tres cabañas tienen una historia que contar.
+              Una Experiencia Cercana y Familiar en Cabañas Tres Morros
             </h2>
             <p className="text-lg text-gray-300 mb-4">
-              Cada una guarda un origen y un estilo único, pensado para ofrecerte una experiencia distinta: descanso, conexión o momentos en familia. Elige la que más te inspire y vive su historia.
+              En Cabañas Tres Morros queremos que vivas la mejor experiencia en Coliumo, disfrutando cada momento con tranquilidad, comodidad y el cariño de una atención cercana. Nuestro equipo estará disponible en todo momento para ayudarte y acompañarte durante tu estadía.
             </p>
             <p className="text-lg text-gray-300 mb-4">
-              Nuestro equipo diseña momentos para que desconectes de lo habitual: caminatas guiadas, conversaciones con
-              artesanos y espacios creados para escuchar el viento. Así, cada propósito personal encuentra su cabaña
-              ideal.
+              Te entregamos información turística clara y actualizada para que aproveches cada día al máximo. Tu descanso y bienestar son lo más importante. <strong className="text-primary-400">Déjanos acompañarte en una estadía que recordarás con cariño.</strong>
             </p>
+            
+            <p className="text-primary-300 uppercase tracking-[0.2em] text-sm mb-4 mt-8">⭐ Descubre Coliumo con Nuestra Guía Local</p>
 
-            <div className="mt-10 grid gap-6 sm:grid-cols-2">
+            <div className="mt-6 grid gap-4 sm:grid-cols-2">
               {highlights.map((item) => (
                 <div
                   key={item.title}
