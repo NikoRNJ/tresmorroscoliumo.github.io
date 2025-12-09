@@ -1,0 +1,71 @@
+# Observabilidad y Contención Operativa
+
+Este documento resume los mecanismos habilitados para monitorear `tresmorroscoliumo.cl` y cómo responder ante incidentes. Actualízalo cada vez que se agreguen nuevas herramientas de monitoreo.
+
+## 1. Recolección de logs en tiempo real
+
+- **DigitalOcean App Platform**  
+  ```powershell
+  doctl apps logs --app tres-morros-app --type build --type run --tail
+  ```
+  Usa `--type deploy` para revisar problemas de despliegue y `--no-follow` cuando solo necesites un snapshot.
+- **Persistencia**: exporta sesiones críticas a almacenamiento seguro (`doctl apps logs ... > logs-YYYYMMDD.txt`) para análisis posterior.
+
+## 1.1 Verificación previa al build
+
+- Ejecuta `pnpm check:env` antes de `pnpm build`.  
+  - El script (`tools/scripts/check-env.mjs`) falla si faltan variables críticas (Supabase, Flow, SendGrid, URLs públicas).  
+  - Variables opcionales (Sentry) solo generan advertencias.  
+  - Usa `CHECK_ENV_SKIP=true pnpm build` únicamente en entornos controlados (no recomendado para producción).
+
+## 2. Instrumentación con Sentry
+
+- Se integró `@sentry/nextjs` en la app (`sentry.client/server/edge.config.ts`) y se añadió `app/global-error.tsx` para capturar errores de render.  
+- Ejecuta el wizard oficial si necesitas regenerar archivos:
+  ```bash
+  npx @sentry/wizard@latest -i nextjs --saas \
+    --org dr-virginio-gomez --project javascript-nextjs
+  ```
+- Configura las siguientes variables en App Platform (Build y Run):
+  - `SENTRY_DSN` (copiar también en `NEXT_PUBLIC_SENTRY_DSN` si usas Replay).
+  - `SENTRY_TRACES_SAMPLE_RATE` / `NEXT_PUBLIC_SENTRY_TRACES_SAMPLE_RATE` (0.1 recomendado).
+  - Opcionales: `SENTRY_PROFILES_SAMPLE_RATE`, `NEXT_PUBLIC_SENTRY_REPLAYS_SESSION_SAMPLE_RATE`, `NEXT_PUBLIC_SENTRY_REPLAYS_ON_ERROR_SAMPLE_RATE`.
+- Para subir sourcemaps define en **build time**:
+  - `SENTRY_AUTH_TOKEN` (token con `project:releases`), `SENTRY_ORG=dr-virginio-gomez`, `SENTRY_PROJECT=javascript-nextjs`.
+- Releases: usa `SENTRY_RELEASE` o exporta `GIT_COMMIT_SHA`. Se propaga automáticamente a Sentry y al endpoint `health-lite`.
+
+## 3. Health checks
+
+- `GET /api/health-lite`: responde rápido sin tocar la base de datos y entrega `uptime`, `release`, `region` y `environment`. Configurado para monitoreos cada 30 s.
+- `GET /api/health`: realiza una consulta real a Supabase. Úsalo en consultas menos frecuentes (p. ej. cada 5 min) para validar conectividad de base de datos.
+- Ambos responden con `Cache-Control: no-store` para que los monitores siempre obtengan datos frescos.
+
+### 3.1 Rotación de llaves Flow
+
+- Mantén los secretos de Flow (`FLOW_API_KEY`, `FLOW_SECRET_KEY`, `FLOW_BASE_URL`) en App Platform Secrets o en tu orquestador de despliegues.  
+- Antes de rotar:
+  1. Duplica las llaves en el panel de Flow (sandbox o producción) y valida el comercio.
+  2. Actualiza los secrets y ejecuta `pnpm check:env` (fallará si `FLOW_FORCE_MOCK=true` en entornos prod/CI).
+  3. Despliega y verifica `GET /api/payments/flow/status` (`configured: true`, `forceMock: false`).
+- Si Flow queda en modo mock en producción, las rutas `/api/payments/flow/*` registran `flow_payment_error` y envían alertas a Sentry automáticamente. Configura una alerta dedicada en Sentry sobre ese tag.
+- `FLOW_ALLOW_MOCK_IN_PROD=true` solo debe usarse como bypass temporal cuando requieras desplegar con `FLOW_FORCE_MOCK=true`. Como segunda medida de seguridad, el endpoint `flow/create` devuelve `FLOW_AUTH_ERROR` (HTTP 502) si Flow responde `401 apiKey not found`.
+
+## 4. Dashboard y alertas sugeridas
+
+- **Panel de errores**: En Sentry, crea alertas por tasa de errores > 5 % y por eventos de tipo `payment_*`.
+- **Métricas de disponibilidad**: UptimeRobot / Better Stack con tres monitors:
+  1. `https://www.tresmorroscoliumo.cl/api/health-lite` (30 s, tiempo de respuesta).
+  2. `https://www.tresmorroscoliumo.cl/api/health` (5 min, DB reachability).
+  3. `https://www.tresmorroscoliumo.cl` (HTTP básico desde otra región).
+- **Registros de pagos**: crea una consulta programada en Supabase (`api_events` donde `event_type` como `'payment_*'`) y envía resumen diario a Slack/Email.
+
+## 5. Procedimiento ante incidentes
+
+1. Revisar monitores → confirmar alerta (Sentry, UptimeRobot, logs DO).
+2. Capturar contexto (`doctl apps logs --tail --since 10m`).
+3. Registrar en `docs/business/incidents.md` (pendiente de crear) con tiempo, causa y mitigación.
+4. Abrir issue en GitHub y vincular commit de corrección.
+
+Mantén esta guía actualizada para que cualquier integrante pueda ejecutar la fase 0 en minutos.
+
+

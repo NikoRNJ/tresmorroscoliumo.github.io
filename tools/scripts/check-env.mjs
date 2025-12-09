@@ -1,0 +1,115 @@
+#!/usr/bin/env node
+import process from 'node:process';
+
+const normalize = (value) => String(value ?? '').trim();
+const isTruthy = (value) => normalize(value).length > 0;
+
+const toBool = (value) => ['1', 'true', 'yes'].includes(normalize(value).toLowerCase());
+
+const shouldSkip = toBool(process.env.CHECK_ENV_SKIP);
+
+if (shouldSkip) {
+  process.exit(0);
+}
+
+const nodeEnv = normalize(process.env.NODE_ENV).toLowerCase();
+const siteEnv = normalize(process.env.NEXT_PUBLIC_SITE_ENV).toLowerCase();
+const isProdEnv =
+  nodeEnv === 'production' ||
+  siteEnv === 'production' ||
+  toBool(process.env.CI);
+
+const flowForceMock = normalize(process.env.FLOW_FORCE_MOCK).toLowerCase() === 'true';
+const allowMockInProd = toBool(process.env.FLOW_ALLOW_MOCK_IN_PROD);
+const allowSandboxInProd = toBool(process.env.FLOW_ALLOW_SANDBOX_IN_PROD);
+const flowBaseUrl = normalize(process.env.FLOW_BASE_URL).toLowerCase();
+
+if (isProdEnv && flowForceMock && !allowMockInProd) {
+  console.error(
+    '❌ FLOW_FORCE_MOCK está en "true" pero el build se está ejecutando para producción.\n' +
+      '   Configura llaves reales de Flow y establece FLOW_FORCE_MOCK=false antes de desplegar.'
+  );
+  process.exit(1);
+}
+
+if (isProdEnv && flowForceMock && allowMockInProd) {
+  console.warn('⚠️ FLOW_FORCE_MOCK=true en producción (modo mock habilitado explícitamente).');
+}
+
+if (isProdEnv && !flowForceMock && flowBaseUrl.includes('sandbox.flow.cl')) {
+  if (!allowSandboxInProd) {
+    console.warn(
+      'OJO: FLOW_BASE_URL apunta a sandbox pero el entorno es produccion.\n' +
+        '   Usa https://www.flow.cl/api y credenciales de produccion o define FLOW_ALLOW_SANDBOX_IN_PROD=true bajo tu propio riesgo.'
+    );
+  }
+}
+
+const needsRealFlow = !flowForceMock || (isProdEnv && !allowMockInProd);
+
+const requiredKeys = [
+  { key: 'NEXT_PUBLIC_SITE_URL', label: 'URL pública del sitio (SEO & links)' },
+  { key: 'PUBLIC_EXTERNAL_URL', label: 'URL pública usada en callbacks (Flow, emails)' },
+  { key: 'NEXT_PUBLIC_SUPABASE_URL', label: 'Supabase URL pública' },
+  { key: 'NEXT_PUBLIC_SUPABASE_ANON_KEY', label: 'Supabase anon key' },
+  { key: 'SUPABASE_SERVICE_ROLE_KEY', label: 'Supabase service role key' },
+  { key: 'SENDGRID_API_KEY', label: 'API Key de SendGrid' },
+  { key: 'SENDGRID_FROM_EMAIL', label: 'Remitente (email) para SendGrid' },
+  { key: 'SENDGRID_FROM_NAME', label: 'Remitente (nombre) para SendGrid' },
+];
+
+const flowKeys = [
+  { key: 'FLOW_API_KEY', label: 'Flow API Key' },
+  { key: 'FLOW_SECRET_KEY', label: 'Flow Secret Key' },
+  { key: 'FLOW_BASE_URL', label: 'Flow Base URL (sandbox o producción)' },
+  { key: 'FLOW_WEBHOOK_SECRET', label: 'Secret interno para validar webhooks de Flow' },
+];
+
+const optionalKeys = [
+  { key: 'SENTRY_DSN', label: 'Sentry DSN (recomendado en producción)' },
+  { key: 'NEXT_PUBLIC_SENTRY_DSN', label: 'Sentry DSN público para Replay' },
+  { key: 'SENTRY_AUTH_TOKEN', label: 'Token para subir sourcemaps' },
+  { key: 'SENTRY_ORG', label: 'Identificador de la organización en Sentry' },
+  { key: 'SENTRY_PROJECT', label: 'Proyecto en Sentry' },
+];
+
+const missing = [];
+
+const track = ({ key, label }) => {
+  if (!isTruthy(process.env[key])) {
+    missing.push({ key, label });
+  }
+};
+
+requiredKeys.forEach(track);
+if (needsRealFlow) {
+  flowKeys.forEach(track);
+}
+
+if (missing.length > 0) {
+  console.error('❌ Variables de entorno obligatorias faltantes:\n');
+  missing.forEach(({ key, label }) => {
+    console.error(`  - ${key}: ${label}`);
+  });
+  console.error(
+    '\nDefine estas variables en tu `.env` local o en App Platform antes de volver a ejecutar `pnpm build`.'
+  );
+  console.error(
+    'Consulta `env/example.env` o la documentación en `docs/technical/observability.md` para más contexto.'
+  );
+  process.exit(1);
+}
+
+const missingOptionals = optionalKeys
+  .filter(({ key }) => !isTruthy(process.env[key]))
+  .map(({ key, label }) => ({ key, label }));
+
+if (missingOptionals.length > 0) {
+  console.warn('⚠️ Variables opcionales ausentes (recomendado configurarlas):');
+  missingOptionals.forEach(({ key, label }) => {
+    console.warn(`  - ${key}: ${label}`);
+  });
+}
+
+console.log('✅ Variables críticas presentes. Continuando con el build...');
+

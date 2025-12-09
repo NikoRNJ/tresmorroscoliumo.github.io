@@ -1,0 +1,286 @@
+# Tres Morros de Coliumo
+
+Plataforma integral para la gestión de reservas, comunicación con huéspedes y pagos en línea de tres cabañas ubicadas en Coliumo, Chile. El objetivo es ofrecer una experiencia de reserva sin fricciones para los clientes finales, al mismo tiempo que se entregan herramientas claras y seguras al operador del negocio.
+
+---
+
+## ✨ Principales características
+
+- **SEO Local Optimizado**: Schema Markup JSON-LD (LodgingBusiness, VacationRental, LocalBusiness, FAQPage), metadata optimizada para Google, geo-coordenadas y rich snippets para búsquedas en Coliumo/Tomé/Biobío.
+- **Reservas inteligentes**: validación en tiempo real del calendario (doble chequeo antes de emitir un hold), indicación visual de check-in/out y bloqueo automático cuando otro huésped toma las fechas.
+- **Flujo de pagos**: integración con Flow/Webpay (modo sandbox y producción) con confirmaciones vía webhook y reintentos manuales seguros.
+- **Notificaciones por correo**: contacto, eventos especiales y confirmaciones de pago usando plantillas enriquecidas y SendGrid.
+- **Panel administrativo**: autenticación básica protegida por cookies, revisión de reservas y bloqueos manuales.
+- **Dashboard de métricas**: tablero `/admin/dashboard` que consume `/api/admin/metrics` para mostrar KPIs, estados de reservas y alertas Flow con layout estilo React Admin.
+- **Monitoreo**: endpoints `/api/health` y `/api/health-lite` para supervisión rápida en despliegues.
+
+---
+
+## 🧱 Arquitectura
+
+| Módulo | Descripción |
+| --- | --- |
+| `apps/web` | Aplicación Next.js 14 con App Router, responsable del frontend público, APIs y panel admin. |
+| `packages/core` | Librería de dominio (auth, Supabase clients, Flow client, email service, validaciones, utilidades). |
+| `packages/ui` | Componentes React/Tailwind reutilizables (wizard de reservas, calendario, layouts, formularios, JSON-LD SEO). |
+| `packages/database` | Esquema SQL y migraciones para Supabase/PostgreSQL. |
+
+> Alias `@/` siguen apuntando al código histórico, redirigiendo internamente a `packages/core` y `packages/ui`.
+
+---
+
+## 🧩 Flujo funcional
+
+1. **Selección de fechas**  
+   El calendario muestra el mes actual y el siguiente. Marca check-in/out con etiquetas amarillas y valida que los días disponibles no se ocupen entre selección y confirmación.
+2. **Hold de reserva (45 min)**  
+   El API `/api/bookings/hold` crea un registro “pending”. Si alguien intenta reservar las mismas fechas, se devuelve 409 con un mensaje claro y el calendario se actualiza.
+3. **Pago con Flow/Webpay**  
+   - `pnpm test:e2e` activa el modo mock (`FLOW_FORCE_MOCK=true`).  
+   - Webhook `/api/flow/confirmation` cambia la reserva a "paid", guarda la traza y envía el correo de confirmación.
+4. **Emails**  
+   - Contacto general: `/api/contact`  
+   - Eventos especiales: `/api/events/special`  
+   - Confirmaciones de pago: `sendBookingConfirmation` en el webhook de Flow.
+
+---
+
+## 🚀 Requisitos
+
+- Node.js 20.x
+- pnpm `>=9.12`
+- Proyecto Supabase (URL + Anon key + Service role)
+- Credenciales Flow (sandbox/producción)
+- SendGrid API key
+
+---
+
+## ⚙️ Configuración
+
+1. **Instalar dependencias**
+   ```bash
+   pnpm install
+   ```
+2. **Variables de entorno**
+   ```bash
+   cp env/example.env .env
+   cp env/example.env .env.local            # Opcional para utilizar los scripts locales
+   cp apps/web/env.local.example apps/web/.env.local
+   ```
+   > `.env.local` ahora puede versionarse si necesitas subirlo a GitHub/DigitalOcean tal cual, pero se recomienda mantener las llaves reales fuera de commits públicos.
+3. **Base de datos**  
+   Ejecutar `packages/database/supabase-schema.sql` y las migraciones dentro de `packages/database/migrations/`.
+4. **Servidor de desarrollo**
+   ```bash
+   pnpm dev
+   ```
+   Salud: <https://www.tresmorroscoliumo.cl/api/health>
+
+---
+
+## 📜 Scripts principales
+
+| Comando | Descripción |
+| --- | --- |
+| `pnpm dev` | Levanta `apps/web` en modo desarrollo. |
+| `pnpm build` / `pnpm start` | Build y servidor de producción. |
+| `pnpm test` | Vitest unitario (`tests/`). |
+| `pnpm test:e2e` | Flujos end-to-end sin servidor externo (`tests-e2e-no-server`). |
+| `pnpm lint` | `next lint` en la app web. |
+| `pnpm clear:bookings` | Limpia `bookings`, `api_events` y `admin_blocks` (usas Service Role). Ideal para dejar el calendario “en blanco” antes de demos. |
+
+> Puedes filtrar por paquete con `pnpm --filter <workspace> <cmd>`.
+
+---
+
+## 📦 Exportar versión mínima para un nuevo repo
+
+¿Necesitas un paquete limpio sólo con el sistema funcional? Ejecuta:
+
+```bash
+pnpm export:app             # Genera dist/deployable con lo esencial
+pnpm export:app ../nuevo    # Opcional: ruta destino personalizada
+```
+
+El script copia únicamente:
+
+- Código fuente y configuraciones necesarias (`apps/web`, `packages/core`, `packages/ui`, `packages/database`, `public`).
+- Archivos raíz obligatorios (`package.json`, `pnpm-lock.yaml`, `pnpm-workspace.yaml`, `tsconfig*.json`, `turbo.json`, `vitest*.config.ts`, `README.md`).
+
+Quedan fuera `Documentacion/`, `docs/`, `tests/`, scripts auxiliares y cualquier carpeta pesada (`node_modules`, `.next`, etc.).  
+Una vez generado el directorio, puedes entrar allí y arrancar un repo nuevo con `git init && pnpm install`.
+
+---
+
+## 🔁 Control de versiones en GitHub
+
+Sugerencias para mantener sincronizado `github.com/NikoRNJ/tresmorroscoliumo`:
+
+1. **Sincroniza antes de trabajar**
+   ```powershell
+   git status -sb
+   git fetch origin
+   git pull --rebase origin main
+   ```
+2. **Sube tus cambios**
+   ```powershell
+   git add -A
+   git commit -m "feat: describe el cambio"
+   git push -u origin main
+   ```
+3. **Conflictos?**  
+   - Revisa `git status` para ver los archivos en conflicto.  
+   - Resuélvelos, marca con `git add` y continúa con `git rebase --continue`.  
+   - Finaliza con `git push` (usa `--force-with-lease` si estabas en medio de un rebase).
+4. **Export minimal + nuevo repo**  
+   ```powershell
+   pnpm export:app
+   cd dist/deployable
+   git init
+   git add .
+   git commit -m "chore: bootstrap"
+   git remote add origin https://github.com/NikoRNJ/tresmorroscoliumo.git
+   git push -u origin main
+   ```
+
+Recuerda que `node_modules/`, `.next/`, `dist/`, `Documentacion/` y otros artefactos pesados ya están cubiertos por `.gitignore`.
+
+---
+
+## 🧪 Testing
+
+- **Unitarios**  
+  ```bash
+  pnpm test
+  ```
+- **E2E (Flow mock)**  
+  ```bash
+  pnpm test:e2e
+  ```
+  Asegúrate de tener `FLOW_FORCE_MOCK=true` en `apps/web/.env.local`.
+
+---
+
+## 📁 Estructura relevante
+
+```
+tres-morros/
+├── apps/
+│   └── web/                 # Next.js (frontend + APIs + admin)
+│       └── app/layout.tsx   # Metadata SEO + JSON-LD Schema
+├── packages/
+│   ├── core/                # Lógica de negocio (Flow, Supabase, Email, Validaciones, etc.)
+│   ├── ui/                  # Componentes UI reutilizables
+│   │   └── src/layout/JsonLd.tsx  # Schema Markup (LodgingBusiness, VacationRental, FAQ)
+│   └── database/            # SQL y migraciones
+├── public/                  # Assets compartidos
+├── tools/scripts/clear-bookings.mjs
+├── package.json / pnpm-lock.yaml
+├── tsconfig*.json / turbo.json / vitest*.config.ts
+└── README.md
+```
+
+---
+
+## 🔧 Variables de entorno (principales)
+
+| Variable | Uso |
+| --- | --- |
+| `NEXT_PUBLIC_SITE_URL` | URL base y callbacks usados en emails / Flow (ngrok en dev, dominio real en prod). |
+| `NEXT_PUBLIC_SITE_ENV` | Nombre del entorno (`development`, `staging`, `production`). |
+| `NEXT_PUBLIC_SUPABASE_URL` / `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Cliente público (reservas). |
+| `SUPABASE_SERVICE_ROLE_KEY` | Mutaciones críticas (holds, pagos, limpieza). |
+| `FLOW_API_KEY`, `FLOW_SECRET_KEY`, `FLOW_BASE_URL` | Credenciales Flow/Webpay. |
+| `FLOW_FORCE_MOCK` | `true` en desarrollo/E2E para simular pagos. |
+| `FLOW_ALLOW_MOCK_IN_PROD` | Usa `true` solo si necesitas habilitar el modo mock en producción de forma controlada. |
+| `FLOW_WEBHOOK_SECRET` | Secreto interno para validar callbacks de Flow. |
+| `SENDGRID_API_KEY`, `SENDGRID_FROM_EMAIL`, `SENDGRID_FROM_NAME` | Emails transaccionales. |
+| `ADMIN_PASSWORD` / `ADMIN_PASSWORD_HASH`, `ADMIN_SESSION_SECRET` | Acceso al panel administrativo (usa `ADMIN_PASSWORD_HASH` con SHA-256 para no almacenar texto plano). |
+| `ADMIN_LOGIN_MAX_ATTEMPTS`, `ADMIN_LOGIN_WINDOW_MS` | Límite de intentos del panel admin (por defecto 5 intentos en 5 min). |
+| `SENTRY_DSN`, `NEXT_PUBLIC_SENTRY_DSN`, `SENTRY_AUTH_TOKEN`, `SENTRY_ORG`, `SENTRY_PROJECT` | Observabilidad (Sentry + sourcemaps). |
+
+> Plantillas disponibles en `env/example.env` y `apps/web/env.local.example`.
+
+### Flow (dev/prod)
+- En desarrollo usa `NEXT_PUBLIC_SITE_URL=https://<tu-ngrok>.ngrok-free.app`.
+- En producción solo cambia `NEXT_PUBLIC_SITE_URL` a tu dominio real `https://www.tresmorroscoliumo.cl`.
+- Endpoints: `returnUrl = ${NEXT_PUBLIC_SITE_URL}/pago/confirmacion`, `confirmationUrl = ${NEXT_PUBLIC_SITE_URL}/api/flow/confirmation`.
+
+---
+
+## ☁️ Despliegue (DigitalOcean, Nginx, Apache)
+
+Antes de desplegar:
+
+```bash
+pnpm check:env   # Verifica que las variables críticas estén presentes
+pnpm build       # Ejecuta el build (prebuild corre automáticamente)
+```
+
+### Observabilidad (Sentry)
+
+1. Instala la configuración recomendada ejecutando el wizard (usa tu cuenta ya creada):
+   ```bash
+   npx @sentry/wizard@latest -i nextjs --saas \
+     --org dr-virginio-gomez --project javascript-nextjs
+   ```
+   (Ya incluimos los archivos base y `.sentryclirc`, por lo que esto solo confirma la integración).
+2. En App Platform (Build y Run) define:
+   - `SENTRY_DSN` y `NEXT_PUBLIC_SENTRY_DSN` (los encuentras en **Project Settings → Client Keys (DSN)**).
+   - `SENTRY_AUTH_TOKEN` (token con permiso “project:releases”).
+   - `SENTRY_ORG=dr-virginio-gomez`, `SENTRY_PROJECT=javascript-nextjs`.
+3. Opcional: `SENTRY_TRACES_SAMPLE_RATE`, `SENTRY_PROFILES_SAMPLE_RATE`, `NEXT_PUBLIC_SENTRY_REPLAYS_*` para ajustar los muestreos.
+4. Tras cada despliegue, las sourcemaps se subirán automáticamente gracias al `withSentryConfig` en `next.config.mjs`.
+
+Consulta `deploy/README.md` (y el spec `.do/app.yaml`) para:
+
+- App Platform: comandos `pnpm install && pnpm build` + `Procfile` listo.
+- Lista completa de variables para copiar en el panel.
+- Guía de Droplet con Node.js 20 + PNPM, servicio `systemd` de ejemplo y reverse proxy Nginx.
+- Plantillas para Apache (`deploy/apache/vhost.conf`) y Nginx (`deploy/nginx/reverse-proxy.conf`).
+
+---
+
+## 💬 Soporte y contacto
+
+- **Cliente**: Tres Morros de Coliumo (Coliumo, Región del Bío-Bío, Chile).  
+- **Tecnología**: Next.js 14 + Supabase + Flow/Webpay + SendGrid.  
+- **Correo de soporte**: contacto@tresmorroscoliumo.cl (configurable en `.env`).  
+
+Este README está pensado para presentar el proyecto a stakeholders y dejar documentado el workflow para los equipos de desarrollo y operación. Para más detalles técnicos se puede consultar `docs/technical/MONOREPO-GUIDE.md`.
+
+---
+
+## 🔍 SEO Local Implementado
+
+El sitio está optimizado para dominar búsquedas locales en Google para "cabañas en Coliumo" y términos relacionados.
+
+### Money Keywords Objetivo
+- cabañas en coliumo
+- arriendo cabañas coliumo
+- cabañas coliumo frente al mar
+- alojamiento coliumo tomé
+- cabañas con jacuzzi coliumo
+
+### Schema Markup (JSON-LD)
+Implementado en `packages/ui/src/layout/JsonLd.tsx`:
+
+| Schema | Propósito |
+| --- | --- |
+| `LodgingBusiness` | Información del negocio para Google Maps y rich snippets |
+| `LocalBusiness` | SEO local con geo-coordenadas (-36.5689, -72.9575) |
+| `VacationRental` x3 | Una por cada cabaña con amenities y capacidad |
+| `BreadcrumbList` | Navegación estructurada |
+| `FAQPage` | Preguntas frecuentes para featured snippets |
+
+### Metadata Optimizada
+```
+Title: "Cabañas en Coliumo | Arriendo Frente al Mar - Tres Morros" (59 chars)
+Description: "Arrienda cabañas en Coliumo con vista al mar y jacuzzi..." (154 chars + CTA)
+```
+
+### Checklist Post-Deploy
+- [ ] Reemplazar teléfono/email en `JsonLd.tsx`
+- [ ] Agregar código Google Search Console en `layout.tsx`
+- [ ] Subir sitemap.xml a Search Console
+- [ ] Verificar coordenadas exactas del negocio

@@ -1,0 +1,200 @@
+name: tres-morros-app
+region: atl
+
+alerts:
+  - rule: DEPLOYMENT_FAILED
+  - rule: DOMAIN_FAILED
+
+domains:
+  - domain: tresmorroscoliumo.cl
+    type: PRIMARY
+  - domain: www.tresmorroscoliumo.cl
+    type: ALIAS
+
+features:
+  - buildpack-stack=ubuntu-22
+  - new-nodejs-buildpack=true
+
+services:
+  - name: tresmorroscoliumo-github-io
+    source_dir: .
+    github:
+      repo: NikoRNJ/tresmorroscoliumo.github.io
+      branch: main
+      deploy_on_push: true
+    environment_slug: node-js
+    http_port: 3000
+    instance_size_slug: apps-s-1vcpu-1gb
+    instance_count: 1
+    health_check:
+      http_path: /api/health-lite
+      initial_delay_seconds: 60
+      period_seconds: 30
+      timeout_seconds: 10
+      success_threshold: 1
+      failure_threshold: 3
+    build_command: pnpm install --frozen-lockfile && CHECK_ENV_SKIP=true pnpm build
+    run_command: >
+      pnpm --filter @tresmorros/web start --hostname 0.0.0.0 --port ${PORT:-3000}
+    routes:
+      - path: /
+    envs:
+      # NODE_ENV
+      - key: NODE_ENV
+        scope: RUN_AND_BUILD_TIME
+        value: production
+
+      # URLs del sitio
+      - key: NEXT_PUBLIC_SITE_URL
+        scope: RUN_AND_BUILD_TIME
+        value: "https://www.tresmorroscoliumo.cl"
+
+      - key: NEXT_PUBLIC_SITE_ENV
+        scope: RUN_AND_BUILD_TIME
+        value: "production"
+
+      - key: PUBLIC_EXTERNAL_URL
+        scope: RUN_AND_BUILD_TIME
+        value: "https://www.tresmorroscoliumo.cl"
+
+      - key: NEXT_PUBLIC_SITE_NAME
+        scope: RUN_AND_BUILD_TIME
+        value: "Tres Morros de Coliumo"
+
+      # Supabase
+      - key: NEXT_PUBLIC_SUPABASE_URL
+        scope: RUN_AND_BUILD_TIME
+        value: "https://tfztguqsdeolxxskumjg.supabase.co"
+
+      - key: NEXT_PUBLIC_SUPABASE_ANON_KEY
+        scope: RUN_AND_BUILD_TIME
+        value: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRmenRndXFzZGVvbHh4c2t1bWpnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI4MjU2NDEsImV4cCI6MjA3ODQwMTY0MX0.rJPmNYxQRtTCKruCtyif7_qk6oJEQ29eluKmkfa-CLA"
+
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        scope: RUN_AND_BUILD_TIME
+        value: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRmenRndXFzZGVvbHh4c2t1bWpnIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2MjgyNTY0MSwiZXhwIjoyMDc4NDAxNjQxfQ.6BEnoFAhzJyaMZ5iCayHIQyTMLFFnwdwbbMJ2vcrlO8"
+
+      # ===========================================================
+      # FLOW PRODUCCIÓN - CREDENCIALES REALES
+      # ===========================================================
+      - key: FLOW_API_KEY
+        scope: RUN_AND_BUILD_TIME
+        type: SECRET
+        value: "7DAA6E3F-1804-4FBD-999C-805C6988LCB6"
+
+      - key: FLOW_SECRET_KEY
+        scope: RUN_AND_BUILD_TIME
+        type: SECRET
+        value: "76930528c3ce6accbc89187dc50960f932ee864c"
+
+      - key: FLOW_BASE_URL
+        scope: RUN_AND_BUILD_TIME
+        value: "https://www.flow.cl/api"
+
+      - key: FLOW_FORCE_MOCK
+        scope: RUN_AND_BUILD_TIME
+        value: "false"
+
+      - key: FLOW_ALLOW_MOCK_IN_PROD
+        scope: RUN_AND_BUILD_TIME
+        value: "false"
+
+      - key: FLOW_ALLOW_SANDBOX_IN_PROD
+        scope: RUN_AND_BUILD_TIME
+        value: "false"
+
+      - key: FLOW_WEBHOOK_SECRET
+        scope: RUN_AND_BUILD_TIME
+        value: "tresmorros-webhook-secret-prod-2025"
+
+      # Observabilidad / Sentry
+      - key: SENTRY_DSN
+        scope: RUN_TIME
+        value: ""
+      - key: NEXT_PUBLIC_SENTRY_DSN
+        scope: RUN_TIME
+        value: ""
+      - key: NEXT_PUBLIC_SENTRY_TRACES_SAMPLE_RATE
+        scope: RUN_TIME
+        value: "0.1"
+      - key: NEXT_PUBLIC_SENTRY_REPLAYS_SESSION_SAMPLE_RATE
+        scope: RUN_TIME
+        value: "0"
+      - key: NEXT_PUBLIC_SENTRY_REPLAYS_ON_ERROR_SAMPLE_RATE
+        scope: RUN_TIME
+        value: "1"
+      - key: SENTRY_TRACES_SAMPLE_RATE
+        scope: RUN_TIME
+        value: "0.1"
+      - key: SENTRY_PROFILES_SAMPLE_RATE
+        scope: RUN_TIME
+        value: "0.1"
+
+      # ===========================================================
+      # EmailJS - Configuración de emails
+      # ===========================================================
+      - key: EMAILJS_PUBLIC_KEY
+        scope: RUN_AND_BUILD_TIME
+        value: "-XXVFi7EqT9YZXuaO"
+
+      - key: EMAILJS_PRIVATE_KEY
+        scope: RUN_AND_BUILD_TIME
+        type: SECRET
+        value: "JdYOA0KSZ0m7zugc16yze"
+
+      - key: EMAILJS_SERVICE_ID
+        scope: RUN_AND_BUILD_TIME
+        value: "service_rd6aeih"
+
+      - key: EMAILJS_TEMPLATE_ID
+        scope: RUN_AND_BUILD_TIME
+        value: "template_3qqg8li"
+
+      - key: EMAILJS_FROM_NAME
+        scope: RUN_AND_BUILD_TIME
+        value: "Tres Morros de Coliumo"
+
+      - key: EMAILJS_FROM_EMAIL
+        scope: RUN_AND_BUILD_TIME
+        value: "cabanastresmorrosdecoliumo@gmail.com"
+
+      # Seguridad / panel admin
+      - key: ADMIN_PASSWORD
+        scope: RUN_TIME
+        type: SECRET
+        value: "TMC_2025_Admin_Secure!"
+
+      - key: ADMIN_SESSION_SECRET
+        scope: RUN_TIME
+        type: SECRET
+        value: "Session_Sec_Random_String_99"
+
+      - key: CRON_SECRET
+        scope: RUN_TIME
+        value: "TMC_Cron_Secret_Key_2025"
+
+workers:
+  - name: cron-worker
+    source_dir: .
+    github:
+      repo: NikoRNJ/tresmorroscoliumo.github.io
+      branch: main
+      deploy_on_push: true
+    environment_slug: node-js
+    instance_size_slug: apps-s-1vcpu-1gb
+    instance_count: 1
+    build_command: pnpm install --frozen-lockfile
+    run_command: >
+      while true; do
+        echo "[Cron] Triggering expire-holds...";
+        curl -X POST -H "x-cron-secret: ${CRON_SECRET}" ${NEXT_PUBLIC_SITE_URL}/api/jobs/expire-holds;
+        echo "\n[Cron] Done. Sleeping 5 minutes...";
+        sleep 300;
+      done
+    envs:
+      - key: CRON_SECRET
+        scope: RUN_TIME
+        value: "TMC_Cron_Secret_Key_2025"
+      - key: NEXT_PUBLIC_SITE_URL
+        scope: RUN_TIME
+        value: "https://www.tresmorroscoliumo.cl"
