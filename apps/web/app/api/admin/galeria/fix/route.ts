@@ -16,17 +16,33 @@ const FOLDER_TO_CATEGORY: Record<string, string> = {
 };
 
 /**
- * GET /api/admin/galeria/fix
+ * GET /api/admin/galeria/fix?key=tresmorros2024
  * 
  * Corrige la tabla galeria:
  * 1. Elimina registros que no son de galería (cabins, hero, proposito)
  * 2. Lee las imágenes que YA están en Supabase Storage
  * 3. Inserta los registros correctos
+ * 
+ * En desarrollo: acepta query param ?key=tresmorros2024
+ * En producción: requiere sesión de admin
  */
 export async function GET(request: NextRequest) {
-    const isAdmin = await requireAdmin();
-    if (!isAdmin) {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    // Verificar autenticación
+    const { searchParams } = new URL(request.url);
+    const devKey = searchParams.get('key');
+    const isDevMode = process.env.NODE_ENV === 'development';
+
+    // En desarrollo, permitir con clave; en producción, requiere admin
+    if (isDevMode && devKey === 'tresmorros2024') {
+        console.log('[fix] Acceso autorizado con clave de desarrollo');
+    } else {
+        const isAdmin = await requireAdmin();
+        if (!isAdmin) {
+            return NextResponse.json({
+                error: 'Unauthorized',
+                hint: isDevMode ? 'Usa ?key=tresmorros2024 para ejecutar en desarrollo' : undefined
+            }, { status: 401 });
+        }
     }
 
     const results = {
