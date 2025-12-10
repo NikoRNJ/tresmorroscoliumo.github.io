@@ -17,13 +17,13 @@ ON CONFLICT (id) DO UPDATE SET
   file_size_limit = 10485760,
   allowed_mime_types = ARRAY['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
 
+-- Eliminar política existente si existe (para evitar errores)
+DROP POLICY IF EXISTS "Galeria images are publicly accessible" ON storage.objects;
+
 -- Política para permitir lectura pública
-CREATE POLICY IF NOT EXISTS "Galeria images are publicly accessible"
+CREATE POLICY "Galeria images are publicly accessible"
 ON storage.objects FOR SELECT
 USING (bucket_id = 'galeria');
-
--- Política para permitir uploads solo con service_role (admin)
--- (Las APIs del admin usan service_role key, así que no necesitan políticas adicionales)
 
 -- Verificar que el bucket fue creado
 SELECT id, name, public, file_size_limit FROM storage.buckets WHERE id = 'galeria';
