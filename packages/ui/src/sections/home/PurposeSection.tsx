@@ -4,21 +4,21 @@ import { Container, Section } from '../../ui/Container';
 const cabinStories = [
   {
     name: 'Vegas de Coliumo',
-    tagline: 'Humedal costero y naturaleza',
+
     description:
       'Un sector encantador dentro de la localidad de Coliumo, en la comuna de Tomé, Región del Biobío. Reconocido por su humedal costero, este lugar destaca por su belleza natural, su tranquilidad y su enorme valor ecológico. Es un entorno ideal para quienes buscan conectar con la naturaleza, disfrutar del paisaje y vivir momentos de calma en un ambiente único.',
     image: '/images/proposito/vegasColiumo.jpg',
   },
   {
     name: 'Caleta del Medio',
-    tagline: 'Memorias de pescadores artesanales',
+
     description:
       'Caleta del Medio es un lugar acogedor y lleno de vida local. Aquí puedes disfrutar de hermosas vistas, ver las embarcaciones artesanales y sentir la esencia tradicional de Coliumo. Un destino perfecto para pasear en familia y descubrir la auténtica cultura costera de la zona.',
     image: '/images/proposito/caletaMedio.jpg',
   },
   {
     name: 'Los Morros',
-    tagline: 'Guardianes de roca y espuma',
+
     description:
       'Los Morros es uno de los paisajes más emblemáticos de Coliumo. Con sus formaciones rocosas y vistas panorámicas, es un lugar ideal para pasear en familia, tomar fotografías y disfrutar de la naturaleza. Un punto imperdible para quienes visitan la zona y buscan momentos tranquilos y memorables.',
     image: '/images/proposito/losmorros.jpg',
@@ -71,7 +71,7 @@ export function PurposeSection() {
             <p className="text-lg text-gray-300 mb-4">
               Te entregamos información turística clara y actualizada para que aproveches cada día al máximo. Tu descanso y bienestar son lo más importante. <strong className="text-primary-400">Déjanos acompañarte en una estadía que recordarás con cariño.</strong>
             </p>
-            
+
             <p className="text-primary-300 uppercase tracking-[0.2em] text-sm mb-4 mt-8">⭐ Descubre Coliumo con Nuestra Guía Local</p>
 
             <div className="mt-6 grid gap-4 sm:grid-cols-2">
@@ -103,16 +103,16 @@ export function PurposeSection() {
                   quality={90}
                   priority={index === 0}
                 />
-                
+
                 {/* Overlay gradiente para legibilidad */}
                 <div className="absolute inset-0 bg-gradient-to-t from-dark-950 via-dark-950/70 to-dark-950/30" />
-                
+
                 {/* Contenido */}
                 <div className="relative z-10 p-6 pt-[25%] h-full flex flex-col justify-end">
                   <div className="absolute inset-x-6 top-0 h-1 rounded-b-full bg-gradient-to-r from-primary-400 via-primary-300 to-primary-500" />
                   <div className="flex items-center justify-between mb-3">
                     <span className="text-sm uppercase tracking-[0.3em] text-primary-200 font-medium">{String(index + 1).padStart(2, '0')}</span>
-                    <span className="rounded-full bg-primary-500/20 backdrop-blur-sm px-3 py-1 text-xs text-primary-300 font-medium">{story.tagline}</span>
+
                   </div>
                   <h3 className="text-2xl font-semibold text-white mb-3 drop-shadow-lg">{story.name}</h3>
                   <p className="text-gray-200 drop-shadow-md">{story.description}</p>

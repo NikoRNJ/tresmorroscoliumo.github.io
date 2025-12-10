@@ -114,8 +114,8 @@ export function GaleriaSortableGrid({
     // Preparar slides para el lightbox
     const slides = items.map(item => ({
         src: resolveImageUrl(item.imageUrl, item.storagePath),
-        alt: item.altText,
-        title: item.altText,
+        alt: item.altText || undefined,
+        title: item.altText || undefined,
     }));
 
     return (
