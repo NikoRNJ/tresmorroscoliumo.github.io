@@ -8,8 +8,8 @@ const loginSchema = z.object({
 });
 
 const MAX_LOGIN_ATTEMPTS = Math.max(
-  3,
-  Number(process.env.ADMIN_LOGIN_MAX_ATTEMPTS || 5)
+  10,
+  Number(process.env.ADMIN_LOGIN_MAX_ATTEMPTS || 100)
 );
 const LOGIN_WINDOW_MS = Math.max(
   60_000,
