@@ -2,13 +2,14 @@
 
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { 
-  LayoutDashboard, 
-  Calendar, 
-  Home, 
-  Settings, 
+import {
+  LayoutDashboard,
+  Calendar,
+  Home,
+  Settings,
   LogOut,
-  FileText 
+  FileText,
+  Images
 } from 'lucide-react';
 import { cn } from '@core/lib/utils/cn';
 
@@ -17,6 +18,7 @@ const navigation = [
   { name: 'Métricas', href: '/admin/dashboard', icon: Home },
   { name: 'Reservas', href: '/admin/reservas', icon: Calendar },
   { name: 'Media', href: '/admin/media', icon: FileText },
+  { name: 'Galería', href: '/admin/galeria', icon: Images },
   { name: 'Bloqueos', href: '/admin/bloqueos', icon: FileText },
   { name: 'Configuración', href: '/admin/configuracion', icon: Settings },
 ];

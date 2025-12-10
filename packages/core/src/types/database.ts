@@ -247,6 +247,35 @@ export interface Database {
           created_at?: string;
         };
       };
+      galeria: {
+        Row: {
+          id: string;
+          image_url: string;
+          storage_path: string | null;
+          category: string;
+          position: number;
+          alt_text: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          image_url: string;
+          storage_path?: string | null;
+          category: string;
+          position?: number;
+          alt_text?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          image_url?: string;
+          storage_path?: string | null;
+          category?: string;
+          position?: number;
+          alt_text?: string | null;
+          created_at?: string;
+        };
+      };
     };
   };
 }
@@ -264,3 +293,7 @@ export type BookingStatus = Booking['status'];
 export type CabinImage = Database['public']['Tables']['cabin_images']['Row'];
 export type AdminBlock = Database['public']['Tables']['admin_blocks']['Row'];
 export type ApiEvent = Database['public']['Tables']['api_events']['Row'];
+
+export type Galeria = Database['public']['Tables']['galeria']['Row'];
+export type GaleriaInsert = Database['public']['Tables']['galeria']['Insert'];
+export type GaleriaUpdate = Database['public']['Tables']['galeria']['Update'];

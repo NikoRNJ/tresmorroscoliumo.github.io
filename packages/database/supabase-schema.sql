@@ -241,6 +241,27 @@ VALUES
 ON CONFLICT (slug) DO NOTHING;
 
 -- ==============================================
+-- TABLA: galeria
+-- Descripción: Galería genérica de imágenes por categorías
+-- ==============================================
+CREATE TABLE IF NOT EXISTS galeria (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  image_url TEXT NOT NULL,
+  storage_path TEXT,                    -- Path in Supabase Storage bucket
+  category TEXT NOT NULL,               -- e.g., "Bautizos", "Bodas"
+  position INTEGER NOT NULL DEFAULT 0,  -- For ordering in carousel/gallery
+  alt_text TEXT,
+  created_at TIMESTAMPTZ DEFAULT now()
+);
+
+-- Indexes for galeria
+CREATE INDEX IF NOT EXISTS idx_galeria_category ON galeria(category);
+CREATE INDEX IF NOT EXISTS idx_galeria_position ON galeria(category, position);
+
+COMMENT ON TABLE galeria IS 'Galería genérica de imágenes organizadas por categorías (Bautizos, Bodas, Eventos, etc.)';
+COMMENT ON COLUMN galeria.position IS 'Posición de orden dentro de la categoría, menor = primero en carrusel';
+
+-- ==============================================
 -- VERIFICACIÓN
 -- ==============================================
 
@@ -264,6 +285,7 @@ ORDER BY table_name;
 -- bookings
 -- cabin_images
 -- cabins
+-- galeria
 
 -- ==============================================
 -- FIN DEL SCHEMA

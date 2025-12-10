@@ -1,0 +1,1117 @@
+-- 1. Agregar columnas para Toallas
+ALTER TABLE bookings 
+ADD COLUMN IF NOT EXISTS towels_count INTEGER DEFAULT 0,
+ADD COLUMN IF NOT EXISTS amount_towels NUMERIC(10, 2) DEFAULT 0;
+
+-- 2. Agregar columna para Personas Extra (que también faltaba en el schema original)
+ALTER TABLE bookings 
+ADD COLUMN IF NOT EXISTS amount_extra_people NUMERIC(10, 2) DEFAULT 0;
+
+-- 3. Agregar comentarios para documentación (opcional pero recomendado)
+COMMENT ON COLUMN bookings.towels_count IS 'Cantidad de toallas adicionales solicitadas';
+COMMENT ON COLUMN bookings.amount_towels IS 'Costo total de las toallas adicionales';
+COMMENT ON COLUMN bookings.amount_extra_people IS 'Costo total por personas adicionales';
+
+-- =================================================================
+-- SCRIPT UNIFICADO DE ACTUALIZACIÓN Y CORRECCIÓN (TRES MORROS)
+-- =================================================================
+
+-- 1. Habilitar extensiones necesarias para validaciones avanzadas
+CREATE EXTENSION IF NOT EXISTS btree_gist;
+
+-- 2. Actualizar Tabla BOOKINGS (Reservas)
+-- Agregar columnas de Toallas y Extras (Si no existen)
+ALTER TABLE bookings 
+ADD COLUMN IF NOT EXISTS towels_count INTEGER DEFAULT 0,
+ADD COLUMN IF NOT EXISTS amount_towels NUMERIC(10, 2) DEFAULT 0,
+ADD COLUMN IF NOT EXISTS amount_extra_people NUMERIC(10, 2) DEFAULT 0;
+
+-- Agregar columnas de Horarios (Si no existen)
+ALTER TABLE bookings
+ADD COLUMN IF NOT EXISTS arrival_time TIME WITHOUT TIME ZONE NOT NULL DEFAULT '15:00',
+ADD COLUMN IF NOT EXISTS departure_time TIME WITHOUT TIME ZONE NOT NULL DEFAULT '12:00';
+
+-- Asegurar valores por defecto en registros antiguos
+UPDATE bookings
+SET
+  arrival_time   = COALESCE(arrival_time, '15:00'::time),
+  departure_time = COALESCE(departure_time, '12:00'::time);
+
+-- 3. Mejorar la restricción de traslape (Evita doble reserva real)
+-- Primero borramos la restricción simple anterior si existe
+DROP INDEX IF EXISTS idx_bookings_no_overlap;
+ALTER TABLE bookings DROP CONSTRAINT IF EXISTS bookings_no_overlap;
+
+-- Agregamos la restricción avanzada (GIST) que considera rangos de fechas
+ALTER TABLE bookings
+  ADD CONSTRAINT bookings_no_overlap
+  EXCLUDE USING gist (
+    cabin_id WITH =,
+    daterange(start_date, end_date, '[)') WITH &&
+  )
+  WHERE (status IN ('pending', 'paid'));
+
+-- 4. Actualizar Tabla CABINS (Cabañas)
+-- Agregar precio por persona extra
+ALTER TABLE cabins 
+ADD COLUMN IF NOT EXISTS price_per_extra_person NUMERIC(10, 2) DEFAULT 10000;
+
+-- 5. CORRECCIÓN DE DATOS DE CABAÑAS
+-- Para que el cobro de "persona extra" funcione, la capacidad base debe ser 2.
+-- Si la dejamos en 7, nunca se cobrará extra.
+UPDATE cabins 
+SET 
+  capacity_base = 2,           -- Base 2 personas
+  capacity_max = 7,            -- Máximo 7 personas
+  price_per_extra_person = 10000, -- $10.000 por cada persona adicional (3ra, 4ta...)
+  base_price = 55000,          -- Precio base por las 2 personas
+  jacuzzi_price = 25000        -- Precio jacuzzi
+WHERE slug IN ('vegas-del-coliumo', 'caleta-del-medio', 'los-morros');
+
+-- 6. Comentarios para documentación
+COMMENT ON COLUMN bookings.towels_count IS 'Cantidad de toallas adicionales solicitadas';
+COMMENT ON COLUMN bookings.amount_towels IS 'Costo total de las toallas adicionales';
+COMMENT ON COLUMN bookings.amount_extra_people IS 'Costo total por personas adicionales';
+COMMENT ON CONSTRAINT bookings_no_overlap ON bookings IS 'Evita traslapes de reservas (pending/paid) permitiendo check-out y check-in el mismo día';
+COMMENT ON COLUMN cabins.price_per_extra_person IS 'Precio por cada persona adicional sobre capacity_base (2). Default: $10,000 CLP';
+
+-- =================================================================
+-- VERIFICACIÓN FINAL
+-- =================================================================
+SELECT slug, capacity_base, capacity_max, base_price, price_per_extra_person 
+FROM cabins;
+
+-- ==============================================
+-- ITERATION 10: FIX EXPIRED HOLDS BLOCKING NEW RESERVATIONS
+-- Fecha: 2025-11-28
+-- 
+-- PROBLEMA: Los holds expirados (expires_at < NOW()) mantienen
+-- status='pending' y bloquean nuevas reservas por el constraint
+-- de exclusión, aunque la API de disponibilidad los muestre como
+-- disponibles.
+--
+-- SOLUCIÓN: Modificar el RPC atómico para expirar holds vencidos
+-- ANTES de intentar insertar una nueva reserva.
+-- ==============================================
+
+-- Actualizar función RPC para expirar holds antes de insertar
+CREATE OR REPLACE FUNCTION create_booking_hold_atomic(
+  p_cabin_id UUID,
+  p_start_date DATE,
+  p_end_date DATE,
+  p_arrival_time TIME WITHOUT TIME ZONE,
+  p_departure_time TIME WITHOUT TIME ZONE,
+  p_party_size INTEGER,
+  p_jacuzzi_days JSONB,
+  p_towels_count INTEGER,
+  p_customer_name TEXT,
+  p_customer_email TEXT,
+  p_customer_phone TEXT,
+  p_customer_notes TEXT,
+  p_expires_at TIMESTAMPTZ,
+  p_amount_base NUMERIC(10,2),
+  p_amount_jacuzzi NUMERIC(10,2),
+  p_amount_extra_people NUMERIC(10,2),
+  p_amount_towels NUMERIC(10,2),
+  p_amount_total NUMERIC(10,2)
+)
+RETURNS bookings AS $$
+DECLARE
+  result bookings;
+  expired_count INTEGER;
+BEGIN
+  -- ============================================
+  -- PASO 1: EXPIRAR HOLDS VENCIDOS QUE SOLAPAN
+  -- ============================================
+  -- Esto es CRÍTICO: el constraint bookings_no_overlap incluye
+  -- status='pending' sin considerar expires_at. Debemos marcar
+  -- como 'expired' cualquier hold vencido ANTES de insertar.
+  UPDATE bookings
+  SET status = 'expired'
+  WHERE cabin_id = p_cabin_id
+    AND status = 'pending'
+    AND expires_at IS NOT NULL
+    AND expires_at < NOW()
+    AND start_date < p_end_date
+    AND end_date > p_start_date;
+  
+  GET DIAGNOSTICS expired_count = ROW_COUNT;
+  
+  -- Log para debugging (visible en logs de Supabase)
+  IF expired_count > 0 THEN
+    RAISE NOTICE '[create_booking_hold_atomic] Expired % stale holds for cabin % overlapping [%, %)', 
+      expired_count, p_cabin_id, p_start_date, p_end_date;
+  END IF;
+
+  -- ============================================
+  -- PASO 2: VERIFICAR ADMIN BLOCKS
+  -- ============================================
+  IF EXISTS (
+    SELECT 1 FROM admin_blocks
+    WHERE cabin_id = p_cabin_id
+      AND start_date < p_end_date
+      AND end_date > p_start_date
+  ) THEN
+    RAISE EXCEPTION 'DATES_UNAVAILABLE' USING ERRCODE = 'P0001';
+  END IF;
+
+  -- ============================================
+  -- PASO 3: INSERTAR NUEVO HOLD
+  -- ============================================
+  -- Si hay otro hold activo (no expirado), el constraint
+  -- bookings_no_overlap lanzará exclusion_violation
+  INSERT INTO bookings (
+    cabin_id,
+    start_date,
+    end_date,
+    arrival_time,
+    departure_time,
+    party_size,
+    jacuzzi_days,
+    status,
+    amount_base,
+    amount_jacuzzi,
+    amount_extra_people,
+    amount_towels,
+    amount_total,
+    towels_count,
+    customer_name,
+    customer_email,
+    customer_phone,
+    customer_notes,
+    expires_at
+  )
+  VALUES (
+    p_cabin_id,
+    p_start_date,
+    p_end_date,
+    p_arrival_time,
+    p_departure_time,
+    p_party_size,
+    COALESCE(p_jacuzzi_days, '[]'::jsonb),
+    'pending',
+    p_amount_base,
+    p_amount_jacuzzi,
+    p_amount_extra_people,
+    p_amount_towels,
+    p_amount_total,
+    COALESCE(p_towels_count, 0),
+    p_customer_name,
+    p_customer_email,
+    p_customer_phone,
+    p_customer_notes,
+    p_expires_at
+  )
+  RETURNING * INTO result;
+
+  RETURN result;
+EXCEPTION
+  WHEN unique_violation OR exclusion_violation THEN
+    -- Otro usuario creó un hold válido entre el UPDATE y el INSERT
+    RAISE EXCEPTION 'DATES_UNAVAILABLE' USING ERRCODE = 'P0001';
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- ============================================
+-- FUNCIÓN AUXILIAR: Expirar holds vencidos globalmente
+-- Útil para llamar antes de consultas de disponibilidad
+-- ============================================
+CREATE OR REPLACE FUNCTION expire_stale_holds()
+RETURNS INTEGER AS $$
+DECLARE
+  expired_count INTEGER;
+BEGIN
+  UPDATE bookings
+  SET status = 'expired'
+  WHERE status = 'pending'
+    AND expires_at IS NOT NULL
+    AND expires_at < NOW();
+  
+  GET DIAGNOSTICS expired_count = ROW_COUNT;
+  RETURN expired_count;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- ============================================
+-- FUNCIÓN: Expirar holds para una cabaña específica
+-- ============================================
+CREATE OR REPLACE FUNCTION expire_stale_holds_for_cabin(p_cabin_id UUID)
+RETURNS INTEGER AS $$
+DECLARE
+  expired_count INTEGER;
+BEGIN
+  UPDATE bookings
+  SET status = 'expired'
+  WHERE cabin_id = p_cabin_id
+    AND status = 'pending'
+    AND expires_at IS NOT NULL
+    AND expires_at < NOW();
+  
+  GET DIAGNOSTICS expired_count = ROW_COUNT;
+  RETURN expired_count;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- ============================================
+-- Actualizar comentario en schema
+-- ============================================
+COMMENT ON COLUMN bookings.expires_at IS 'Momento en que expira el hold (45 min desde creación). Los holds expirados se marcan automáticamente como expired.';
+
+-- ============================================
+-- LIMPIEZA INICIAL: Expirar todos los holds vencidos existentes
+-- ============================================
+DO $$
+DECLARE
+  cleaned INTEGER;
+BEGIN
+  UPDATE bookings
+  SET status = 'expired'
+  WHERE status = 'pending'
+    AND expires_at IS NOT NULL
+    AND expires_at < NOW();
+  
+  GET DIAGNOSTICS cleaned = ROW_COUNT;
+  RAISE NOTICE 'Initial cleanup: expired % stale holds', cleaned;
+END $$;
+
+
+-- Atomic hold creation via RPC to avoid race conditions
+-- Creates a function that checks admin blocks, relies on exclusion constraint for overlaps, and logs codes
+
+CREATE OR REPLACE FUNCTION create_booking_hold_atomic(
+  p_cabin_id UUID,
+  p_start_date DATE,
+  p_end_date DATE,
+  p_arrival_time TIME WITHOUT TIME ZONE,
+  p_departure_time TIME WITHOUT TIME ZONE,
+  p_party_size INTEGER,
+  p_jacuzzi_days JSONB,
+  p_towels_count INTEGER,
+  p_customer_name TEXT,
+  p_customer_email TEXT,
+  p_customer_phone TEXT,
+  p_customer_notes TEXT,
+  p_expires_at TIMESTAMPTZ,
+  p_amount_base NUMERIC(10,2),
+  p_amount_jacuzzi NUMERIC(10,2),
+  p_amount_extra_people NUMERIC(10,2),
+  p_amount_towels NUMERIC(10,2),
+  p_amount_total NUMERIC(10,2)
+)
+RETURNS bookings AS $$
+DECLARE
+  result bookings;
+BEGIN
+  -- Check admin blocks overlap
+  IF EXISTS (
+    SELECT 1 FROM admin_blocks
+    WHERE cabin_id = p_cabin_id
+      AND start_date < p_end_date
+      AND end_date > p_start_date
+  ) THEN
+    RAISE EXCEPTION 'DATES_UNAVAILABLE' USING ERRCODE = 'P0001';
+  END IF;
+
+  INSERT INTO bookings (
+    cabin_id,
+    start_date,
+    end_date,
+    arrival_time,
+    departure_time,
+    party_size,
+    jacuzzi_days,
+    status,
+    amount_base,
+    amount_jacuzzi,
+    amount_extra_people,
+    amount_towels,
+    amount_total,
+    towels_count,
+    customer_name,
+    customer_email,
+    customer_phone,
+    customer_notes,
+    expires_at
+  )
+  VALUES (
+    p_cabin_id,
+    p_start_date,
+    p_end_date,
+    p_arrival_time,
+    p_departure_time,
+    p_party_size,
+    COALESCE(p_jacuzzi_days, '[]'::jsonb),
+    'pending',
+    p_amount_base,
+    p_amount_jacuzzi,
+    p_amount_extra_people,
+    p_amount_towels,
+    p_amount_total,
+    COALESCE(p_towels_count, 0),
+    p_customer_name,
+    p_customer_email,
+    p_customer_phone,
+    p_customer_notes,
+    p_expires_at
+  )
+  RETURNING * INTO result;
+
+  RETURN result;
+EXCEPTION
+  WHEN unique_violation OR exclusion_violation THEN
+    RAISE EXCEPTION 'DATES_UNAVAILABLE' USING ERRCODE = 'P0001';
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+
+
+-- Migration: Add towels support to bookings
+-- Date: 2025-11-19
+
+ALTER TABLE bookings 
+ADD COLUMN IF NOT EXISTS towels_count INTEGER DEFAULT 0,
+ADD COLUMN IF NOT EXISTS amount_towels NUMERIC(10, 2) DEFAULT 0;
+
+COMMENT ON COLUMN bookings.towels_count IS 'Cantidad de toallas adicionales solicitadas';
+COMMENT ON COLUMN bookings.amount_towels IS 'Costo total de las toallas adicionales';
+
+
+
+-- ITERACIÓN 6: Sistema de emails con SendGrid
+-- Agrega columnas para trackear envío de emails de confirmación
+
+-- Agregar columna para timestamp de confirmación enviada
+ALTER TABLE bookings 
+ADD COLUMN IF NOT EXISTS confirmation_sent_at TIMESTAMPTZ;
+
+-- Crear índice para búsquedas eficientes
+CREATE INDEX IF NOT EXISTS idx_bookings_confirmation_sent 
+ON bookings(confirmation_sent_at) 
+WHERE confirmation_sent_at IS NOT NULL;
+
+-- Comentarios descriptivos
+COMMENT ON COLUMN bookings.confirmation_sent_at IS 'Timestamp de cuando se envió el email de confirmación al cliente después del pago exitoso';
+
+-- Verificar la estructura
+SELECT 
+  column_name, 
+  data_type, 
+  is_nullable,
+  column_default
+FROM information_schema.columns 
+WHERE table_name = 'bookings' 
+  AND column_name = 'confirmation_sent_at';
+
+
+
+-- ==============================================
+-- MIGRACIÓN: Agregar columnas para integración con Flow
+-- Fecha: 2025-11-11
+-- Iteración: 5
+-- ==============================================
+
+-- Agregar columna para almacenar el costo de personas extra
+-- (Esta columna faltaba en el schema original)
+ALTER TABLE bookings 
+ADD COLUMN IF NOT EXISTS amount_extra_people NUMERIC(10, 2) DEFAULT 0 NOT NULL;
+
+COMMENT ON COLUMN bookings.amount_extra_people IS 'Costo adicional por personas extra sobre capacity_base';
+
+-- Agregar columna price_per_extra_person a cabins
+-- (Esta columna faltaba en el schema original)
+ALTER TABLE cabins 
+ADD COLUMN IF NOT EXISTS price_per_extra_person NUMERIC(10, 2) DEFAULT 10000 NOT NULL CHECK (price_per_extra_person >= 0);
+
+COMMENT ON COLUMN cabins.price_per_extra_person IS 'Precio por persona adicional sobre capacity_base (por noche)';
+
+-- Las columnas flow_order_id y flow_payment_data ya existen en el schema
+-- Verificar que existen (esto no falla si ya existen):
+DO $$ 
+BEGIN
+  -- Verificar flow_order_id
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.columns 
+    WHERE table_name = 'bookings' AND column_name = 'flow_order_id'
+  ) THEN
+    ALTER TABLE bookings ADD COLUMN flow_order_id TEXT UNIQUE;
+    COMMENT ON COLUMN bookings.flow_order_id IS 'ID de orden en Flow (flowOrder)';
+  END IF;
+
+  -- Verificar flow_payment_data
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.columns 
+    WHERE table_name = 'bookings' AND column_name = 'flow_payment_data'
+  ) THEN
+    ALTER TABLE bookings ADD COLUMN flow_payment_data JSONB;
+    COMMENT ON COLUMN bookings.flow_payment_data IS 'Datos completos de la respuesta de Flow API';
+  END IF;
+END $$;
+
+-- Crear índice para flow_order_id si no existe
+CREATE INDEX IF NOT EXISTS idx_bookings_flow_order ON bookings(flow_order_id);
+
+-- ==============================================
+-- ACTUALIZAR DATOS EXISTENTES DE CABAÑAS
+-- (Solo si aún no tienen el precio correcto)
+-- ==============================================
+
+-- Actualizar las 3 cabañas con los precios correctos
+UPDATE cabins SET 
+  capacity_base = 2,
+  capacity_max = 7,
+  base_price = 55000,
+  jacuzzi_price = 25000,
+  price_per_extra_person = 10000
+WHERE slug IN ('vegas-del-coliumo', 'caleta-del-medio', 'los-morros');
+
+-- Verificar que todo está correcto
+SELECT 
+  slug,
+  title,
+  capacity_base,
+  capacity_max,
+  base_price,
+  price_per_extra_person,
+  jacuzzi_price
+FROM cabins;
+
+
+
+-- ==============================================
+-- ITERATION 11: CORRECCIÓN DEFINITIVA DEL SISTEMA DE HOLDS
+-- Fecha: 2025-12-02
+-- 
+-- DIAGNÓSTICO DEL PROBLEMA:
+-- ========================
+-- El constraint `bookings_no_overlap` bloquea reservas basándose SOLO
+-- en `status IN ('pending', 'paid')`, pero NO considera `expires_at`.
+-- 
+-- Esto causa que:
+-- 1. Usuario A crea hold → status='pending', expires_at=NOW()+45min
+-- 2. Pasan 46 minutos → hold sigue con status='pending' (no se actualizó)
+-- 3. API de disponibilidad muestra fecha como "disponible" (verifica expires_at)
+-- 4. Usuario B intenta reservar → FALLA por el constraint (no verifica expires_at)
+-- 
+-- SOLUCIÓN:
+-- =========
+-- PostgreSQL NO permite usar NOW() en constraints EXCLUDE USING gist.
+-- Por eso debemos:
+-- 1. Actualizar proactivamente holds expirados a status='expired'
+-- 2. Crear trigger para marcar automáticamente holds vencidos
+-- 3. Actualizar funciones RPC para expirar antes de operar
+-- ==============================================
+
+-- ============================================
+-- PASO 1: LIMPIEZA INICIAL
+-- Marcar como 'expired' todos los holds vencidos
+-- ============================================
+DO $$
+DECLARE
+  cleaned INTEGER;
+BEGIN
+  UPDATE bookings
+  SET status = 'expired'
+  WHERE status = 'pending'
+    AND expires_at IS NOT NULL
+    AND expires_at < NOW();
+  
+  GET DIAGNOSTICS cleaned = ROW_COUNT;
+  RAISE NOTICE '[Iteration 11] Limpieza inicial: % holds expirados actualizados', cleaned;
+END $$;
+
+-- ============================================
+-- PASO 2: FUNCIÓN PARA EXPIRAR HOLDS GLOBALMENTE
+-- (recrear para asegurar que existe)
+-- ============================================
+CREATE OR REPLACE FUNCTION expire_stale_holds()
+RETURNS INTEGER AS $$
+DECLARE
+  expired_count INTEGER;
+BEGIN
+  UPDATE bookings
+  SET status = 'expired'
+  WHERE status = 'pending'
+    AND expires_at IS NOT NULL
+    AND expires_at < NOW();
+  
+  GET DIAGNOSTICS expired_count = ROW_COUNT;
+  RETURN expired_count;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+COMMENT ON FUNCTION expire_stale_holds() IS 
+  'Marca como expired todos los holds con expires_at vencido. Llamar periódicamente o antes de consultas.';
+
+-- ============================================
+-- PASO 3: FUNCIÓN PARA EXPIRAR HOLDS DE UNA CABAÑA
+-- ============================================
+CREATE OR REPLACE FUNCTION expire_stale_holds_for_cabin(p_cabin_id UUID)
+RETURNS INTEGER AS $$
+DECLARE
+  expired_count INTEGER;
+BEGIN
+  UPDATE bookings
+  SET status = 'expired'
+  WHERE cabin_id = p_cabin_id
+    AND status = 'pending'
+    AND expires_at IS NOT NULL
+    AND expires_at < NOW();
+  
+  GET DIAGNOSTICS expired_count = ROW_COUNT;
+  RETURN expired_count;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+COMMENT ON FUNCTION expire_stale_holds_for_cabin(UUID) IS 
+  'Marca como expired los holds vencidos de una cabaña específica.';
+
+-- ============================================
+-- PASO 4: FUNCIÓN RPC ATÓMICA MEJORADA
+-- Expira holds vencidos ANTES de verificar disponibilidad
+-- ============================================
+CREATE OR REPLACE FUNCTION create_booking_hold_atomic(
+  p_cabin_id UUID,
+  p_start_date DATE,
+  p_end_date DATE,
+  p_arrival_time TIME WITHOUT TIME ZONE,
+  p_departure_time TIME WITHOUT TIME ZONE,
+  p_party_size INTEGER,
+  p_jacuzzi_days JSONB,
+  p_towels_count INTEGER,
+  p_customer_name TEXT,
+  p_customer_email TEXT,
+  p_customer_phone TEXT,
+  p_customer_notes TEXT,
+  p_expires_at TIMESTAMPTZ,
+  p_amount_base NUMERIC(10,2),
+  p_amount_jacuzzi NUMERIC(10,2),
+  p_amount_extra_people NUMERIC(10,2),
+  p_amount_towels NUMERIC(10,2),
+  p_amount_total NUMERIC(10,2)
+)
+RETURNS bookings AS $$
+DECLARE
+  result bookings;
+  expired_count INTEGER;
+BEGIN
+  -- ============================================
+  -- PASO 1: EXPIRAR HOLDS VENCIDOS QUE SOLAPAN
+  -- ============================================
+  -- CRÍTICO: El constraint bookings_no_overlap incluye
+  -- status='pending' sin considerar expires_at. 
+  -- Debemos marcar como 'expired' cualquier hold vencido
+  -- ANTES de intentar insertar.
+  UPDATE bookings
+  SET status = 'expired'
+  WHERE cabin_id = p_cabin_id
+    AND status = 'pending'
+    AND expires_at IS NOT NULL
+    AND expires_at < NOW()
+    AND start_date < p_end_date
+    AND end_date > p_start_date;
+  
+  GET DIAGNOSTICS expired_count = ROW_COUNT;
+  
+  IF expired_count > 0 THEN
+    RAISE NOTICE '[create_booking_hold_atomic] Expirados % holds vencidos para cabaña % en rango [%, %)', 
+      expired_count, p_cabin_id, p_start_date, p_end_date;
+  END IF;
+
+  -- ============================================
+  -- PASO 2: VERIFICAR BLOQUEOS ADMINISTRATIVOS
+  -- ============================================
+  IF EXISTS (
+    SELECT 1 FROM admin_blocks
+    WHERE cabin_id = p_cabin_id
+      AND start_date < p_end_date
+      AND end_date > p_start_date
+  ) THEN
+    RAISE EXCEPTION 'DATES_UNAVAILABLE' USING ERRCODE = 'P0001';
+  END IF;
+
+  -- ============================================
+  -- PASO 3: INSERTAR NUEVO HOLD
+  -- ============================================
+  -- Si hay otro hold activo (no expirado), el constraint
+  -- bookings_no_overlap lanzará exclusion_violation
+  INSERT INTO bookings (
+    cabin_id,
+    start_date,
+    end_date,
+    arrival_time,
+    departure_time,
+    party_size,
+    jacuzzi_days,
+    status,
+    amount_base,
+    amount_jacuzzi,
+    amount_extra_people,
+    amount_towels,
+    amount_total,
+    towels_count,
+    customer_name,
+    customer_email,
+    customer_phone,
+    customer_notes,
+    expires_at
+  )
+  VALUES (
+    p_cabin_id,
+    p_start_date,
+    p_end_date,
+    p_arrival_time,
+    p_departure_time,
+    p_party_size,
+    COALESCE(p_jacuzzi_days, '[]'::jsonb),
+    'pending',
+    p_amount_base,
+    p_amount_jacuzzi,
+    p_amount_extra_people,
+    p_amount_towels,
+    p_amount_total,
+    COALESCE(p_towels_count, 0),
+    p_customer_name,
+    p_customer_email,
+    p_customer_phone,
+    p_customer_notes,
+    p_expires_at
+  )
+  RETURNING * INTO result;
+
+  RETURN result;
+EXCEPTION
+  WHEN unique_violation OR exclusion_violation THEN
+    RAISE EXCEPTION 'DATES_UNAVAILABLE' USING ERRCODE = 'P0001';
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+COMMENT ON FUNCTION create_booking_hold_atomic IS 
+  'Crea un hold de reserva de forma atómica. Expira holds vencidos antes de insertar para evitar conflictos con el constraint.';
+
+-- ============================================
+-- PASO 5: FUNCIÓN PARA VERIFICAR DISPONIBILIDAD
+-- (útil para validaciones adicionales)
+-- ============================================
+CREATE OR REPLACE FUNCTION check_dates_available(
+  p_cabin_id UUID,
+  p_start_date DATE,
+  p_end_date DATE,
+  p_exclude_booking_id UUID DEFAULT NULL
+)
+RETURNS BOOLEAN AS $$
+DECLARE
+  has_conflict BOOLEAN;
+BEGIN
+  -- Primero expirar holds vencidos que solapan
+  UPDATE bookings
+  SET status = 'expired'
+  WHERE cabin_id = p_cabin_id
+    AND status = 'pending'
+    AND expires_at IS NOT NULL
+    AND expires_at < NOW()
+    AND start_date < p_end_date
+    AND end_date > p_start_date;
+  
+  -- Verificar si hay conflictos con reservas activas
+  SELECT EXISTS (
+    SELECT 1 FROM bookings
+    WHERE cabin_id = p_cabin_id
+      AND status IN ('pending', 'paid')
+      AND start_date < p_end_date
+      AND end_date > p_start_date
+      AND (p_exclude_booking_id IS NULL OR id != p_exclude_booking_id)
+      -- Para pending, verificar que no esté expirado
+      AND (status = 'paid' OR (status = 'pending' AND expires_at > NOW()))
+  ) INTO has_conflict;
+  
+  -- También verificar bloqueos administrativos
+  IF NOT has_conflict THEN
+    SELECT EXISTS (
+      SELECT 1 FROM admin_blocks
+      WHERE cabin_id = p_cabin_id
+        AND start_date < p_end_date
+        AND end_date > p_start_date
+    ) INTO has_conflict;
+  END IF;
+  
+  RETURN NOT has_conflict;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+COMMENT ON FUNCTION check_dates_available IS 
+  'Verifica si las fechas están disponibles para reserva, expirando holds vencidos primero.';
+
+-- ============================================
+-- PASO 6: ÍNDICE PARA ACELERAR CONSULTAS DE EXPIRACIÓN
+-- ============================================
+CREATE INDEX IF NOT EXISTS idx_bookings_pending_expires 
+  ON bookings(cabin_id, expires_at) 
+  WHERE status = 'pending' AND expires_at IS NOT NULL;
+
+COMMENT ON INDEX idx_bookings_pending_expires IS 
+  'Acelera búsquedas de holds pendientes que pueden estar expirados.';
+
+-- ============================================
+-- PASO 7: TRIGGER OPCIONAL PARA AUTO-EXPIRAR
+-- (se ejecuta cuando se consulta la tabla)
+-- 
+-- NOTA: Este trigger es OPCIONAL y puede afectar
+-- ligeramente el rendimiento. Descomentarlo si se
+-- prefiere expiración automática en cada consulta.
+-- ============================================
+/*
+CREATE OR REPLACE FUNCTION trigger_expire_stale_holds()
+RETURNS TRIGGER AS $$
+BEGIN
+  -- Expirar holds vencidos de la misma cabaña
+  UPDATE bookings
+  SET status = 'expired'
+  WHERE cabin_id = NEW.cabin_id
+    AND status = 'pending'
+    AND expires_at IS NOT NULL
+    AND expires_at < NOW()
+    AND id != NEW.id;
+  
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS trg_expire_stale_holds ON bookings;
+CREATE TRIGGER trg_expire_stale_holds
+  BEFORE INSERT ON bookings
+  FOR EACH ROW
+  EXECUTE FUNCTION trigger_expire_stale_holds();
+*/
+
+-- ============================================
+-- VERIFICACIÓN FINAL
+-- ============================================
+DO $$
+DECLARE
+  pending_expired INTEGER;
+  pending_active INTEGER;
+BEGIN
+  -- Contar holds pendientes expirados (no deberían existir)
+  SELECT COUNT(*) INTO pending_expired
+  FROM bookings
+  WHERE status = 'pending'
+    AND expires_at IS NOT NULL
+    AND expires_at < NOW();
+  
+  -- Contar holds pendientes activos
+  SELECT COUNT(*) INTO pending_active
+  FROM bookings
+  WHERE status = 'pending'
+    AND expires_at IS NOT NULL
+    AND expires_at >= NOW();
+  
+  RAISE NOTICE '=== VERIFICACIÓN POST-MIGRACIÓN ===';
+  RAISE NOTICE 'Holds pendientes expirados (deberían ser 0): %', pending_expired;
+  RAISE NOTICE 'Holds pendientes activos: %', pending_active;
+  RAISE NOTICE '===================================';
+  
+  IF pending_expired > 0 THEN
+    RAISE WARNING '⚠️ Hay % holds con status=pending pero expires_at vencido. Ejecutar expire_stale_holds() manualmente.', pending_expired;
+  END IF;
+END $$;
+
+-- ============================================
+-- FIN DE LA MIGRACIÓN
+-- ============================================
+
+
+-- ==============================================
+-- MIGRATION: Iteration 12 - Media Storage
+-- Fecha: 2025-12-06
+-- Descripcion: Crear bucket 'media' y politicas de acceso
+-- ==============================================
+
+-- 1. Crear el bucket 'media' si no existe
+-- Esto habilita el almacenamiento de imagenes para el panel de admin
+INSERT INTO storage.buckets (id, name, public)
+VALUES ('media', 'media', true)
+ON CONFLICT (id) DO NOTHING;
+
+-- 2. Habilitar acceso publico de lectura (SELECT) para todos
+-- Esto permite que el frontend (y cualquiera) pueda ver las imagenes
+DROP POLICY IF EXISTS "Public Access Media" ON storage.objects;
+
+CREATE POLICY "Public Access Media"
+ON storage.objects FOR SELECT
+USING ( bucket_id = 'media' );
+
+-- Nota: Las subidas (INSERT) y borrados (DELETE) se hacen desde el backend
+-- usando la 'service_role_key', la cual se salta las politicas RLS.
+-- Por lo tanto, no es necesario crear politicas de escritura publicas.
+
+
+
+
+CREATE TABLE IF NOT EXISTS galeria (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  image_url TEXT NOT NULL,
+  storage_path TEXT,                    -- Path in Supabase Storage bucket
+  category TEXT NOT NULL,               -- e.g., "Bautizos", "Bodas"
+  position INTEGER NOT NULL DEFAULT 0,  -- For ordering in carousel/gallery
+  alt_text TEXT,
+  created_at TIMESTAMPTZ DEFAULT now()
+);
+-- Indexes for efficient queries
+CREATE INDEX idx_galeria_category ON galeria(category);
+CREATE INDEX idx_galeria_position ON galeria(category, position);
+COMMENT ON TABLE galeria IS 'Generic image gallery organized by categories';
+COMMENT ON COLUMN galeria.position IS 'Order position within category, lower = first';
+
+
+-- ==============================================
+-- GALERIA TABLE MIGRATION
+-- ==============================================
+
+CREATE TABLE IF NOT EXISTS galeria (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  image_url TEXT NOT NULL,
+  storage_path TEXT,
+  category TEXT NOT NULL,
+  position INTEGER NOT NULL DEFAULT 0,
+  alt_text TEXT,
+  created_at TIMESTAMPTZ DEFAULT now()
+);
+
+-- Indexes
+CREATE INDEX IF NOT EXISTS idx_galeria_category ON galeria(category);
+CREATE INDEX IF NOT EXISTS idx_galeria_position ON galeria(category, position);
+
+-- Comments
+COMMENT ON TABLE galeria IS 'Galería genérica de imágenes por categorías';
+COMMENT ON COLUMN galeria.position IS 'Orden dentro de la categoría, menor = primero';
+
+
+CREATE TABLE IF NOT EXISTS galeria (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  image_url TEXT NOT NULL,
+  storage_path TEXT,
+  category TEXT NOT NULL,
+  position INTEGER NOT NULL DEFAULT 0,
+  alt_text TEXT,
+  created_at TIMESTAMPTZ DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS idx_galeria_category ON galeria(category);
+CREATE INDEX IF NOT EXISTS idx_galeria_position ON galeria(category, position);
+
+
+CREATE TABLE IF NOT EXISTS galeria (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  image_url TEXT NOT NULL,
+  storage_path TEXT,
+  category TEXT NOT NULL,
+  position INTEGER NOT NULL DEFAULT 0,
+  alt_text TEXT,
+  created_at TIMESTAMPTZ DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS idx_galeria_category ON galeria(category);
+CREATE INDEX IF NOT EXISTS idx_galeria_position ON galeria(category, position);
+
+
+
+CREATE TABLE IF NOT EXISTS galeria (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  image_url TEXT NOT NULL,
+  storage_path TEXT,
+  category TEXT NOT NULL,
+  position INTEGER NOT NULL DEFAULT 0,
+  alt_text TEXT,
+  created_at TIMESTAMPTZ DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS idx_galeria_category ON galeria(category);
+CREATE INDEX IF NOT EXISTS idx_galeria_position ON galeria(category, position);
+
+
+
+CREATE TABLE IF NOT EXISTS galeria (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  image_url TEXT NOT NULL,
+  storage_path TEXT,
+  category TEXT NOT NULL,
+  position INTEGER NOT NULL DEFAULT 0,
+  alt_text TEXT,
+  created_at TIMESTAMPTZ DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS idx_galeria_category ON galeria(category);
+CREATE INDEX IF NOT EXISTS idx_galeria_position ON galeria(category, position);
+
+
+-- =========================================================
+-- Supabase schema para el panel de medios
+-- Incluye soporte para cabañas (cabins), imagen principal e RLS
+-- =========================================================
+
+-- Extensiones
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+
+-- Tabla de categorías (opcional, para usos generales)
+CREATE TABLE IF NOT EXISTS categories (
+  id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+  name VARCHAR(100) NOT NULL,
+  slug VARCHAR(100) NOT NULL UNIQUE,
+  description TEXT,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Tabla de cabañas (alineada con el backend principal)
+CREATE TABLE IF NOT EXISTS cabins (
+  id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+  slug VARCHAR(120) NOT NULL UNIQUE,
+  title VARCHAR(255) NOT NULL,
+  description TEXT,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Tabla de imágenes (soporta categoría o cabaña e imagen principal)
+CREATE TABLE IF NOT EXISTS images (
+  id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+  url TEXT NOT NULL,
+  name VARCHAR(255) NOT NULL,
+  alt VARCHAR(255),
+  category_id UUID REFERENCES categories(id) ON DELETE CASCADE,
+  cabin_id UUID REFERENCES cabins(id) ON DELETE CASCADE,
+  is_primary BOOLEAN DEFAULT FALSE,
+  order_index INTEGER DEFAULT 0,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  CONSTRAINT images_target_present CHECK (category_id IS NOT NULL OR cabin_id IS NOT NULL)
+);
+
+-- Tabla de productos (opcional)
+CREATE TABLE IF NOT EXISTS products (
+  id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+  name VARCHAR(255) NOT NULL,
+  slug VARCHAR(255) NOT NULL UNIQUE,
+  description TEXT,
+  price DECIMAL(10, 2) DEFAULT 0,
+  category_id UUID REFERENCES categories(id) ON DELETE SET NULL,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Índices
+CREATE INDEX IF NOT EXISTS idx_images_category ON images(category_id);
+CREATE INDEX IF NOT EXISTS idx_images_cabin ON images(cabin_id);
+CREATE INDEX IF NOT EXISTS idx_images_order ON images(order_index);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_images_primary_cabin
+  ON images(cabin_id)
+  WHERE is_primary = TRUE;
+CREATE INDEX IF NOT EXISTS idx_products_category ON products(category_id);
+CREATE INDEX IF NOT EXISTS idx_products_slug ON products(slug);
+
+-- Trigger helper: updated_at
+CREATE OR REPLACE FUNCTION update_updated_at_column()
+RETURNS TRIGGER AS $$
+BEGIN
+  NEW.updated_at = NOW();
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER update_images_updated_at
+  BEFORE UPDATE ON images
+  FOR EACH ROW
+  EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER update_products_updated_at
+  BEFORE UPDATE ON products
+  FOR EACH ROW
+  EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER update_cabins_updated_at
+  BEFORE UPDATE ON cabins
+  FOR EACH ROW
+  EXECUTE FUNCTION update_updated_at_column();
+
+-- =============================================
+-- Row Level Security (RLS)
+-- =============================================
+ALTER TABLE categories ENABLE ROW LEVEL SECURITY;
+ALTER TABLE cabins ENABLE ROW LEVEL SECURITY;
+ALTER TABLE images ENABLE ROW LEVEL SECURITY;
+ALTER TABLE products ENABLE ROW LEVEL SECURITY;
+
+-- Lectura pública
+CREATE POLICY "Allow public read categories" ON categories
+  FOR SELECT USING (true);
+CREATE POLICY "Allow public read cabins" ON cabins
+  FOR SELECT USING (true);
+CREATE POLICY "Allow public read images" ON images
+  FOR SELECT USING (true);
+CREATE POLICY "Allow public read products" ON products
+  FOR SELECT USING (true);
+
+-- Escritura solo autenticados/service role
+CREATE POLICY "Allow authenticated insert categories" ON categories
+  FOR INSERT WITH CHECK (true);
+CREATE POLICY "Allow authenticated update categories" ON categories
+  FOR UPDATE USING (true);
+CREATE POLICY "Allow authenticated delete categories" ON categories
+  FOR DELETE USING (true);
+
+CREATE POLICY "Allow authenticated insert cabins" ON cabins
+  FOR INSERT WITH CHECK (true);
+CREATE POLICY "Allow authenticated update cabins" ON cabins
+  FOR UPDATE USING (true);
+CREATE POLICY "Allow authenticated delete cabins" ON cabins
+  FOR DELETE USING (true);
+
+CREATE POLICY "Allow authenticated insert images" ON images
+  FOR INSERT WITH CHECK (true);
+CREATE POLICY "Allow authenticated update images" ON images
+  FOR UPDATE USING (true);
+CREATE POLICY "Allow authenticated delete images" ON images
+  FOR DELETE USING (true);
+
+CREATE POLICY "Allow authenticated insert products" ON products
+  FOR INSERT WITH CHECK (true);
+CREATE POLICY "Allow authenticated update products" ON products
+  FOR UPDATE USING (true);
+CREATE POLICY "Allow authenticated delete products" ON products
+  FOR DELETE USING (true);
+
+-- =============================================
+-- Realtime
+-- =============================================
+ALTER PUBLICATION supabase_realtime ADD TABLE images;
+ALTER PUBLICATION supabase_realtime ADD TABLE categories;
+ALTER PUBLICATION supabase_realtime ADD TABLE cabins;
+
+-- =============================================
+-- Storage bucket (media)
+-- =============================================
+-- Crear bucket:
+-- INSERT INTO storage.buckets (id, name, public) VALUES ('media', 'media', true);
+
+CREATE POLICY "Allow public read storage" ON storage.objects
+  FOR SELECT USING (bucket_id = 'media');
+
+CREATE POLICY "Allow authenticated upload storage" ON storage.objects
+  FOR INSERT WITH CHECK (bucket_id = 'media');
+
+CREATE POLICY "Allow authenticated delete storage" ON storage.objects
+  FOR DELETE USING (bucket_id = 'media');
+
+-- =============================================
+-- Datos de ejemplo (opcional)
+-- =============================================
+INSERT INTO categories (name, slug, description) VALUES
+  ('Hero', 'hero', 'Imágenes para el carrusel principal'),
+  ('Productos', 'productos', 'Imágenes de productos'),
+  ('Galería', 'galeria', 'Galería general de imágenes')
+ON CONFLICT (slug) DO NOTHING;
+
+INSERT INTO cabins (slug, title, description) VALUES
+  ('los-morros', 'Los Morros', 'Cabaña frente al mar'),
+  ('caleta-del-medio', 'Caleta del Medio', 'Cabaña con vista a la caleta'),
+  ('vegas-del-coliumo', 'Vegas del Coliumo', 'Cabaña con terraza amplia')
+ON CONFLICT (slug) DO NOTHING;

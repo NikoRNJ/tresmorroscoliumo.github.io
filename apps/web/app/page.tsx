@@ -6,9 +6,8 @@ import { LocationSection } from '@/components/sections/home/LocationSection';
 import { ContactForm } from '@/components/forms/ContactForm';
 import { getActiveCabins } from '@/lib/data/cabins';
 
-export const dynamic = 'force-static';
-export const fetchCache = 'force-cache';
-export const revalidate = false;
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 
 export default async function Home() {
   const cabins = await getActiveCabins();

@@ -5,29 +5,48 @@
  * usar un sistema más robusto como NextAuth.js o Supabase Auth.
  * 
  * Iteración 7: Panel de Administración
+ * 
+ * NOTA: Las variables de entorno se leen en tiempo de ejecución (getters)
+ * para evitar problemas con HMR y cache de módulos en desarrollo.
  */
 
 import { cookies } from 'next/headers'
 import crypto from 'crypto'
 
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD
-const ADMIN_PASSWORD_HASH = process.env.ADMIN_PASSWORD_HASH
-const ADMIN_SESSION_SECRET = process.env.ADMIN_SESSION_SECRET
 const SESSION_COOKIE_NAME = 'admin_session'
 const SESSION_DURATION = 24 * 60 * 60 * 1000
-const NODE_ENV = (process.env.NODE_ENV || '').toLowerCase()
-const SITE_ENV = (process.env.NEXT_PUBLIC_SITE_ENV || '').toLowerCase()
-const IS_PROD = NODE_ENV === 'production' || SITE_ENV === 'production'
 
-const storedPasswordHash =
-  ADMIN_PASSWORD_HASH ||
-  (ADMIN_PASSWORD ? hashPassword(ADMIN_PASSWORD) : null)
-
-if (!storedPasswordHash) {
-  console.warn('⚠️ ADMIN_PASSWORD/ADMIN_PASSWORD_HASH not set. Admin panel will not be accessible.')
+// Getters para leer variables de entorno en tiempo de ejecución
+// Esto evita problemas con HMR donde las variables se evalúan antes de estar disponibles
+function getAdminPassword(): string | undefined {
+  return process.env.ADMIN_PASSWORD
 }
-if (!ADMIN_SESSION_SECRET) {
-  console.warn('⚠️ ADMIN_SESSION_SECRET not set. Admin sessions will be rejected.')
+
+function getAdminPasswordHash(): string | undefined {
+  return process.env.ADMIN_PASSWORD_HASH
+}
+
+function getAdminSessionSecret(): string | undefined {
+  return process.env.ADMIN_SESSION_SECRET
+}
+
+function isProd(): boolean {
+  const nodeEnv = (process.env.NODE_ENV || '').toLowerCase()
+  const siteEnv = (process.env.NEXT_PUBLIC_SITE_ENV || '').toLowerCase()
+  return nodeEnv === 'production' || siteEnv === 'production'
+}
+
+/**
+ * Obtiene el hash almacenado de la contraseña (en tiempo de ejecución)
+ */
+function getStoredPasswordHash(): string | null {
+  const hashFromEnv = getAdminPasswordHash()
+  if (hashFromEnv) return hashFromEnv
+  
+  const password = getAdminPassword()
+  if (password) return hashPassword(password)
+  
+  return null
 }
 
 /**
@@ -38,14 +57,15 @@ function hashPassword(password: string): string {
 }
 
 function signToken(token: string): string {
-  if (!ADMIN_SESSION_SECRET) {
+  const secret = getAdminSessionSecret()
+  if (!secret) {
     throw new Error('ADMIN_SESSION_SECRET is not defined')
   }
-  return crypto.createHmac('sha256', ADMIN_SESSION_SECRET).update(token).digest('hex')
+  return crypto.createHmac('sha256', secret).update(token).digest('hex')
 }
 
 function verifySignature(token: string, signature: string): boolean {
-  if (!ADMIN_SESSION_SECRET) return false
+  if (!getAdminSessionSecret()) return false
   const expected = signToken(token)
   const expectedBuffer = Buffer.from(expected)
   const providedBuffer = Buffer.from(signature)
@@ -66,16 +86,20 @@ function timingSafeCompare(a: string, b: string): boolean {
  * Verificar si la contraseña es correcta
  */
 export function verifyAdminPassword(password: string): boolean {
-  if (!storedPasswordHash) return false
+  const storedHash = getStoredPasswordHash()
+  if (!storedHash) {
+    console.warn('⚠️ verifyAdminPassword: No password hash available')
+    return false
+  }
   const attemptHash = hashPassword(password)
-  return timingSafeCompare(attemptHash, storedPasswordHash)
+  return timingSafeCompare(attemptHash, storedHash)
 }
 
 /**
  * Crear sesión de admin
  */
 export async function createAdminSession(): Promise<string> {
-  if (!ADMIN_SESSION_SECRET) {
+  if (!getAdminSessionSecret()) {
     throw new Error('ADMIN_SESSION_SECRET is required to create admin sessions')
   }
   const sessionToken = crypto.randomBytes(32).toString('hex')
@@ -85,7 +109,7 @@ export async function createAdminSession(): Promise<string> {
 
   cookies().set(SESSION_COOKIE_NAME, value, {
     httpOnly: true,
-    secure: IS_PROD,
+    secure: isProd(),
     sameSite: 'strict',
     expires: expiresAt,
     path: '/',
