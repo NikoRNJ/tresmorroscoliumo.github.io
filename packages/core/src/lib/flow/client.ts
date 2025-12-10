@@ -33,16 +33,17 @@ class FlowClient {
     const timeoutFromEnv = Number(process.env.FLOW_HTTP_TIMEOUT_MS || '')
     this.httpTimeoutMs = Number.isFinite(timeoutFromEnv) && timeoutFromEnv > 0 ? timeoutFromEnv : 15000
 
-    // Log de inicialización para debugging
-    if (this.configured) {
-      const isSandbox = this.baseUrl?.includes('sandbox');
-      console.log(`[Flow] ✅ Cliente configurado - Modo: ${isSandbox ? 'SANDBOX' : 'PRODUCCIÓN'}`);
-      console.log(`[Flow] 📍 Base URL: ${this.baseUrl}`);
-    } else {
-      console.warn('[Flow] ⚠️ Modo MOCK activo (credenciales no configuradas o FLOW_FORCE_MOCK=true)');
-      if (!this.apiKey) console.warn('[Flow]    → FLOW_API_KEY no configurada');
-      if (!this.secretKey) console.warn('[Flow]    → FLOW_SECRET_KEY no configurada');
-      if (!this.baseUrl) console.warn('[Flow]    → FLOW_BASE_URL no configurada');
+    // Lazy init: solo loguear si estamos en un entorno de ejecución real (no build)
+    // y si la variable NODE_ENV indica que deberíamos tener configuración (production)
+    if (process.env.NODE_ENV === 'production' && process.env.NEXT_PHASE !== 'phase-production-build') {
+      if (this.configured) {
+        const isSandbox = this.baseUrl?.includes('sandbox');
+        console.log(`[Flow] ✅ Cliente configurado - Modo: ${isSandbox ? 'SANDBOX' : 'PRODUCCIÓN'}`);
+      } else if (!forceMock) {
+        // Solo warn si NO estamos forzando mock explícitamente y tampoco hay keys
+        // Esto reduce el ruido durante builds donde las keys no están presentes
+        // console.warn('[Flow] ⚠️ Modo MOCK activo (credenciales no configuradas)');
+      }
     }
   }
 
@@ -135,17 +136,17 @@ class FlowClient {
       // Crear URLSearchParams para el POST
       const formData = new URLSearchParams();
       Object.entries(paymentParams).forEach(([key, value]) => {
-      formData.append(key, String(value));
-    });
-    formData.append('s', signature);
+        formData.append(key, String(value));
+      });
+      formData.append('s', signature);
 
-    // Hacer request a Flow con timeout
-    const response = await this.fetchWithTimeout(`${this.baseUrl}/payment/create`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
-      },
-      body: formData.toString(),
+      // Hacer request a Flow con timeout
+      const response = await this.fetchWithTimeout(`${this.baseUrl}/payment/create`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: formData.toString(),
       });
 
       if (!response.ok) {
