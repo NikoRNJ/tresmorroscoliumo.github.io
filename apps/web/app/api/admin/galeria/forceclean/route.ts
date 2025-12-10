@@ -37,7 +37,7 @@ export async function GET(request: NextRequest) {
             .select('id, category')
             .limit(100);
 
-        results.steps.push({ step: 'before', count: before?.length, categories: [...new Set(before?.map(r => r.category) || [])] });
+        results.steps.push({ step: 'before', count: before?.length, categories: Array.from(new Set(before?.map(r => r.category) || [])) });
 
         if (err1) {
             results.steps.push({ step: 'error_fetch', error: err1.message });
