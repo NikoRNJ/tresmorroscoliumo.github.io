@@ -14,7 +14,8 @@ export async function GET() {
   const startTime = Date.now();
 
   const health = {
-    status: 'checking' as 'ok' | 'error' | 'checking',
+    status: 'ok' as 'ok' | 'error' | 'checking',
+    version: 'v2-fix-sync-populate',
     timestamp: new Date().toISOString(),
     environment: process.env.NODE_ENV,
     elapsed: 0,
