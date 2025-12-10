@@ -280,9 +280,10 @@ export function useGaleriaLibrary({ initialCategories, constraints }: UseGaleria
     };
 
     // Initial load
-    useEffect(() => {
-        void sync();
-    }, []);
+    // Disabled auto-sync to rely on SSR data (initialCategories) and prevent flickering or destructive sync on mount.
+    // useEffect(() => {
+    //     void sync();
+    // }, []);
 
     // ---------- Helper actions ----------
     const selectCategory = (slug: string) => setSelectedCategory(slug);

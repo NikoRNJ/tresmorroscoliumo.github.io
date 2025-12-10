@@ -137,13 +137,13 @@ export function GaleriaImageCard({
                             alt={item.altText || 'Imagen de galería'}
                             fill
                             sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, (max-width: 1024px) 25vw, 16vw"
-                            className={`object-cover transition-all duration-300 group-hover:scale-105 ${imageLoaded ? 'opacity-100' : 'opacity-0'}`}
+                            className="object-cover transition-all duration-300 group-hover:scale-105"
                             onLoad={() => setImageLoaded(true)}
                             onError={() => {
                                 console.error('Error cargando imagen:', imageUrl);
                                 setImageError(true);
                             }}
-                            unoptimized={imageUrl.includes('supabase.co')}
+                            unoptimized={true} // Forzamos unoptimized para evitar problemas con dominios externos o locales complejos
                         />
                     </>
                 )}
