@@ -19,4 +19,4 @@ export * from './layout/SocialFloatingButtons'
 export * from './ui/Button'
 export * from './ui/Card'
 export * from './ui/Container'
-
+export * from './analytics'

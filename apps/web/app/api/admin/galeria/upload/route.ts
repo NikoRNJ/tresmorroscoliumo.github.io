@@ -6,15 +6,8 @@ import { generateFileName, toSlugSegment } from '@/modules/galeria/utils/filePat
 import fs from 'fs';
 import path from 'path';
 
-// Base path for public/images/galeria - handles monorepo context
-const getPublicImagesGaleriaPath = () => {
-    const monorepoPath = path.join(process.cwd(), 'apps', 'web', 'public', 'images', 'galeria');
-    if (fs.existsSync(path.join(process.cwd(), 'apps', 'web', 'public'))) {
-        return monorepoPath;
-    }
-    return path.join(process.cwd(), 'public', 'images', 'galeria');
-};
-const PUBLIC_IMAGES_PATH = getPublicImagesGaleriaPath();
+// Base path for public/images/galeria
+const PUBLIC_IMAGES_PATH = path.join(process.cwd(), 'public', 'images', 'galeria');
 
 /**
  * POST /api/admin/galeria/upload
@@ -56,9 +49,9 @@ export async function POST(request: NextRequest) {
             fs.mkdirSync(categoryPath, { recursive: true });
         }
 
-        // Write file to disk (use buffer from ProcessedImage)
+        // Write file to disk
         const filePath = path.join(categoryPath, fileName);
-        fs.writeFileSync(filePath, processed.buffer);
+        fs.writeFileSync(filePath, processed);
 
         // Public URL for the image
         const publicUrl = `/images/galeria/${categorySlug}/${fileName}`;

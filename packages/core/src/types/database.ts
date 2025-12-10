@@ -276,6 +276,38 @@ export interface Database {
           created_at?: string;
         };
       };
+      site_visits: {
+        Row: {
+          id: string;
+          ip_hash: string;
+          path: string;
+          device_type: string | null;
+          referrer: string | null;
+          country: string | null;
+          visited_at: string;
+          visit_date: string;
+        };
+        Insert: {
+          id?: string;
+          ip_hash: string;
+          path?: string;
+          device_type?: string | null;
+          referrer?: string | null;
+          country?: string | null;
+          visited_at?: string;
+          visit_date?: string;
+        };
+        Update: {
+          id?: string;
+          ip_hash?: string;
+          path?: string;
+          device_type?: string | null;
+          referrer?: string | null;
+          country?: string | null;
+          visited_at?: string;
+          visit_date?: string;
+        };
+      };
     };
   };
 }
@@ -297,3 +329,7 @@ export type ApiEvent = Database['public']['Tables']['api_events']['Row'];
 export type Galeria = Database['public']['Tables']['galeria']['Row'];
 export type GaleriaInsert = Database['public']['Tables']['galeria']['Insert'];
 export type GaleriaUpdate = Database['public']['Tables']['galeria']['Update'];
+
+export type SiteVisit = Database['public']['Tables']['site_visits']['Row'];
+export type SiteVisitInsert = Database['public']['Tables']['site_visits']['Insert'];
+export type SiteVisitUpdate = Database['public']['Tables']['site_visits']['Update'];

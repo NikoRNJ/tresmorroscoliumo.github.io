@@ -17,7 +17,6 @@ const navigation = [
   { name: 'Dashboard', href: '/admin', icon: LayoutDashboard },
   { name: 'Métricas', href: '/admin/dashboard', icon: Home },
   { name: 'Reservas', href: '/admin/reservas', icon: Calendar },
-  { name: 'Media', href: '/admin/media', icon: FileText },
   { name: 'Galería', href: '/admin/galeria', icon: Images },
   { name: 'Bloqueos', href: '/admin/bloqueos', icon: FileText },
   { name: 'Configuración', href: '/admin/configuracion', icon: Settings },

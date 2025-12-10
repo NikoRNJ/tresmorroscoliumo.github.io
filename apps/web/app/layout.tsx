@@ -5,6 +5,7 @@ import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { JsonLdSchema } from "@/components/layout/JsonLd";
 import { SocialFloatingButtons } from "@/components/layout/SocialFloatingButtons";
+import { VisitorTracker } from "@/components/analytics";
 
 export const viewport: Viewport = {
   width: "device-width",
@@ -19,16 +20,16 @@ export const viewport: Viewport = {
 // ============================================
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "https://www.tresmorroscoliumo.cl"),
-  
+
   // Title Tag optimizado (59 caracteres - dentro del límite)
   title: {
     default: "Cabañas en Coliumo | Arriendo Frente al Mar - Tres Morros",
     template: "%s | Cabañas Tres Morros Coliumo",
   },
-  
+
   // Meta Description con CTA (154 caracteres)
   description: "Arrienda cabañas en Coliumo con vista al mar y jacuzzi. A 30 min de Tomé. Reserva online tu escape perfecto en la costa del Biobío. ¡Consulta disponibilidad!",
-  
+
   // Keywords ampliadas para SEO local
   keywords: [
     // Money Keywords principales
@@ -52,11 +53,11 @@ export const metadata: Metadata = {
     "tres morros coliumo",
     "cabañas tres morros",
   ],
-  
+
   authors: [{ name: "Cabañas Tres Morros Coliumo" }],
   creator: "Cabañas Tres Morros Coliumo",
   publisher: "Cabañas Tres Morros Coliumo",
-  
+
   // Open Graph optimizado para compartir
   openGraph: {
     type: "website",
@@ -75,7 +76,7 @@ export const metadata: Metadata = {
       },
     ],
   },
-  
+
   // Twitter Card optimizada
   twitter: {
     card: "summary_large_image",
@@ -85,7 +86,7 @@ export const metadata: Metadata = {
     description: "Tu escape perfecto en la costa del Biobío. Reserva online.",
     images: ["/images/common/og-image.jpg"],
   },
-  
+
   // Robots optimizado para indexación
   robots: {
     index: true,
@@ -100,14 +101,14 @@ export const metadata: Metadata = {
       noimageindex: false,
     },
   },
-  
+
   // Verificación de herramientas (agregar IDs reales)
   verification: {
     google: "tu-codigo-google-search-console", // TODO: Agregar código real
     // yandex: "tu-codigo-yandex",
     // bing: "tu-codigo-bing",
   },
-  
+
   // Canonical y alternates
   alternates: {
     canonical: process.env.NEXT_PUBLIC_SITE_URL || "https://www.tresmorroscoliumo.cl",
@@ -115,10 +116,10 @@ export const metadata: Metadata = {
       "es-CL": process.env.NEXT_PUBLIC_SITE_URL || "https://www.tresmorroscoliumo.cl",
     },
   },
-  
+
   // Categoría del sitio
   category: "travel",
-  
+
   // Información adicional
   other: {
     "geo.region": "CL-BI",
@@ -140,6 +141,7 @@ export default function RootLayout({
         <JsonLdSchema siteUrl={process.env.NEXT_PUBLIC_SITE_URL || "https://www.tresmorroscoliumo.cl"} />
       </head>
       <body className="flex min-h-screen flex-col antialiased">
+        <VisitorTracker />
         <Header />
         <main className="flex-1">{children}</main>
         <Footer />
