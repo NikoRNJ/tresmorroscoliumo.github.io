@@ -1,5 +1,5 @@
 /**
- * Health Check Endpoint
+ * Health Check Endpoint - DIAGNÓSTICO DETALLADO
  * Verifica que la API está funcionando y puede conectarse a Supabase
  */
 
@@ -7,38 +7,65 @@ import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase/server';
 
 export async function GET() {
+  const startTime = Date.now();
+
+  const health = {
+    status: 'checking' as 'ok' | 'error' | 'checking',
+    timestamp: new Date().toISOString(),
+    environment: process.env.NODE_ENV,
+    elapsed: 0,
+
+    // Diagnóstico de variables de entorno (sin exponer valores sensibles)
+    env: {
+      hasSupabaseUrl: !!process.env.NEXT_PUBLIC_SUPABASE_URL,
+      hasServiceKey: !!process.env.SUPABASE_SERVICE_ROLE_KEY,
+      supabaseUrlPrefix: process.env.NEXT_PUBLIC_SUPABASE_URL
+        ? new URL(process.env.NEXT_PUBLIC_SUPABASE_URL).hostname
+        : 'NOT_SET',
+    },
+
+    // Resultado de la prueba de conexión
+    database: {
+      connected: false,
+      cabinsCount: 0,
+      activeCabinsCount: 0,
+      error: null as string | null,
+    },
+  };
+
   try {
-    // Intentar hacer una query simple a Supabase
-    const { error } = await supabaseAdmin
+    // Query 1: Probar conexión básica
+    const { data: allCabins, error: allError } = await supabaseAdmin
       .from('cabins')
-      .select('id')
-      .limit(1);
+      .select('id, slug, active');
 
-    if (error) throw error;
-
-    return NextResponse.json({
-      status: 'ok',
-      timestamp: new Date().toISOString(),
-      database: 'connected',
-      environment: process.env.NODE_ENV,
-    });
-  } catch (error) {
-    // Only log real errors, suppress expected build-time connection failures
-    const isBuildTime = process.env.NODE_ENV === 'production' && process.env.NEXT_PHASE !== 'phase-production-server';
-    const isNetworkError = error instanceof Error && (error.message.includes('fetch failed') || error.message.includes('ENOTFOUND'));
-
-    if (!isBuildTime || !isNetworkError) {
-      console.error('Health check failed:', error);
+    if (allError) {
+      health.database.error = allError.message;
+      health.status = 'error';
+    } else {
+      health.database.connected = true;
+      health.database.cabinsCount = allCabins?.length || 0;
+      health.database.activeCabinsCount = allCabins?.filter(c => c.active).length || 0;
+      health.status = 'ok';
     }
 
-    return NextResponse.json(
-      {
-        status: 'error',
-        timestamp: new Date().toISOString(),
-        database: 'disconnected',
-        error: error instanceof Error ? error.message : 'Unknown error',
-      },
-      { status: 500 }
-    );
+  } catch (error) {
+    health.status = 'error';
+    health.database.error = error instanceof Error ? error.message : 'Unknown error';
+
+    // Solo log si no es error de build time
+    const isBuildTime = process.env.NODE_ENV === 'production' && process.env.NEXT_PHASE !== 'phase-production-server';
+    if (!isBuildTime) {
+      console.error('[health] Check failed:', error);
+    }
   }
+
+  health.elapsed = Date.now() - startTime;
+
+  return NextResponse.json(health, {
+    status: health.status === 'ok' ? 200 : 500,
+    headers: {
+      'Cache-Control': 'no-store, max-age=0',
+    },
+  });
 }
