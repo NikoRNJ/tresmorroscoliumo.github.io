@@ -16,6 +16,14 @@ const getPublicImagesPath = () => {
 };
 
 /**
+ * GET /api/admin/galeria/migrate
+ * Permite ejecutar la migración desde el navegador
+ */
+export async function GET(request: NextRequest) {
+    return runMigration(request);
+}
+
+/**
  * POST /api/admin/galeria/migrate
  * 
  * MIGRACIÓN COMPLETA: Lee imágenes del filesystem local,
@@ -24,6 +32,10 @@ const getPublicImagesPath = () => {
  * ⚠️ SOLO ejecutar desde LOCALHOST con las imágenes locales.
  */
 export async function POST(request: NextRequest) {
+    return runMigration(request);
+}
+
+async function runMigration(request: NextRequest) {
     const isAdmin = await requireAdmin();
     if (!isAdmin) {
         return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
