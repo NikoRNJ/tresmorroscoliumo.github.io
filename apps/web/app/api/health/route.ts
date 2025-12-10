@@ -23,8 +23,14 @@ export async function GET() {
       environment: process.env.NODE_ENV,
     });
   } catch (error) {
-    console.error('Health check failed:', error);
-    
+    // Only log real errors, suppress expected build-time connection failures
+    const isBuildTime = process.env.NODE_ENV === 'production' && process.env.NEXT_PHASE !== 'phase-production-server';
+    const isNetworkError = error instanceof Error && (error.message.includes('fetch failed') || error.message.includes('ENOTFOUND'));
+
+    if (!isBuildTime || !isNetworkError) {
+      console.error('Health check failed:', error);
+    }
+
     return NextResponse.json(
       {
         status: 'error',

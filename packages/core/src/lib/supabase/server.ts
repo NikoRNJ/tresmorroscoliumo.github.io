@@ -11,10 +11,14 @@ const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || 'placeholder-key';
 
 if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
-  // Warn instead of throw to allow build to pass in environments where secrets are not available at build time
-  console.warn(
-    '⚠️ Missing Supabase environment variables (NEXT_PUBLIC_SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY). supabaseAdmin will fail if used.'
-  );
+  // Only warn in development or if we successfully launched the server (not build phase)
+  // Prevents log spam during Digital Ocean static build
+  const isBuildTime = process.env.NODE_ENV === 'production' && process.env.NEXT_PHASE !== 'phase-production-server';
+  if (!isBuildTime) {
+    console.warn(
+      '⚠️ Missing Supabase environment variables (NEXT_PUBLIC_SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY). supabaseAdmin will fail if used.'
+    );
+  }
 }
 
 /**
