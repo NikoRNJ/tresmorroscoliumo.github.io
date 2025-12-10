@@ -78,8 +78,9 @@ export async function POST(request: NextRequest) {
         }
 
         // Insertar visita en la base de datos
-        const { error } = await supabaseAdmin
-            .from('site_visits')
+        // Nota: La tabla site_visits debe crearse en Supabase ejecutando el script SQL
+        const { error } = await (supabaseAdmin
+            .from('site_visits') as any)
             .insert({
                 ip_hash: ipHash,
                 path: path,

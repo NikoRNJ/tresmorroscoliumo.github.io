@@ -3,15 +3,14 @@ import { requireAdmin } from '@/lib/auth/admin';
 import { supabaseAdmin } from '@/lib/supabase/server';
 import { toWebp } from '@/modules/media/server/imageProcessing';
 import { generateFileName, toSlugSegment } from '@/modules/galeria/utils/filePaths';
-import fs from 'fs';
-import path from 'path';
-
-// Base path for public/images/galeria
-const PUBLIC_IMAGES_PATH = path.join(process.cwd(), 'public', 'images', 'galeria');
+import { uploadImage, checkStorageHealth } from '@/modules/galeria/services/storageService';
 
 /**
  * POST /api/admin/galeria/upload
- * Upload an image to a specific category (saves to public/images/galeria/)
+ * Upload an image to a specific category
+ * 
+ * En DESARROLLO: guarda en public/images/galeria/
+ * En PRODUCCIÓN: guarda en Supabase Storage
  */
 export async function POST(request: NextRequest) {
     const isAdmin = await requireAdmin();
@@ -32,30 +31,36 @@ export async function POST(request: NextRequest) {
     }
 
     try {
+        // Verificar que el storage está configurado
+        const health = await checkStorageHealth();
+        if (!health.ready) {
+            console.error('Storage no disponible:', health.error);
+            return NextResponse.json(
+                { error: health.error || 'Storage no configurado' },
+                { status: 503 }
+            );
+        }
+
         // Convert to WebP format
         const rawBuffer = Buffer.from(await file.arrayBuffer());
         const processed = await toWebp(rawBuffer);
 
-        // Generate filename and local path
+        // Generate filename
         const baseName = file.name?.split('.').slice(0, -1).join('.') || 'imagen';
         const fileName = generateFileName(baseName, 'webp');
 
         // Parse category: "Galeria - Interior" -> "interior"
         const categorySlug = extractCategorySlug(category);
 
-        // Ensure category folder exists
-        const categoryPath = path.join(PUBLIC_IMAGES_PATH, categorySlug);
-        if (!fs.existsSync(categoryPath)) {
-            fs.mkdirSync(categoryPath, { recursive: true });
+        // Upload to storage (local or Supabase depending on environment)
+        const uploadResult = await uploadImage(processed.buffer, categorySlug, fileName);
+
+        if (!uploadResult.success) {
+            return NextResponse.json(
+                { error: uploadResult.error || 'No se pudo subir la imagen' },
+                { status: 500 }
+            );
         }
-
-        // Write file to disk
-        const filePath = path.join(categoryPath, fileName);
-        fs.writeFileSync(filePath, processed);
-
-        // Public URL for the image
-        const publicUrl = `/images/galeria/${categorySlug}/${fileName}`;
-        const storagePath = `public/images/galeria/${categorySlug}/${fileName}`;
 
         // Get next position for this category
         const { data: existing } = await (supabaseAdmin
@@ -70,8 +75,8 @@ export async function POST(request: NextRequest) {
         const { data, error } = await (supabaseAdmin
             .from('galeria') as any)
             .insert({
-                image_url: publicUrl,
-                storage_path: storagePath,
+                image_url: uploadResult.publicUrl,
+                storage_path: uploadResult.storagePath,
                 category: category,
                 position: position,
                 alt_text: baseName,
@@ -80,10 +85,8 @@ export async function POST(request: NextRequest) {
             .single();
 
         if (error || !data) {
-            // If database insert fails, delete the file
-            if (fs.existsSync(filePath)) {
-                fs.unlinkSync(filePath);
-            }
+            console.error('Error insertando en DB:', error);
+            // TODO: Considerar eliminar el archivo subido si falla el insert
             throw new Error('No se pudo registrar la imagen en la base de datos');
         }
 
@@ -91,7 +94,12 @@ export async function POST(request: NextRequest) {
         await (supabaseAdmin.from('api_events') as any).insert({
             event_type: 'galeria_image_uploaded',
             event_source: 'admin',
-            payload: { imageId: data.id, category, storage_path: storagePath },
+            payload: {
+                imageId: data.id,
+                category,
+                storage_path: uploadResult.storagePath,
+                storage_mode: health.mode,
+            },
             status: 'success',
         });
 

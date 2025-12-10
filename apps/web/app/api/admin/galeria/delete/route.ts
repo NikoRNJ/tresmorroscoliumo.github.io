@@ -1,21 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAdmin } from '@/lib/auth/admin';
 import { supabaseAdmin } from '@/lib/supabase/server';
-import fs from 'fs';
-import path from 'path';
-
-// Helper to get correct base path for images (handles monorepo context)
-const getPublicPath = () => {
-    const monorepoPath = path.join(process.cwd(), 'apps', 'web', 'public');
-    if (fs.existsSync(monorepoPath)) {
-        return monorepoPath;
-    }
-    return path.join(process.cwd(), 'public');
-};
+import { deleteImage } from '@/modules/galeria/services/storageService';
 
 /**
  * POST /api/admin/galeria/delete
- * Delete an image from galeria (removes from filesystem and database)
+ * Delete an image from galeria (removes from storage and database)
+ * 
+ * Funciona tanto con storage local (desarrollo) como Supabase Storage (producción)
  */
 export async function POST(request: NextRequest) {
     const isAdmin = await requireAdmin();
@@ -42,30 +34,15 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ error: 'Imagen no encontrada' }, { status: 404 });
         }
 
-        // Try to remove from local filesystem
-        const storagePath = imageData.storage_path as string | undefined;
-        const imageUrl = imageData.image_url as string | undefined;
-        const PUBLIC_PATH = getPublicPath();
+        // Delete from storage (local or Supabase depending on storage_path prefix)
+        const deleteResult = await deleteImage(
+            imageData.storage_path,
+            imageData.image_url
+        );
 
-        // Determine local file path
-        let localFilePath: string | null = null;
-
-        if (storagePath && storagePath.startsWith('public/images/')) {
-            // Path like "public/images/galeria/interior/image.webp"
-            // Remove 'public/' prefix and join with actual public path
-            localFilePath = path.join(PUBLIC_PATH, storagePath.replace('public/', ''));
-        } else if (imageUrl && imageUrl.startsWith('/images/')) {
-            // URL like "/images/galeria/interior/image.webp"
-            localFilePath = path.join(PUBLIC_PATH, imageUrl);
-        }
-
-        if (localFilePath && fs.existsSync(localFilePath)) {
-            try {
-                fs.unlinkSync(localFilePath);
-                console.log('Deleted local file:', localFilePath);
-            } catch (fsError) {
-                console.warn('Could not remove local file:', fsError);
-            }
+        if (!deleteResult.success) {
+            console.warn('No se pudo eliminar archivo del storage:', deleteResult.error);
+            // Continuamos con la eliminación de DB aunque falle el storage
         }
 
         // Delete from database
@@ -98,7 +75,11 @@ export async function POST(request: NextRequest) {
         await (supabaseAdmin.from('api_events') as any).insert({
             event_type: 'galeria_deleted',
             event_source: 'admin',
-            payload: { imageId, category: imageData.category },
+            payload: {
+                imageId,
+                category: imageData.category,
+                storagePath: imageData.storage_path,
+            },
             status: 'success',
         });
 
