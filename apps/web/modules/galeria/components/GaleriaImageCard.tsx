@@ -3,13 +3,14 @@
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import type { GaleriaItem } from '../types';
-import { Trash2, GripVertical, Edit2, X, Check, ImageOff, RefreshCw, ExternalLink } from 'lucide-react';
+import { Trash2, GripVertical, Edit2, X, Check, ImageOff, RefreshCw, ExternalLink, Eye } from 'lucide-react';
 
 type GaleriaImageCardProps = {
     item: GaleriaItem;
     disabled?: boolean;
     onDelete: (item: GaleriaItem) => void;
     onUpdateMeta: (item: GaleriaItem, payload: { altText?: string }) => void;
+    onPreview?: (item: GaleriaItem) => void;
 };
 
 /**
@@ -37,6 +38,7 @@ export function GaleriaImageCard({
     disabled,
     onDelete,
     onUpdateMeta,
+    onPreview,
 }: GaleriaImageCardProps) {
     const [isEditing, setIsEditing] = useState(false);
     const [editAltText, setEditAltText] = useState(item.altText || '');
@@ -46,6 +48,9 @@ export function GaleriaImageCard({
 
     // Resolver URL de imagen
     const imageUrl = resolveImageUrl(item.imageUrl, item.storagePath);
+
+    // Extract filename from URL (moved up to be available in render)
+    const fileName = item.imageUrl.split('/').pop() || item.id;
 
     // Reset error state when item changes
     useEffect(() => {
@@ -86,9 +91,6 @@ export function GaleriaImageCard({
         return 'bg-gray-500/80';
     };
 
-    // Extract filename from URL
-    const fileName = item.imageUrl.split('/').pop() || item.id;
-
     return (
         <div className="group relative overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm transition-all hover:shadow-lg hover:border-primary-200">
             {/* Image Container */}
@@ -128,38 +130,55 @@ export function GaleriaImageCard({
                             </div>
                         )}
 
-                        {/* Actual image using Next.js Image for optimization */}
+                        {/* Actual image */}
                         <Image
                             key={`${item.id}-${retryCount}`}
                             src={imageUrl}
                             alt={item.altText || 'Imagen de galería'}
                             fill
                             sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, (max-width: 1024px) 25vw, 16vw"
-                            className={`object-cover transition-all duration-300 group-hover:scale-105 ${imageLoaded ? 'opacity-100' : 'opacity-0'
-                                }`}
+                            className={`object-cover transition-all duration-300 group-hover:scale-105 ${imageLoaded ? 'opacity-100' : 'opacity-0'}`}
                             onLoad={() => setImageLoaded(true)}
                             onError={() => {
                                 console.error('Error cargando imagen:', imageUrl);
                                 setImageError(true);
                             }}
-                            unoptimized={imageUrl.includes('supabase.co')} // Skip optimization for external URLs
+                            unoptimized={imageUrl.includes('supabase.co')}
                         />
                     </>
                 )}
 
                 {/* Position badge */}
-                <div className="absolute left-2 top-2 rounded-full bg-black/70 px-2.5 py-1 text-xs font-bold text-white shadow-lg backdrop-blur-sm z-10">
+                <div className="absolute left-2 top-2 rounded-full bg-black/70 px-2.5 py-1 text-xs font-bold text-white shadow-lg backdrop-blur-sm z-10 pointer-events-none">
                     #{item.position}
                 </div>
 
                 {/* Category badge */}
-                <div className={`absolute right-2 top-2 rounded-full ${getCategoryColor()} px-2.5 py-1 text-xs font-medium text-white shadow-lg backdrop-blur-sm z-10`}>
+                <div className={`absolute right-2 top-2 rounded-full ${getCategoryColor()} px-2.5 py-1 text-xs font-medium text-white shadow-lg backdrop-blur-sm z-10 pointer-events-none`}>
                     {categoryDisplayName}
                 </div>
 
-                {/* Drag handle overlay */}
-                <div className="absolute inset-0 flex items-center justify-center bg-black/0 opacity-0 transition-all group-hover:bg-black/30 group-hover:opacity-100 z-20 cursor-grab active:cursor-grabbing">
-                    <GripVertical className="h-10 w-10 text-white drop-shadow-lg" />
+                {/* Overlay Controls (Drag & Preview) */}
+                <div className="absolute inset-0 flex items-center justify-center bg-black/0 opacity-0 transition-all group-hover:bg-black/30 group-hover:opacity-100 z-20">
+                    {/* Drag Handle */}
+                    <div className="cursor-grab active:cursor-grabbing p-4 opacity-70 hover:opacity-100">
+                        <GripVertical className="h-10 w-10 text-white drop-shadow-lg" />
+                    </div>
+
+                    {/* Preview Button */}
+                    {onPreview && !imageError && (
+                        <button
+                            className="absolute bottom-3 right-3 rounded-full bg-white/20 p-2 text-white shadow-lg backdrop-blur-md hover:bg-white/40 active:scale-95 transition-all"
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                onPreview(item);
+                            }}
+                            onPointerDown={(e) => e.stopPropagation()}
+                            title="Previsualizar imagen"
+                        >
+                            <Eye className="h-5 w-5" />
+                        </button>
+                    )}
                 </div>
             </div>
 
@@ -175,22 +194,16 @@ export function GaleriaImageCard({
                             placeholder="Texto alternativo"
                             autoFocus
                         />
-                        <button
-                            onClick={handleSave}
-                            className="rounded p-1 text-green-600 hover:bg-green-50"
-                        >
+                        <button onClick={handleSave} className="rounded p-1 text-green-600 hover:bg-green-50">
                             <Check className="h-4 w-4" />
                         </button>
-                        <button
-                            onClick={handleCancel}
-                            className="rounded p-1 text-gray-400 hover:bg-gray-100"
-                        >
+                        <button onClick={handleCancel} className="rounded p-1 text-gray-400 hover:bg-gray-100">
                             <X className="h-4 w-4" />
                         </button>
                     </div>
                 ) : (
                     <div className="flex items-center justify-between">
-                        <div className="min-w-0 flex-1">
+                        <div className="min-w-0 flex-1 cursor-pointer" onClick={() => onPreview?.(item)}>
                             <p className="truncate text-xs font-medium text-gray-900" title={fileName}>
                                 {fileName}
                             </p>

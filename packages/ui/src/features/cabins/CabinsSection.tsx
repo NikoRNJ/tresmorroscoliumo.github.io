@@ -25,24 +25,19 @@ export function CabinsSection({ cabins }: CabinsSectionProps) {
             ============================================ */}
         <div className="text-center mb-16">
           <p className="text-sm uppercase tracking-[0.4em] text-primary-300 mb-3">
-            Arriendo de Cabañas en Coliumo
+            Tu Refugio en la Costa
           </p>
           <h2 className="heading-secondary mb-6">
-            Nuestras <span className="text-primary-500">Cabañas</span> Frente al Mar
+            Vive la Experiencia <span className="text-primary-500">Frente al Mar</span>
           </h2>
-          
-          {/* Párrafo SEO optimizado con keywords naturales */}
+
+          {/* Párrafo SEO optimizado con tono natural y amigable */}
           <div className="text-lg text-gray-300 max-w-4xl mx-auto space-y-4">
             <p>
-              Descubre el alojamiento perfecto en <strong>Coliumo, Tomé</strong>. Nuestras tres cabañas 
-              están diseñadas para brindarte una experiencia única en la costa del <strong>Biobío</strong>: 
-              despierta con el sonido del mar, disfruta un atardecer desde tu terraza privada y 
-              relájate en nuestro <strong>jacuzzi con vista al océano</strong>.
+              Queremos que tu visita a <strong>Coliumo</strong> sea inolvidable. Nuestras tres cabañas están pensadas para conectarte con la magia de la costa del <strong>Biobío</strong>: despierta con el suave murmullo de las olas, maravíllate con los atardeceres desde tu terraza y encuentra el relax total en nuestro <strong>jacuzzi con vista al océano</strong>.
             </p>
             <p className="text-gray-400">
-              Ya sea que viajes en <strong>pareja</strong>, con tu <strong>familia</strong> o un 
-              <strong> grupo de amigos</strong>, tenemos la cabaña ideal para ti. Todas incluyen 
-              cocina equipada, WiFi, estacionamiento y capacidad para hasta 7 personas.
+              Ya sea una escapada romántica, unas vacaciones en <strong>familia</strong> o un viaje con <strong>amigos</strong>, tenemos el espacio perfecto para ti. Cabañas acogedoras y totalmente equipadas para hasta 7 personas, con cocina completa, WiFi y estacionamiento, listas para ser tu hogar junto al mar.
             </p>
           </div>
         </div>
@@ -64,7 +59,7 @@ export function CabinsSection({ cabins }: CabinsSectionProps) {
           <p className="text-gray-400 mb-6">
             Síguenos en redes sociales y contáctanos directamente
           </p>
-          
+
           <div className="flex items-center justify-center gap-4 flex-wrap">
             {/* Instagram */}
             <a
@@ -76,7 +71,7 @@ export function CabinsSection({ cabins }: CabinsSectionProps) {
               <Instagram className="h-5 w-5" />
               <span>Instagram</span>
             </a>
-            
+
             {/* Facebook */}
             <a
               href="https://web.facebook.com/profile.php?id=61583396638851"
@@ -87,7 +82,7 @@ export function CabinsSection({ cabins }: CabinsSectionProps) {
               <Facebook className="h-5 w-5" />
               <span>Facebook</span>
             </a>
-            
+
             {/* WhatsApp */}
             <a
               href="https://wa.me/56988661405?text=Hola%2C%20me%20interesa%20reservar%20una%20caba%C3%B1a"
@@ -98,7 +93,7 @@ export function CabinsSection({ cabins }: CabinsSectionProps) {
               <MessageCircle className="h-5 w-5" />
               <span>WhatsApp</span>
             </a>
-            
+
             {/* Gmail */}
             <a
               href="mailto:cabanastresmorrosdecoliumo@gmail.com"
