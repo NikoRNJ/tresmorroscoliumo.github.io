@@ -232,7 +232,7 @@ export function useGaleriaLibrary({ initialCategories, constraints }: UseGaleria
                 const cat = categoryMap.get(slug)!;
                 cat.items.push({
                     id: img.id,
-                    imageUrl: img.image_url,
+                    imageUrl: img.image_url.replace(/\\/g, '/'),
                     storagePath: img.storage_path,
                     category: img.category,
                     position: img.position,

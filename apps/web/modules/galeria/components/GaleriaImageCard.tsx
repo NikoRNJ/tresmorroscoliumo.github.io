@@ -53,8 +53,8 @@ export function GaleriaImageCard({
     return (
         <div className="group relative overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm transition-all hover:shadow-lg hover:border-primary-200">
             {/* Image */}
-            <div className="relative aspect-[4/3] w-full bg-gray-100">
-                {imageError ? (
+            <div className="relative aspect-[4/3] w-full bg-gray-200">
+                {imageError || !item.imageUrl ? (
                     <div className="absolute inset-0 flex flex-col items-center justify-center text-gray-400 bg-gray-50">
                         <ImageOff className="h-8 w-8 mb-2" />
                         <span className="text-xs">No se pudo cargar</span>
@@ -67,7 +67,7 @@ export function GaleriaImageCard({
                         alt={item.altText || 'Imagen de galería'}
                         className="absolute inset-0 h-full w-full object-cover transition-transform group-hover:scale-105"
                         onError={() => setImageError(true)}
-                        loading="lazy"
+                        decoding="async"
                     />
                 )}
 
