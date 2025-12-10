@@ -30,20 +30,22 @@ export default async function MediaPage() {
   let cabinRows: any[] = [];
 
   try {
-    const { data, error } = await supabaseAdmin
-      .from('cabins')
+    const { data, error } = await (supabaseAdmin
+      .from('cabins') as any)
       .select(
         'id, slug, title, cabin_images(id, cabin_id, image_url, alt_text, sort_order, is_primary)'
       )
       .order('title', { ascending: true });
 
     if (error) {
-      console.error('Error obteniendo cabañas:', error);
+      console.warn('Advertencia build: No se pudieron obtener cabañas:', error.message);
     } else {
       cabinRows = data ?? [];
     }
   } catch (err) {
-    console.error('Error inesperado obteniendo cabañas:', err);
+    console.warn('Advertencia build: Error inesperado obteniendo cabañas (probablemente sin conexión a DB):', err);
+    // fallback vacío para que el build termine
+    cabinRows = [];
   }
 
   const folders: MediaFolder[] = await Promise.all(
