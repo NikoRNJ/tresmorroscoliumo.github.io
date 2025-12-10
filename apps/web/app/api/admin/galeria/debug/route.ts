@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { supabaseAdmin } from '@/lib/supabase/server';
+import { createClient } from '@supabase/supabase-js';
 
 export const dynamic = 'force-dynamic';
 
@@ -8,6 +8,22 @@ export const dynamic = 'force-dynamic';
  * Endpoint de diagnóstico para ver el estado de la galería
  */
 export async function GET() {
+    // Crear cliente nuevo para evitar caching
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+    if (!supabaseUrl || !supabaseKey) {
+        return NextResponse.json({
+            error: 'Missing env vars',
+            hasUrl: !!supabaseUrl,
+            hasKey: !!supabaseKey,
+        }, { status: 500 });
+    }
+
+    const supabaseAdmin = createClient(supabaseUrl, supabaseKey, {
+        auth: { autoRefreshToken: false, persistSession: false }
+    });
+
     try {
         // Obtener todos los registros
         const { data: allRecords, error } = await (supabaseAdmin
