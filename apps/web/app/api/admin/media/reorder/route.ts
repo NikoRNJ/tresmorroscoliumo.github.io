@@ -19,8 +19,8 @@ export async function POST(request: NextRequest) {
   try {
     for (let index = 0; index < orderedIds.length; index++) {
       const imageId = orderedIds[index];
-      await supabaseAdmin
-        .from('cabin_images')
+      await (supabaseAdmin
+        .from('cabin_images') as any)
         .update({ sort_order: index + 1 })
         .eq('id', imageId)
         .eq('cabin_id', cabinId);

@@ -24,8 +24,8 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'cabinId requerido' }, { status: 400 });
   }
 
-  const { data: cabin, error: cabinError } = await supabaseAdmin
-    .from('cabins')
+  const { data: cabin, error: cabinError } = await (supabaseAdmin
+    .from('cabins') as any)
     .select('id, slug, title')
     .eq('id', cabinId)
     .maybeSingle();
@@ -49,26 +49,26 @@ export async function POST(request: NextRequest) {
       .map((file) => `${prefix}${file.name}`)
       .filter((path) => !path.endsWith('-thumb.webp')) || [];
 
-  const { data: dbImages } = await supabaseAdmin
-    .from('cabin_images')
+  const { data: dbImages } = await (supabaseAdmin
+    .from('cabin_images') as any)
     .select('id, image_url, sort_order, is_primary, alt_text')
     .eq('cabin_id', cabinId)
     .order('sort_order', { ascending: true });
 
   const dbPaths = new Set(
     (dbImages || [])
-      .map((img) => extractPathFromPublicUrl(img.image_url))
+      .map((img: any) => extractPathFromPublicUrl(img.image_url))
       .filter(Boolean) as string[]
   );
 
   const missingInDb = storedPaths.filter((path) => !dbPaths.has(path));
   const missingInStorage =
     dbImages
-      ?.filter((img) => {
+      ?.filter((img: any) => {
         const path = extractPathFromPublicUrl(img.image_url);
         return path && !storedPaths.includes(path);
       })
-      .map((img) => img.image_url) || [];
+      .map((img: any) => img.image_url) || [];
 
   // Importar desde carpeta local si no hay nada en storage
   if (storedPaths.length === 0) {
@@ -94,7 +94,7 @@ export async function POST(request: NextRequest) {
   for (const path of missingInDb) {
     currentSort += 1;
     const sortOrder = currentSort;
-    await supabaseAdmin.from('cabin_images').insert({
+    await (supabaseAdmin.from('cabin_images') as any).insert({
       cabin_id: cabinId,
       image_url: getPublicUrl(path),
       alt_text: path.split('/').pop() || 'imagen',
@@ -103,8 +103,8 @@ export async function POST(request: NextRequest) {
     });
   }
 
-  const { data: refreshed } = await supabaseAdmin
-    .from('cabin_images')
+  const { data: refreshed } = await (supabaseAdmin
+    .from('cabin_images') as any)
     .select('id, cabin_id, image_url, alt_text, sort_order, is_primary')
     .eq('cabin_id', cabinId)
     .order('sort_order', { ascending: true });

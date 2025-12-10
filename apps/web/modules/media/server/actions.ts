@@ -54,16 +54,16 @@ export async function uploadCabinImage(params: {
     await uploadToStorage(thumbPath, thumb.buffer, thumb.contentType);
   }
 
-  const { data: existing } = await supabaseAdmin
-    .from('cabin_images')
+  const { data: existing } = await (supabaseAdmin
+    .from('cabin_images') as any)
     .select('id, sort_order, is_primary')
     .eq('cabin_id', cabinId);
 
   const sortOrder = nextSortOrder(existing || []);
-  const shouldBePrimary = !existing?.length || !existing.some((img) => img.is_primary);
+  const shouldBePrimary = !existing?.length || !existing.some((img: any) => img.is_primary);
 
-  const { data, error } = await supabaseAdmin
-    .from('cabin_images')
+  const { data, error } = await (supabaseAdmin
+    .from('cabin_images') as any)
     .insert({
       cabin_id: cabinId,
       image_url: getPublicUrl(filePath),
@@ -81,8 +81,8 @@ export async function uploadCabinImage(params: {
   const record = data as CabinImageRow;
 
   if (shouldBePrimary && existing?.length) {
-    await supabaseAdmin
-      .from('cabin_images')
+    await (supabaseAdmin
+      .from('cabin_images') as any)
       .update({ is_primary: false })
       .eq('cabin_id', cabinId)
       .neq('id', record.id);

@@ -18,8 +18,8 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'imageId requerido' }, { status: 400 });
   }
 
-  const { data, error } = await supabaseAdmin
-    .from('cabin_images')
+  const { data, error } = await (supabaseAdmin
+    .from('cabin_images') as any)
     .select('id, cabin_id, image_url, is_primary, sort_order')
     .eq('id', imageId)
     .maybeSingle();
@@ -52,19 +52,19 @@ export async function POST(request: NextRequest) {
     console.warn('No se pudo eliminar archivo del storage', removeError);
   }
 
-  await supabaseAdmin.from('cabin_images').delete().eq('id', imageId);
+  await (supabaseAdmin.from('cabin_images') as any).delete().eq('id', imageId);
 
   if (data.is_primary) {
-    const { data: remaining } = await supabaseAdmin
-      .from('cabin_images')
+    const { data: remaining } = await (supabaseAdmin
+      .from('cabin_images') as any)
       .select('id')
       .eq('cabin_id', data.cabin_id)
       .order('sort_order', { ascending: true })
       .limit(1);
 
     if (remaining && remaining[0]) {
-      await supabaseAdmin
-        .from('cabin_images')
+      await (supabaseAdmin
+        .from('cabin_images') as any)
         .update({ is_primary: true })
         .eq('id', remaining[0].id);
     }
