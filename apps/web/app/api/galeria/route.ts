@@ -1,20 +1,20 @@
 import { NextResponse } from 'next/server';
-import { supabaseAdmin } from '@/lib/supabase/server';
+import { createClient } from '@supabase/supabase-js';
+import fs from 'fs';
+import path from 'path';
 
 export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 
 /**
  * GET /api/galeria
  * Public API to fetch gallery images grouped by category
  * Used by the frontend Gallery component
  */
-import fs from 'fs';
-import path from 'path';
 
 // Helper for dev mode fallback
 const getDevImages = (subfolder: string) => {
     try {
-        // Try monorepo structure first
         let dir = path.join(process.cwd(), 'apps', 'web', 'public', 'images', 'galeria', subfolder);
         if (!fs.existsSync(dir)) {
             dir = path.join(process.cwd(), 'public', 'images', 'galeria', subfolder);
@@ -35,27 +35,40 @@ const getDevImages = (subfolder: string) => {
 };
 
 export async function GET() {
+    // Crear cliente fresco para evitar caching
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+    if (!supabaseUrl || !supabaseKey) {
+        console.error('[galeria] Missing Supabase credentials');
+        return NextResponse.json({ collections: [], error: 'Config error' });
+    }
+
+    const supabase = createClient(supabaseUrl, supabaseKey, {
+        auth: { autoRefreshToken: false, persistSession: false }
+    });
+
     try {
         // Fetch images from galeria table
-        const { data, error } = await (supabaseAdmin
-            .from('galeria') as any)
+        const { data, error } = await supabase
+            .from('galeria')
             .select('id, image_url, category, alt_text, position')
             .order('category', { ascending: true })
             .order('position', { ascending: true });
 
         if (error) {
-            console.error('Error fetching galeria:', error);
-            // In dev, continue even if DB fails
+            console.error('[galeria] Error fetching:', error);
             if (process.env.NODE_ENV !== 'development') {
-                return NextResponse.json({ error: 'Error fetching gallery' }, { status: 500 });
+                return NextResponse.json({ collections: [], error: error.message });
             }
         }
 
+        console.log(`[galeria] Fetched ${data?.length || 0} records`);
+
         const categoryMap = new Map<string, { id: string; label: string; images: { src: string; alt: string }[] }>();
 
-        // 1. Process DB Data
+        // Process DB Data
         for (const row of data || []) {
-            // ... (keep existing logic but inline simplified)
             const category = row.category as string;
             let tabId = '';
             let tabLabel = '';
@@ -71,8 +84,7 @@ export async function GET() {
             categoryMap.get(tabId)!.images.push({ src: row.image_url, alt: row.alt_text || 'Imagen' });
         }
 
-        // 2. DEV MODE INJECTION: Force 'exterior' from filesystem
-        // This ensures the user SEES the folder contents even if DB sync is missing.
+        // DEV MODE: Add filesystem images
         if (process.env.NODE_ENV === 'development') {
             const devExteriors = getDevImages('exterior');
             if (devExteriors.length > 0) {
@@ -95,6 +107,8 @@ export async function GET() {
             .filter(id => categoryMap.has(id))
             .map(id => categoryMap.get(id)!);
 
+        console.log(`[galeria] Returning ${collections.length} collections`);
+
         return NextResponse.json(
             { collections },
             {
@@ -106,7 +120,7 @@ export async function GET() {
             }
         );
     } catch (error) {
-        console.error('Error in galeria API:', error);
-        return NextResponse.json({ error: 'Internal error' }, { status: 500 });
+        console.error('[galeria] Error:', error);
+        return NextResponse.json({ collections: [], error: 'Internal error' });
     }
 }

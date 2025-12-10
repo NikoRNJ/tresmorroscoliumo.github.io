@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { supabaseAdmin } from '@/lib/supabase/server';
+import { createClient } from '@supabase/supabase-js';
 import fs from 'fs';
 import path from 'path';
 
@@ -38,7 +38,7 @@ function getContentType(name: string) {
  * GET /api/admin/galeria/rebuild?key=tresmorros2024
  * 
  * RECONSTRUCCIÓN COMPLETA:
- * 1. Sube TODAS las imágenes locales a Supabase Storage
+ * 1. Lee imagenes de Supabase Storage
  * 2. Limpia la tabla galeria
  * 3. Inserta registros para las 4 categorías
  */
@@ -50,6 +50,18 @@ export async function GET(request: NextRequest) {
         return NextResponse.json({ error: 'Unauthorized', hint: 'Use ?key=tresmorros2024' }, { status: 401 });
     }
 
+    // Crear cliente fresco
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+    if (!supabaseUrl || !supabaseKey) {
+        return NextResponse.json({ error: 'Missing env vars' }, { status: 500 });
+    }
+
+    const supabase = createClient(supabaseUrl, supabaseKey, {
+        auth: { autoRefreshToken: false, persistSession: false }
+    });
+
     const results = {
         uploaded: 0,
         skipped: 0,
@@ -60,68 +72,27 @@ export async function GET(request: NextRequest) {
     };
 
     try {
-        const basePath = getLocalPath();
-        console.log('[rebuild] Base path:', basePath);
+        console.log('[rebuild] Iniciando reconstrucción...');
 
-        // PASO 1: Subir imágenes locales a Supabase Storage
-        for (const folder of VALID_FOLDERS) {
-            const folderPath = path.join(basePath, folder);
-
-            if (!fs.existsSync(folderPath)) {
-                results.errors.push(`Carpeta no existe: ${folder}`);
-                continue;
-            }
-
-            const files = fs.readdirSync(folderPath).filter(isImage);
-            console.log(`[rebuild] ${folder}: ${files.length} archivos`);
-
-            for (const fileName of files) {
-                const filePath = path.join(folderPath, fileName);
-                const storagePath = `${folder}/${fileName}`;
-
-                try {
-                    // Verificar si ya existe
-                    const { data: existing } = await supabaseAdmin.storage
-                        .from(STORAGE_BUCKET)
-                        .list(folder, { search: fileName });
-
-                    if (existing?.some(f => f.name === fileName)) {
-                        results.skipped++;
-                        continue;
-                    }
-
-                    // Subir archivo
-                    const buffer = fs.readFileSync(filePath);
-                    const { error: uploadError } = await supabaseAdmin.storage
-                        .from(STORAGE_BUCKET)
-                        .upload(storagePath, buffer, {
-                            contentType: getContentType(fileName),
-                            upsert: true,
-                        });
-
-                    if (uploadError) {
-                        results.errors.push(`Upload ${storagePath}: ${uploadError.message}`);
-                    } else {
-                        results.uploaded++;
-                    }
-                } catch (e: any) {
-                    results.errors.push(`Error ${fileName}: ${e.message}`);
-                }
-            }
-        }
-
-        // PASO 2: Limpiar tabla galeria COMPLETAMENTE
-        const { data: allRecords } = await (supabaseAdmin.from('galeria') as any).select('id');
+        // PASO 1: Limpiar tabla galeria COMPLETAMENTE
+        const { data: allRecords } = await supabase.from('galeria').select('id');
         if (allRecords && allRecords.length > 0) {
-            const ids = allRecords.map((r: any) => r.id);
-            await (supabaseAdmin.from('galeria') as any).delete().in('id', ids);
-            results.deleted = ids.length;
-            console.log(`[rebuild] Eliminados ${ids.length} registros`);
+            const { error: deleteError } = await supabase
+                .from('galeria')
+                .delete()
+                .neq('id', '00000000-0000-0000-0000-000000000000');
+
+            if (deleteError) {
+                results.errors.push(`Delete error: ${deleteError.message}`);
+            } else {
+                results.deleted = allRecords.length;
+                console.log(`[rebuild] Eliminados ${allRecords.length} registros`);
+            }
         }
 
-        // PASO 3: Insertar registros desde Supabase Storage
+        // PASO 2: Insertar registros desde Supabase Storage
         for (const folder of VALID_FOLDERS) {
-            const { data: files, error: listError } = await supabaseAdmin.storage
+            const { data: files, error: listError } = await supabase.storage
                 .from(STORAGE_BUCKET)
                 .list(folder);
 
@@ -139,11 +110,12 @@ export async function GET(request: NextRequest) {
 
             for (const file of imageFiles) {
                 const storagePath = `${folder}/${file.name}`;
-                const { data: urlData } = supabaseAdmin.storage
+                const { data: urlData } = supabase.storage
                     .from(STORAGE_BUCKET)
                     .getPublicUrl(storagePath);
 
-                const { error: insertError } = await (supabaseAdmin.from('galeria') as any)
+                const { error: insertError } = await supabase
+                    .from('galeria')
                     .insert({
                         image_url: urlData.publicUrl,
                         storage_path: `supabase://${storagePath}`,
@@ -161,7 +133,7 @@ export async function GET(request: NextRequest) {
         }
 
         // Log evento
-        await (supabaseAdmin.from('api_events') as any).insert({
+        await supabase.from('api_events').insert({
             event_type: 'galeria_rebuilt',
             event_source: 'admin',
             payload: results,

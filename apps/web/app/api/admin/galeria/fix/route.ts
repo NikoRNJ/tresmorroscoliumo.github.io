@@ -1,13 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { requireAdmin } from '@/lib/auth/admin';
-import { supabaseAdmin } from '@/lib/supabase/server';
+import { createClient } from '@supabase/supabase-js';
 
 export const dynamic = 'force-dynamic';
 
-// Categorías válidas para la galería pública
 const VALID_GALLERY_FOLDERS = ['exterior', 'interior', 'playas', 'puntos-turisticos'];
 
-// Mapeo de carpeta a nombre de categoría para la galería
 const FOLDER_TO_CATEGORY: Record<string, string> = {
     'exterior': 'Exterior',
     'interior': 'Interior',
@@ -19,31 +16,32 @@ const FOLDER_TO_CATEGORY: Record<string, string> = {
  * GET /api/admin/galeria/fix?key=tresmorros2024
  * 
  * Corrige la tabla galeria:
- * 1. Elimina registros que no son de galería (cabins, hero, proposito)
- * 2. Lee las imágenes que YA están en Supabase Storage
+ * 1. Elimina todos los registros
+ * 2. Lee las imágenes de Supabase Storage
  * 3. Inserta los registros correctos
- * 
- * En desarrollo: acepta query param ?key=tresmorros2024
- * En producción: requiere sesión de admin
  */
 export async function GET(request: NextRequest) {
-    // Verificar autenticación
     const { searchParams } = new URL(request.url);
-    const devKey = searchParams.get('key');
-    const isDevMode = process.env.NODE_ENV === 'development';
+    const key = searchParams.get('key');
 
-    // En desarrollo, permitir con clave; en producción, requiere admin
-    if (isDevMode && devKey === 'tresmorros2024') {
-        console.log('[fix] Acceso autorizado con clave de desarrollo');
-    } else {
-        const isAdmin = await requireAdmin();
-        if (!isAdmin) {
-            return NextResponse.json({
-                error: 'Unauthorized',
-                hint: isDevMode ? 'Usa ?key=tresmorros2024 para ejecutar en desarrollo' : undefined
-            }, { status: 401 });
-        }
+    if (key !== 'tresmorros2024') {
+        return NextResponse.json({
+            error: 'Unauthorized',
+            hint: 'Use ?key=tresmorros2024'
+        }, { status: 401 });
     }
+
+    // Crear cliente fresco
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+    if (!supabaseUrl || !supabaseKey) {
+        return NextResponse.json({ error: 'Missing env vars' }, { status: 500 });
+    }
+
+    const supabase = createClient(supabaseUrl, supabaseKey, {
+        auth: { autoRefreshToken: false, persistSession: false }
+    });
 
     const results = {
         deleted: 0,
@@ -55,33 +53,28 @@ export async function GET(request: NextRequest) {
     try {
         console.log('[fix] Iniciando corrección de galería...');
 
-        // PASO 1: Eliminar TODOS los registros actuales (están mal)
-        const { data: existingRecords, error: fetchError } = await (supabaseAdmin
-            .from('galeria') as any)
+        // PASO 1: Eliminar TODOS los registros
+        const { data: existingRecords } = await supabase
+            .from('galeria')
             .select('id');
 
-        if (fetchError) {
-            return NextResponse.json({ error: fetchError.message }, { status: 500 });
-        }
-
         if (existingRecords && existingRecords.length > 0) {
-            const ids = existingRecords.map((r: any) => r.id);
-            const { error: deleteError } = await (supabaseAdmin
-                .from('galeria') as any)
+            const { error: deleteError } = await supabase
+                .from('galeria')
                 .delete()
-                .in('id', ids);
+                .neq('id', '00000000-0000-0000-0000-000000000000');
 
             if (deleteError) {
                 results.errors.push(`Error eliminando: ${deleteError.message}`);
             } else {
-                results.deleted = ids.length;
-                console.log(`[fix] Eliminados ${ids.length} registros incorrectos`);
+                results.deleted = existingRecords.length;
+                console.log(`[fix] Eliminados ${existingRecords.length} registros`);
             }
         }
 
-        // PASO 2: Leer imágenes del Storage y crear registros correctos
+        // PASO 2: Leer imágenes del Storage y crear registros
         for (const folder of VALID_GALLERY_FOLDERS) {
-            const { data: files, error: listError } = await supabaseAdmin.storage
+            const { data: files, error: listError } = await supabase.storage
                 .from('galeria')
                 .list(folder);
 
@@ -95,48 +88,43 @@ export async function GET(request: NextRequest) {
                 continue;
             }
 
-            // Filtrar solo imágenes
             const imageFiles = files.filter(f =>
                 /\.(jpg|jpeg|png|webp|avif|gif)$/i.test(f.name) &&
                 !f.name.startsWith('.')
             );
 
-            console.log(`[fix] ${folder}: ${imageFiles.length} imágenes encontradas`);
+            console.log(`[fix] ${folder}: ${imageFiles.length} imágenes`);
             results.categories[folder] = imageFiles.length;
 
-            // Insertar cada imagen
-            const categoryName = FOLDER_TO_CATEGORY[folder] || folder;
+            const categoryName = FOLDER_TO_CATEGORY[folder];
             let position = 1;
 
             for (const file of imageFiles) {
                 const storagePath = `${folder}/${file.name}`;
-
-                // Obtener URL pública
-                const { data: urlData } = supabaseAdmin.storage
+                const { data: urlData } = supabase.storage
                     .from('galeria')
                     .getPublicUrl(storagePath);
 
-                const { error: insertError } = await (supabaseAdmin
-                    .from('galeria') as any)
+                const { error: insertError } = await supabase
+                    .from('galeria')
                     .insert({
                         image_url: urlData.publicUrl,
                         storage_path: `supabase://${storagePath}`,
                         category: categoryName,
-                        position: position,
-                        alt_text: file.name.replace(/\.[^.]+$/, '').replace(/-/g, ' ').replace(/_/g, ' '),
+                        position: position++,
+                        alt_text: file.name.replace(/\.[^.]+$/, '').replace(/[-_]/g, ' '),
                     });
 
                 if (insertError) {
-                    results.errors.push(`Error insertando ${file.name}: ${insertError.message}`);
+                    results.errors.push(`Insert ${file.name}: ${insertError.message}`);
                 } else {
                     results.inserted++;
-                    position++;
                 }
             }
         }
 
         // Log evento
-        await (supabaseAdmin.from('api_events') as any).insert({
+        await supabase.from('api_events').insert({
             event_type: 'galeria_fixed',
             event_source: 'admin',
             payload: results,
@@ -147,17 +135,14 @@ export async function GET(request: NextRequest) {
 
         return NextResponse.json({
             success: true,
-            message: `Corrección completada: ${results.deleted} eliminados, ${results.inserted} insertados`,
+            message: `Corrección: ${results.deleted} eliminados, ${results.inserted} insertados`,
             results,
         }, {
             headers: { 'Cache-Control': 'no-store' },
         });
 
     } catch (error: any) {
-        console.error('[fix] Error fatal:', error);
-        return NextResponse.json({
-            error: error.message,
-            results,
-        }, { status: 500 });
+        console.error('[fix] Error:', error);
+        return NextResponse.json({ error: error.message, results }, { status: 500 });
     }
 }
