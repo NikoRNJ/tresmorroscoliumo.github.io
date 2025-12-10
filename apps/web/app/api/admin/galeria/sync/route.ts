@@ -219,17 +219,20 @@ function scanRefinedRecursively(
             if (parts.length > 0) {
                 // Find 'galeria' index
                 const galeriaIndex = parts.findIndex(p => p.toLowerCase() === 'galeria');
+                const cabinsIndex = parts.findIndex(p => p.toLowerCase() === 'cabins');
 
                 if (galeriaIndex !== -1 && galeriaIndex + 1 < parts.length) {
                     // Use subfolder immediately after galeria: e.g. 'exterior'
                     categoryName = capitalize(parts[galeriaIndex + 1].replace(/-/g, ' '));
-                } else if (galeriaIndex === -1) {
-                    // Not inside galeria, use immediate parent
+                } else if (cabinsIndex !== -1 && cabinsIndex + 1 < parts.length) {
+                    // Caso especial Cabins: 'cabins/los-morros' -> 'Cabin - Los Morros'
+                    categoryName = `Cabin - ${capitalize(parts[cabinsIndex + 1].replace(/-/g, ' '))}`;
+                } else if (galeriaIndex === -1 && cabinsIndex === -1) {
+                    // Not inside galeria or cabins, use immediate parent (e.g. 'hero' -> 'Hero')
                     categoryName = capitalize(parts[parts.length - 1].replace(/-/g, ' '));
                 } else {
-                    // Inside galeria root directly -> 'General' or keep 'Galeria'?
-                    // Let's call it 'Galeria' if it's direct.
-                    categoryName = 'Galeria';
+                    // Inside root directly
+                    categoryName = 'General';
                 }
             }
 
