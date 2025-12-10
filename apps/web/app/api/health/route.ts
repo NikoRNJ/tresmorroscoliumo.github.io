@@ -4,7 +4,11 @@
  */
 
 import { NextResponse } from 'next/server';
-import { supabaseAdmin } from '@/lib/supabase/server';
+import { supabaseAdmin, isSupabaseConfigured } from '@/lib/supabase/server';
+
+// Forzar que esta ruta sea dinámica (nunca cacheada)
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 
 export async function GET() {
   const startTime = Date.now();
@@ -35,8 +39,8 @@ export async function GET() {
 
   try {
     // Query 1: Probar conexión básica
-    const { data: allCabins, error: allError } = await supabaseAdmin
-      .from('cabins')
+    const { data: allCabins, error: allError } = await (supabaseAdmin
+      .from('cabins') as any)
       .select('id, slug, active');
 
     if (allError) {
@@ -45,7 +49,7 @@ export async function GET() {
     } else {
       health.database.connected = true;
       health.database.cabinsCount = allCabins?.length || 0;
-      health.database.activeCabinsCount = allCabins?.filter(c => c.active).length || 0;
+      health.database.activeCabinsCount = allCabins?.filter((c: any) => c.active).length || 0;
       health.status = 'ok';
     }
 
