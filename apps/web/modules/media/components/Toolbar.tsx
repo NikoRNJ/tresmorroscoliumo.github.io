@@ -8,9 +8,10 @@ type ToolbarProps = {
   folder: MediaFolder | null;
   onSync: () => void;
   syncing: boolean;
+  readOnly?: boolean;
 };
 
-export function Toolbar({ folder, onSync, syncing }: ToolbarProps) {
+export function Toolbar({ folder, onSync, syncing, readOnly }: ToolbarProps) {
   if (!folder) return null;
 
   return (
