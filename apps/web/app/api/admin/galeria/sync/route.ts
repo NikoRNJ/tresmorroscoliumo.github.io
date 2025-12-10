@@ -29,123 +29,148 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    // Crear cliente fresco
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+    if (!supabaseUrl || !supabaseKey) {
+        return NextResponse.json({ error: 'Missing env vars' }, { status: 500 });
+    }
+
+    const { createClient } = await import('@supabase/supabase-js');
+    const supabaseAdmin = createClient(supabaseUrl, supabaseKey, {
+        auth: { autoRefreshToken: false, persistSession: false }
+    });
+
     try {
-        // Step 1: Scan filesystem entirely
-        const filesystemImages = scanRefinedRecursively(PUBLIC_IMAGES_PATH);
-        const fsUrls = new Set(filesystemImages.map(img => img.publicUrl));
+        const isProduction = process.env.NODE_ENV === 'production';
 
-        // Step 2: Get all existing DB records
-        const { data: dbRecords, error: dbError } = await (supabaseAdmin
-            .from('galeria') as any)
-            .select('id, image_url, category');
+        if (isProduction) {
+            console.log('[sync] Producción detectada: Saltando sincronización de filesystem (solo fetch DB).');
+            // En producción, JSON confiamos en la DB y el Storage. No borramos nada basado en filesystem efímero.
+        } else {
+            console.log('[sync] Desarrollo detectado: Sincronizando filesystem -> DB.');
 
-        if (dbError) throw dbError;
+            // Step 1: Scan filesystem entirely
+            const filesystemImages = scanRefinedRecursively(PUBLIC_IMAGES_PATH);
+            const fsUrls = new Set(filesystemImages.map(img => img.publicUrl));
 
-        const dbUrls = new Map((dbRecords || []).map((r: any) => [r.image_url, r]));
+            // Step 2: Get all existing DB records
+            const { data: dbRecords, error: dbError } = await supabaseAdmin
+                .from('galeria')
+                .select('id, image_url, category');
 
-        // Step 3: Identify additions and deletions
-        const toInsert = [];
-        const toDeleteIds: string[] = [];
-        const toUpdateCategory: any[] = [];
+            if (dbError) throw dbError;
 
-        // Check for additions and category updates
-        for (const fsImg of filesystemImages) {
-            if (!dbUrls.has(fsImg.publicUrl)) {
-                // New image
-                toInsert.push(fsImg);
-            } else {
-                // Existing image: Check if category matches current folder structure
-                const dbRecord: any = dbUrls.get(fsImg.publicUrl);
-                if (dbRecord.category !== fsImg.category) {
-                    toUpdateCategory.push({ id: dbRecord.id, category: fsImg.category });
+            const dbUrls = new Map((dbRecords || []).map((r: any) => [r.image_url, r]));
+
+            // Step 3: Identify additions and deletions
+            const toInsert = [];
+            const toDeleteIds: string[] = [];
+            const toUpdateCategory: any[] = [];
+
+            // Check for additions and category updates
+            for (const fsImg of filesystemImages) {
+                if (!dbUrls.has(fsImg.publicUrl)) {
+                    // New image
+                    toInsert.push(fsImg);
+                } else {
+                    // Existing image: Check if category matches current folder structure
+                    const dbRecord: any = dbUrls.get(fsImg.publicUrl);
+                    if (dbRecord.category !== fsImg.category) {
+                        toUpdateCategory.push({ id: dbRecord.id, category: fsImg.category });
+                    }
                 }
             }
-        }
 
-        // Check for deletions (DB records not in FS)
-        for (const [url, record] of Array.from(dbUrls.entries()) as [string, any][]) {
-            if (!fsUrls.has(url)) {
-                toDeleteIds.push(record.id);
+            // Check for deletions (DB records not in FS - ONLY IF URL is local path)
+            for (const [url, record] of Array.from(dbUrls.entries()) as [string, any][]) {
+                // Solo borrar si es una ruta local y no está en disco
+                // Si es una URL de supabase (https://...), NO borrar por falta en disco local
+                const isLocalUrl = url.startsWith('/images/');
+                if (isLocalUrl && !fsUrls.has(url)) {
+                    toDeleteIds.push(record.id);
+                }
             }
-        }
 
-        // --- EXECUTE UPDATES ---
+            // --- EXECUTE UPDATES ---
 
-        // 1. Delete orphaned
-        if (toDeleteIds.length > 0) {
-            await (supabaseAdmin.from('galeria') as any).delete().in('id', toDeleteIds);
-            console.log(`Deleted ${toDeleteIds.length} orphaned images.`);
-        }
+            // 1. Delete orphaned
+            if (toDeleteIds.length > 0) {
+                await supabaseAdmin.from('galeria').delete().in('id', toDeleteIds);
+                console.log(`Deleted ${toDeleteIds.length} orphaned images.`);
+            }
 
-        // 2. Insert new
-        if (toInsert.length > 0) {
-            // Get max positions to append correctly
-            const { data: posData } = await (supabaseAdmin.from('galeria') as any).select('category, position');
-            const categoryPositions = new Map<string, number>();
-            posData?.forEach((r: any) => {
-                const current = categoryPositions.get(r.category) || 0;
-                if (r.position > current) categoryPositions.set(r.category, r.position);
-            });
-
-            const maxBatch = 50;
-            const insertBatches = [];
-            let currentBatch: any[] = [];
-
-            for (const img of toInsert) {
-                const nextPos = (categoryPositions.get(img.category) || 0) + 1;
-                categoryPositions.set(img.category, nextPos);
-
-                currentBatch.push({
-                    image_url: img.publicUrl,
-                    storage_path: img.storagePath,
-                    category: img.category,
-                    position: nextPos,
-                    alt_text: img.altText,
-                    status: 'synced'
+            // 2. Insert new
+            if (toInsert.length > 0) {
+                const { data: posData } = await supabaseAdmin.from('galeria').select('category, position');
+                const categoryPositions = new Map<string, number>();
+                posData?.forEach((r: any) => {
+                    const current = categoryPositions.get(r.category) || 0;
+                    if (r.position > current) categoryPositions.set(r.category, r.position);
                 });
 
-                if (currentBatch.length >= maxBatch) {
-                    insertBatches.push(currentBatch);
-                    currentBatch = [];
+                const maxBatch = 50;
+                const insertBatches = [];
+                let currentBatch: any[] = [];
+
+                for (const img of toInsert) {
+                    const nextPos = (categoryPositions.get(img.category) || 0) + 1;
+                    categoryPositions.set(img.category, nextPos);
+
+                    currentBatch.push({
+                        image_url: img.publicUrl,
+                        storage_path: img.storagePath,
+                        category: img.category,
+                        position: nextPos,
+                        alt_text: img.altText,
+                        status: 'synced'
+                    });
+
+                    if (currentBatch.length >= maxBatch) {
+                        insertBatches.push(currentBatch);
+                        currentBatch = [];
+                    }
                 }
-            }
-            if (currentBatch.length > 0) insertBatches.push(currentBatch);
+                if (currentBatch.length > 0) insertBatches.push(currentBatch);
 
-            for (const batch of insertBatches) {
-                await (supabaseAdmin.from('galeria') as any).insert(batch);
+                for (const batch of insertBatches) {
+                    await supabaseAdmin.from('galeria').insert(batch);
+                }
+                console.log(`Inserted ${toInsert.length} new images.`);
             }
-            console.log(`Inserted ${toInsert.length} new images.`);
+
+            // 3. Update categories
+            if (toUpdateCategory.length > 0) {
+                for (const update of toUpdateCategory) {
+                    await supabaseAdmin.from('galeria')
+                        .update({ category: update.category })
+                        .eq('id', update.id);
+                }
+                console.log(`Updated category for ${toUpdateCategory.length} images.`);
+            }
+
+            if (toInsert.length > 0 || toDeleteIds.length > 0 || toUpdateCategory.length > 0) {
+                await supabaseAdmin.from('api_events').insert({
+                    event_type: 'galeria_synced_master',
+                    event_source: 'admin',
+                    payload: { added: toInsert.length, deleted: toDeleteIds.length, updated: toUpdateCategory.length },
+                    status: 'success',
+                });
+            }
         }
 
-        // 3. Update categories (migrated folders)
-        if (toUpdateCategory.length > 0) {
-            for (const update of toUpdateCategory) {
-                await (supabaseAdmin.from('galeria') as any)
-                    .update({ category: update.category })
-                    .eq('id', update.id);
-            }
-            console.log(`Updated category for ${toUpdateCategory.length} images.`);
-        }
-
-        // Step 4: Final Fetch
-        const { data: allImages } = await (supabaseAdmin
-            .from('galeria') as any)
+        // Step 4: Final Fetch from DB (Source of Truth)
+        const { data: allImages } = await supabaseAdmin
+            .from('galeria')
             .select('*')
             .order('category', { ascending: true })
             .order('position', { ascending: true });
 
         const categories = Array.from(new Set(allImages?.map((i: any) => i.category) || []));
 
-        await (supabaseAdmin.from('api_events') as any).insert({
-            event_type: 'galeria_synced_master',
-            event_source: 'admin',
-            payload: { added: toInsert.length, deleted: toDeleteIds.length, updated: toUpdateCategory.length },
-            status: 'success',
-        });
-
         return NextResponse.json({
             success: true,
-            stats: { added: toInsert.length, deleted: toDeleteIds.length, updated: toUpdateCategory.length },
             categories: categories,
             images: allImages || [],
         });
