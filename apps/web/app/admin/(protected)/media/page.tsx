@@ -4,6 +4,8 @@ import { supabaseAdmin } from '@/lib/supabase/server';
 import { MediaDashboard } from '@/modules/media/components/MediaDashboard';
 import type { MediaFolder, UploadConstraints } from '@/modules/media/types';
 
+export const dynamic = 'force-dynamic';
+
 const validExtensions = ['.jpg', '.jpeg', '.png', '.webp', '.avif'];
 
 async function getLocalImages(slug: string) {
