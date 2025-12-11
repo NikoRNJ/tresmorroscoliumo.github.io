@@ -104,17 +104,41 @@ export const generateFileName = (base: string, extension: string): string => {
 };
 
 /**
+ * Helper to determine storage prefix based on category name.
+ * Aligns with the admin/rebuild script structure.
+ */
+function getCategoryStoragePrefix(category: string): string {
+    const slug = toSlugSegment(category);
+
+    if (slug === 'hero') return 'hero/';
+    if (slug === 'proposito') return 'proposito/';
+
+    // Cabins: "Cabaña Caleta Del Medio" -> "cabins/caleta-del-medio/"
+    // Slug for "Cabaña Caleta Del Medio" is "cabana-caleta-del-medio"
+    if (slug.startsWith('cabana-') || category.toLowerCase().trim().startsWith('cabaña')) {
+        // Try to extract the name part. 
+        const cabinSlug = slug.replace(/^cabana-/, '');
+        if (cabinSlug) return `cabins/${cabinSlug}/`;
+    }
+
+    // Standard gallery folders (exterior, interior, etc.)
+    // Stored at root in the bucket: 'exterior/', 'interior/'
+    // We map the slug directly to the folder.
+    return `${slug}/`;
+}
+
+/**
  * Build the storage path for a galeria image
- * Format: galeria/{category-slug}/{filename}
+ * Format: {prefix}/{filename}
  */
 export const buildGaleriaPath = (category: string, fileName: string): string =>
-    `galeria/${toSlugSegment(category)}/${fileName}`;
+    `${getCategoryStoragePrefix(category)}${fileName}`;
 
 /**
  * Build the folder prefix for a category
  */
 export const buildGaleriaFolderPrefix = (category: string): string =>
-    `galeria/${toSlugSegment(category)}/`;
+    getCategoryStoragePrefix(category);
 
 /**
  * Get the next position number for a new item

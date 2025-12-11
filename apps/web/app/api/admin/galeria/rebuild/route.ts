@@ -6,15 +6,11 @@ import path from 'path';
 export const dynamic = 'force-dynamic';
 
 const STORAGE_BUCKET = 'galeria';
-const VALID_FOLDERS = ['exterior', 'interior', 'playas', 'puntos-turisticos', 'hero'];
 
-const FOLDER_TO_CATEGORY: Record<string, string> = {
-    'exterior': 'Exterior',
-    'interior': 'Interior',
-    'playas': 'Playas',
-    'puntos-turisticos': 'Puntos turisticos',
-    'hero': 'Hero',
-};
+// Helper to format category names (caleta-del-medio -> Caleta Del Medio)
+function formatCategoryName(slug: string): string {
+    return slug.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+}
 
 function getLocalBasePath() {
     const mono = path.join(process.cwd(), 'apps', 'web', 'public', 'images');
@@ -35,13 +31,75 @@ function getContentType(name: string) {
     return types[ext || ''] || 'application/octet-stream';
 }
 
+interface SyncJob {
+    localPath: string;
+    storageFolder: string;
+    category: string;
+}
+
+function getSyncJobs(): SyncJob[] {
+    const basePath = getLocalBasePath();
+    const jobs: SyncJob[] = [];
+
+    // 1. Hero
+    jobs.push({
+        localPath: path.join(basePath, 'hero'),
+        storageFolder: 'hero',
+        category: 'Hero'
+    });
+
+    // 2. Proposito
+    jobs.push({
+        localPath: path.join(basePath, 'proposito'),
+        storageFolder: 'proposito',
+        category: 'Proposito'
+    });
+
+    // 3. Galeria Standard Folders
+    const galeriaFolders = ['exterior', 'interior', 'playas', 'puntos-turisticos'];
+    const folderToCat: Record<string, string> = {
+        'exterior': 'Exterior',
+        'interior': 'Interior',
+        'playas': 'Playas',
+        'puntos-turisticos': 'Puntos turisticos',
+    };
+
+    for (const f of galeriaFolders) {
+        jobs.push({
+            localPath: path.join(basePath, 'galeria', f),
+            storageFolder: f, // Matches legacy structure: root relative in bucket
+            category: folderToCat[f]
+        });
+    }
+
+    // 4. Cabins (Dynamic Subfolders)
+    const cabinsPath = path.join(basePath, 'cabins');
+    if (fs.existsSync(cabinsPath)) {
+        const cabinDirs = fs.readdirSync(cabinsPath).filter(f => {
+            try {
+                return fs.statSync(path.join(cabinsPath, f)).isDirectory();
+            } catch { return false; }
+        });
+
+        for (const c of cabinDirs) {
+            jobs.push({
+                localPath: path.join(cabinsPath, c),
+                storageFolder: `cabins/${c}`,
+                category: `Cabaña ${formatCategoryName(c)}`
+            });
+        }
+    }
+
+    return jobs;
+}
+
 /**
  * GET /api/admin/galeria/rebuild?key=tresmorros2024
  * 
  * RECONSTRUCCIÓN COMPLETA:
- * 1. Lee imagenes de Supabase Storage
+ * 1. Lee imagenes de Supabase Storage (y sube las locales faltantes/actualizadas)
  * 2. Limpia la tabla galeria
- * 3. Inserta registros para las 4 categorías
+ * 3. Inserta registros para todas las categorías
  */
 export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
@@ -51,7 +109,6 @@ export async function GET(request: NextRequest) {
         return NextResponse.json({ error: 'Unauthorized', hint: 'Use ?key=tresmorros2024' }, { status: 401 });
     }
 
-    // Crear cliente fresco
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
     const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
@@ -74,28 +131,25 @@ export async function GET(request: NextRequest) {
 
     try {
         console.log('[rebuild] Iniciando reconstrucción...');
+        const jobs = getSyncJobs();
 
-        // PASO 0: Sincronizar Local -> Storage (Subir archivos locales)
+        // PASO 0: Sincronizar Local -> Storage
         console.log('[rebuild] Sincronizando archivos locales a Storage...');
-        const localBasePath = getLocalBasePath();
 
-        for (const folder of VALID_FOLDERS) {
-            // Resolver ruta local: 'hero' está en root de images, otros en 'galeria/'
-            const folderPath = folder === 'hero'
-                ? path.join(localBasePath, 'hero')
-                : path.join(localBasePath, 'galeria', folder);
+        for (const job of jobs) {
+            if (!fs.existsSync(job.localPath)) {
+                console.log(`[rebuild] Skipping job, path not found: ${job.localPath}`);
+                continue;
+            }
 
-            if (!fs.existsSync(folderPath)) continue;
+            const localFiles = fs.readdirSync(job.localPath).filter(f => isImage(f));
 
-            const localFiles = fs.readdirSync(folderPath);
-            const imageFiles = localFiles.filter(f => isImage(f));
-
-            for (const file of imageFiles) {
+            for (const file of localFiles) {
                 try {
-                    const filePath = path.join(folderPath, file);
+                    const filePath = path.join(job.localPath, file);
                     const fileBuffer = fs.readFileSync(filePath);
                     const contentType = getContentType(file);
-                    const storagePath = `${folder}/${file}`;
+                    const storagePath = `${job.storageFolder}/${file}`;
 
                     const { error: uploadError } = await supabase.storage
                         .from(STORAGE_BUCKET)
@@ -105,7 +159,7 @@ export async function GET(request: NextRequest) {
                         });
 
                     if (uploadError) {
-                        console.error(`[rebuild] Error subiendo ${file}:`, uploadError);
+                        console.error(`[rebuild] Error subiendo ${storagePath}:`, uploadError);
                         results.errors.push(`Upload ${file}: ${uploadError.message}`);
                     } else {
                         results.uploaded++;
@@ -122,7 +176,7 @@ export async function GET(request: NextRequest) {
             const { error: deleteError } = await supabase
                 .from('galeria')
                 .delete()
-                .neq('id', '00000000-0000-0000-0000-000000000000');
+                .neq('id', '00000000-0000-0000-0000-000000000000'); // Delete distinct from nothing
 
             if (deleteError) {
                 results.errors.push(`Delete error: ${deleteError.message}`);
@@ -133,25 +187,32 @@ export async function GET(request: NextRequest) {
         }
 
         // PASO 2: Insertar registros desde Supabase Storage
-        for (const folder of VALID_FOLDERS) {
+        for (const job of jobs) {
+            // List files in the storage folder
             const { data: files, error: listError } = await supabase.storage
                 .from(STORAGE_BUCKET)
-                .list(folder);
+                .list(job.storageFolder, {
+                    limit: 100,
+                    offset: 0,
+                    sortBy: { column: 'name', order: 'asc' },
+                });
 
             if (listError || !files) {
-                results.errors.push(`List ${folder}: ${listError?.message || 'No files'}`);
+                // If folder is empty or doesn't exist in storage yet (and no local files uploaded), this might fail or return empty
+                // Note: .list() on a non-existent folder often returns empty list, which is fine.
+                if (listError) results.errors.push(`List ${job.storageFolder}: ${listError.message}`);
                 continue;
             }
 
             const imageFiles = files.filter(f => isImage(f.name));
-            results.categories[folder] = imageFiles.length;
-            console.log(`[rebuild] Storage ${folder}: ${imageFiles.length} imágenes`);
+            results.categories[job.category] = (results.categories[job.category] || 0) + imageFiles.length;
 
-            const categoryName = FOLDER_TO_CATEGORY[folder];
+            console.log(`[rebuild] Storage ${job.storageFolder} -> Cat '${job.category}': ${imageFiles.length} imágenes`);
+
             let position = 1;
 
             for (const file of imageFiles) {
-                const storagePath = `${folder}/${file.name}`;
+                const storagePath = `${job.storageFolder}/${file.name}`;
                 const { data: urlData } = supabase.storage
                     .from(STORAGE_BUCKET)
                     .getPublicUrl(storagePath);
@@ -161,7 +222,7 @@ export async function GET(request: NextRequest) {
                     .insert({
                         image_url: urlData.publicUrl,
                         storage_path: `supabase://${storagePath}`,
-                        category: categoryName,
+                        category: job.category,
                         position: position++,
                         alt_text: file.name.replace(/\.[^.]+$/, '').replace(/[-_]/g, ' '),
                     });
@@ -186,7 +247,7 @@ export async function GET(request: NextRequest) {
 
         return NextResponse.json({
             success: true,
-            message: `Reconstrucción: ${results.uploaded} subidas, ${results.inserted} insertadas, ${results.deleted} eliminadas`,
+            message: `Reconstrucción completada`,
             results,
         });
 
