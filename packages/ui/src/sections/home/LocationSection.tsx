@@ -133,17 +133,10 @@ export function LocationSection() {
           {/* Párrafo SEO optimizado sobre la ubicación */}
           <div className="text-lg text-gray-300 max-w-4xl mx-auto space-y-4 mb-8">
             <p>
-              <strong>Coliumo</strong> es una joya escondida en la costa de la <strong>Región del Biobío</strong>, 
-              a solo <strong>30 minutos de Tomé</strong> y <strong>1 hora de Concepción</strong>. Este pequeño 
-              pueblo de pescadores conserva la autenticidad del litoral chileno: caletas tradicionales, 
-              playas de arena dorada y una tranquilidad que no encontrarás en destinos masificados.
+              <strong>Coliumo</strong> es una joya costera del <strong>Biobío</strong>, a <strong>10 km de Tomé</strong> y <strong>39 km de Concepción</strong>. Un pueblo de pescadores con caletas tradicionales, playas de arena dorada y un ambiente tranquilo, perfecto para el descanso en familia.
             </p>
             <p className="text-gray-400">
-              Nuestras cabañas están ubicadas en el sector <strong>Tres Morros</strong>, nombrado así por 
-              las tres formaciones rocosas que emergen del mar frente a la costa. Desde aquí tendrás 
-              acceso directo a <strong>playas vírgenes</strong>, <strong>restaurantes de mariscos frescos</strong>, 
-              senderos naturales y la famosa <strong>caleta de pescadores</strong> donde podrás comprar 
-              productos del mar recién capturados.
+              Nuestras cabañas están en el sector <strong>Vega de Coliumo</strong>, a pocos minutos de las playas, restaurantes de mariscos frescos, senderos naturales y la caleta de pescadores, donde podrás conseguir productos del mar recién capturados.
             </p>
           </div>
         </div>
@@ -188,11 +181,9 @@ export function LocationSection() {
               <div>
                 <h3 className="text-xl font-bold text-white mb-2">Dirección</h3>
                 <p className="text-gray-400">
-                  Sector Tres Morros, Coliumo
+                  Avenida Los Morros 992, Coliumo
                   <br />
-                  Tomé, Región del Biobío
-                  <br />
-                  Chile
+                  Región del Bío-Bío, Chile
                 </p>
               </div>
             </div>
@@ -216,11 +207,11 @@ export function LocationSection() {
               <div>
                 <h3 className="text-xl font-bold text-white mb-2">Cómo Llegar</h3>
                 <p className="text-gray-400">
-                  <strong>Desde Tomé:</strong> 30 min por Ruta 150
+                  <strong>Desde Tomé:</strong> aprox. 10 km por Ruta 150
                   <br />
-                  <strong>Desde Concepción:</strong> 1 hora
+                  <strong>Desde Concepción:</strong> aprox. 39 km
                   <br />
-                  <strong>Desde Dichato:</strong> 20 min
+                  <strong>Desde Dichato:</strong> aprox. 11 km
                 </p>
               </div>
             </div>

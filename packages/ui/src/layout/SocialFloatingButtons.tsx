@@ -28,7 +28,7 @@ export function SocialFloatingButtons() {
     },
     {
       name: 'WhatsApp',
-      href: 'https://wa.me/56966576206',
+      href: 'https://wa.me/56988661405',
       icon: MessageCircle,
       bgColor: 'bg-green-500',
       hoverScale: 'hover:scale-110',

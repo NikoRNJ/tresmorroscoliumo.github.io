@@ -2,7 +2,7 @@ import { Cabin } from '@core/types/database';
 import { Container, Section } from '../../ui/Container';
 import { CabinCard } from './CabinCard';
 import { cabinDisplayOrder } from './media';
-import { Instagram, Facebook, MessageCircle, Mail } from 'lucide-react';
+import { Instagram, Facebook, MessageCircle } from 'lucide-react';
 
 interface CabinsSectionProps {
   cabins: Cabin[];
@@ -27,13 +27,13 @@ export function CabinsSection({ cabins }: CabinsSectionProps) {
           {/* Párrafo SEO optimizado con tono natural y amigable */}
           <div className="text-lg text-gray-300 max-w-4xl mx-auto space-y-4">
             <p>
-              Queremos que tu visita a <strong>Coliumo</strong> sea inolvidable. Nuestras tres cabañas están pensadas para conectarte con la magia de la costa del <strong>Biobío</strong>: despierta con el suave murmullo de las olas, maravíllate con los atardeceres desde tu terraza y encuentra el relax total en nuestra <strong>tinaja rodeada de árboles nativos</strong>, naturaleza y un gran aroma a lavanda.
+              Bienvenidos a <strong>Cabañas Tres Morros de Coliumo</strong>, el lugar ideal para disfrutar en <strong>familia</strong> de la belleza natural de la costa del <strong>Biobío</strong>. Aquí podrás despertar con el canto de los pájaros, respirar aire puro entre árboles nativos y relajarte en nuestra <strong>tinaja con hidromasaje</strong> rodeada de lavanda y naturaleza.
             </p>
             <p className="text-gray-400">
-              Ya sea una escapada romántica, unas vacaciones en <strong>familia</strong> o un viaje con <strong>amigos</strong>, tenemos el espacio perfecto para ti. Cabañas acogedoras y totalmente equipadas para hasta 7 personas, con la comodidad completa para disfrutar unos juegos de mesa y un agradable descanso.
+              Nuestras cabañas son perfectas para familias, parejas o grupos de <strong>amigos</strong> que buscan desconectarse de la rutina. Espacios acogedores para hasta 7 personas, equipados con todo lo necesario para una estadía cómoda: cocina completa, terraza privada, parrilla y juegos de mesa para compartir.
             </p>
             <p className="text-gray-400">
-              Contamos con <strong>estacionamiento privado</strong>, listas para tu comodidad y tranquilidad.
+              A pocos pasos de playas tranquilas, caletas de pescadores artesanales y senderos naturales. <strong>Estacionamiento privado</strong> y un ambiente seguro para que disfrutes sin preocupaciones.
             </p>
           </div>
         </div>
@@ -53,7 +53,7 @@ export function CabinsSection({ cabins }: CabinsSectionProps) {
         {/* Sección de Redes Sociales y WhatsApp */}
         <div className="mt-16 text-center">
           <p className="text-gray-400 mb-6">
-            Síguenos en redes sociales y contáctanos directamente
+            Siguenos en nuestras redes sociales y contactanos directamente
           </p>
 
           <div className="flex items-center justify-center gap-4 flex-wrap">
@@ -68,17 +68,6 @@ export function CabinsSection({ cabins }: CabinsSectionProps) {
               <span>Instagram</span>
             </a>
 
-            {/* Facebook */}
-            <a
-              href="https://web.facebook.com/profile.php?id=61583396638851"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center gap-2 px-5 py-3 bg-blue-600 text-white rounded-full font-medium hover:bg-blue-700 transition-colors"
-            >
-              <Facebook className="h-5 w-5" />
-              <span>Facebook</span>
-            </a>
-
             {/* WhatsApp */}
             <a
               href="https://wa.me/56988661405?text=Hola%2C%20me%20interesa%20reservar%20una%20caba%C3%B1a"
@@ -90,13 +79,15 @@ export function CabinsSection({ cabins }: CabinsSectionProps) {
               <span>WhatsApp</span>
             </a>
 
-            {/* Gmail */}
+            {/* Facebook */}
             <a
-              href="mailto:cabanastresmorrosdecoliumo@gmail.com"
-              className="flex items-center gap-2 px-5 py-3 bg-red-500 text-white rounded-full font-medium hover:bg-red-600 transition-colors"
+              href="https://web.facebook.com/profile.php?id=61583396638851"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-2 px-5 py-3 bg-blue-600 text-white rounded-full font-medium hover:bg-blue-700 transition-colors"
             >
-              <Mail className="h-5 w-5" />
-              <span>Gmail</span>
+              <Facebook className="h-5 w-5" />
+              <span>Facebook</span>
             </a>
           </div>
         </div>

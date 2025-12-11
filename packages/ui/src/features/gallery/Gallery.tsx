@@ -85,8 +85,7 @@ export function Gallery() {
             <span className="text-primary-500">Galería</span>
           </h2>
           <p className="text-xl text-gray-400 max-w-3xl mx-auto">
-            Disfruta visual para conocerte el espacio y tener un vistazo que te imagines tus próximas
-            vacaciones con tus allegados.
+            Revisa la galería y sueña tus próximas vacaciones con quienes más quieres.
           </p>
         </div>
 

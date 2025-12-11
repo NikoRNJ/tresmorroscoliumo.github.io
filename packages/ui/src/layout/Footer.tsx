@@ -23,7 +23,7 @@ export function Footer() {
     },
     {
       name: 'WhatsApp',
-      href: 'https://wa.me/56966576206',
+      href: 'https://wa.me/56988661405',
       icon: MessageCircle,
       hoverColor: 'hover:text-green-500 hover:bg-green-500/10',
     },
