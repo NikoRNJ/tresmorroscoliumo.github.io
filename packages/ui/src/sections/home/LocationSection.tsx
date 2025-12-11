@@ -77,40 +77,40 @@ const iconMap: Record<IconName, JSX.Element> = {
 
 const nearbySpots: { name: string; description: string; distance: string; icon: IconName }[] = [
   {
-    name: 'Playa Los Morros',
-    description: 'Arena dorada y oleaje suave para caminar descalzo al amanecer o ver el atardecer frente al Pacífico.',
-    distance: '4 min caminando',
+    name: 'Playa Vegas de Coliumo',
+    description: 'Arena dorada perfecta para caminar descalzo al amanecer o disfrutar de un atardecer inolvidable frente al Pacífico.',
+    distance: '10 a 15 min caminando',
     icon: 'wave',
   },
   {
-    name: 'Caleta del Medio',
-    description: 'Punto ideal para conversar con pescadores, probar ceviche recién hecho y reservar paseos en lancha.',
-    distance: '6 min en auto',
+    name: 'Muelle Caleta del Medio',
+    description: 'Un lugar ideal pasear por la costanera y muelle, disfrutar de la gastronomia local y practicar pesca deportiva en un entorno auténtico y tranquilo.',
+    distance: '5 min en auto',
     icon: 'boat',
   },
   {
-    name: 'Mirador Punta de Parra',
-    description: 'Un balcón natural con vista panorámica a Tomé y la bahía; perfecto para fotografía y contemplación.',
-    distance: '15 min en auto',
-    icon: 'compass',
-  },
-  {
-    name: 'Almacén La Vega',
-    description: 'Abierto todo el año con pan fresco, abarrotes y productos locales para abastecerse sin salir del sector.',
-    distance: '3 min caminando',
-    icon: 'store',
-  },
-  {
-    name: 'Sendero Bosque Húmedo',
-    description: 'Ruta interpretativa entre helechos y árboles nativos que desemboca en pequeñas pozas de agua.',
-    distance: '12 min en auto',
+    name: 'Humedal Ciclovía Coliumo',
+    description: 'Pensada como un gran paseo público con ciclovía peatonal y para bicicletas, esta ruta busca facilitar la movilidad y ofrecer un espacio seguro para disfrutar en familia.',
+    distance: '5 min en auto',
     icon: 'leaf',
   },
   {
-    name: 'Mercado de Tomé',
-    description: 'Artesanías, tejidos y sabores tradicionales para llevarse un recuerdo auténtico del litoral.',
-    distance: '25 min en auto',
-    icon: 'basket',
+    name: 'Casa Piedra Coliumo',
+    description: 'Casa Piedra —o Casa Giacaman— es una llamativa construcción de dos pisos en hormigón armado, emplazada sobre los acantilados frente al océano Pacífico.',
+    distance: '7 min en auto',
+    icon: 'compass',
+  },
+  {
+    name: 'Necochea',
+    description: 'Paisajes únicos frente al océano, acantilados impresionantes y rincones altamente fotografiables. Un lugar perfecto para caminar y conectar con la naturaleza.',
+    distance: '9 min en auto',
+    icon: 'leaf',
+  },
+  {
+    name: 'Playa Los Morros',
+    description: 'Playa Los Morros es la principal playa apta para el baño en Coliumo, ideal para disfrutar de la gastronomía local, practicar deportes náuticos y paseos.',
+    distance: '12 min en auto',
+    icon: 'wave',
   },
 ];
 
@@ -129,7 +129,7 @@ export function LocationSection() {
           <h2 className="heading-secondary mb-4">
             <span className="text-primary-500">Ubicación</span> Privilegiada
           </h2>
-          
+
           {/* Párrafo SEO optimizado sobre la ubicación */}
           <div className="text-lg text-gray-300 max-w-4xl mx-auto space-y-4 mb-8">
             <p>
@@ -248,7 +248,7 @@ export function LocationSection() {
             <p className="text-sm uppercase tracking-[0.4em] text-primary-300 mb-3">Qué Hacer en Coliumo</p>
             <h3 className="text-3xl font-semibold text-white mb-3">Puntos de Interés Cercanos</h3>
             <p className="text-lg text-gray-400 max-w-3xl mx-auto">
-              Desde nuestras cabañas podrás explorar playas, degustar gastronomía local y 
+              Desde nuestras cabañas podrás explorar playas, degustar gastronomía local y
               conectar con la naturaleza del litoral del Biobío.
             </p>
           </div>

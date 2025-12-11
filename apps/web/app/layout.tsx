@@ -23,19 +23,19 @@ export const metadata: Metadata = {
 
   // Title Tag optimizado (59 caracteres - dentro del límite)
   title: {
-    default: "Cabañas en Coliumo | Arriendo Frente al Mar - Tres Morros",
+    default: "Cabañas en Coliumo | Arriendo con Tinaja - Tres Morros",
     template: "%s | Cabañas Tres Morros Coliumo",
   },
 
   // Meta Description con CTA (154 caracteres)
-  description: "Arrienda cabañas en Coliumo con vista al mar y jacuzzi. A 30 min de Tomé. Reserva online tu escape perfecto en la costa del Biobío. ¡Consulta disponibilidad!",
+  description: "Arrienda cabañas en Coliumo con tinaja y naturaleza. A 10 km de Tomé. Reserva online tu escape perfecto en la costa del Biobío. ¡Consulta disponibilidad!",
 
   // Keywords ampliadas para SEO local
   keywords: [
     // Money Keywords principales
     "cabañas en coliumo",
     "arriendo cabañas coliumo",
-    "cabañas coliumo frente al mar",
+    "cabañas coliumo naturaleza",
     "alojamiento coliumo tomé",
     "cabañas tomé región del biobío",
     // Keywords con modificadores
@@ -64,14 +64,14 @@ export const metadata: Metadata = {
     locale: "es_CL",
     url: process.env.NEXT_PUBLIC_SITE_URL || "https://www.tresmorroscoliumo.cl",
     siteName: "Cabañas Tres Morros Coliumo",
-    title: "Cabañas en Coliumo | Arrienda Frente al Mar con Jacuzzi",
-    description: "Escápate a Coliumo. Cabañas equipadas con vista al Pacífico, jacuzzi y acceso a la playa. Reserva online con pago seguro.",
+    title: "Cabañas en Coliumo | Arrienda con Tinaja y Naturaleza",
+    description: "Escápate a Coliumo. Cabañas equipadas rodeadas de naturaleza, tinaja y acceso a playas cercanas. Reserva online con pago seguro.",
     images: [
       {
         url: "/images/common/og-image.jpg",
         width: 1200,
         height: 630,
-        alt: "Cabañas Tres Morros Coliumo - Vista aérea frente al mar",
+        alt: "Cabañas Tres Morros Coliumo - Entorno natural",
         type: "image/jpeg",
       },
     ],
@@ -82,7 +82,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     site: "@tresmorroscoliumo",
     creator: "@tresmorroscoliumo",
-    title: "Cabañas en Coliumo | Frente al Mar con Jacuzzi",
+    title: "Cabañas en Coliumo | Tinaja y Naturaleza",
     description: "Tu escape perfecto en la costa del Biobío. Reserva online.",
     images: ["/images/common/og-image.jpg"],
   },

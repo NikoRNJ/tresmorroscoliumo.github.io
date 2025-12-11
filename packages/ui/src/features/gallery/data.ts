@@ -6,7 +6,7 @@ export const galleryCollections: GalleryCollection[] = [
     label: 'EXTERIORES',
     images: [
       { src: '/images/exterior/IMG_1215.jpeg', alt: 'Entorno natural de Coliumo' },
-      { src: '/images/exterior/IMG_1216.jpeg', alt: 'Área exterior con vista al mar' },
+      { src: '/images/exterior/IMG_1216.jpeg', alt: 'Área exterior rodeada de naturaleza' },
       { src: '/images/exterior/IMG_1217.jpeg', alt: 'Fachada de las cabañas' },
       { src: '/images/exterior/IMG_1218.jpeg', alt: 'Paisaje costero de Coliumo' },
       { src: '/images/exterior/IMG_1219.jpeg', alt: 'Vista panorámica del entorno' },
@@ -15,7 +15,7 @@ export const galleryCollections: GalleryCollection[] = [
       { src: '/images/exterior/IMG_1229.jpeg', alt: 'Vista exterior al atardecer' },
       { src: '/images/exterior/IMG_1230.jpeg', alt: 'Entorno de las cabañas' },
       { src: '/images/exterior/IMG_1234.jpeg', alt: 'Área común exterior' },
-      { src: '/images/exterior/IMG_1235.jpeg', alt: 'Vista del mar desde las cabañas' },
+      { src: '/images/exterior/IMG_1235.jpeg', alt: 'Entorno natural de las cabañas' },
       { src: '/images/exterior/IMG_1236.jpeg', alt: 'Paisaje de Tres Morros' },
       { src: '/images/exterior/IMG_1238.jpeg', alt: 'Naturaleza de Coliumo' },
       { src: '/images/exterior/IMG_1239.jpeg', alt: 'Vista general del complejo' },

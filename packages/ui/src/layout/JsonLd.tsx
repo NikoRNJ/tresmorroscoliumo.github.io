@@ -19,7 +19,7 @@ export function JsonLdSchema({ siteUrl = 'https://www.tresmorroscoliumo.cl' }: J
     name: 'Cabañas Tres Morros Coliumo',
     alternateName: 'Tres Morros de Coliumo',
     description:
-      'Cabañas frente al mar en Coliumo, Tomé. Arriendo de cabañas equipadas con tinaja con hidromasaje, vista al océano Pacífico y acceso directo a la playa. Ideal para familias, parejas y grupos.',
+      'Cabañas en Coliumo, Tomé. Arriendo de cabañas equipadas con tinaja con hidromasaje, rodeadas de naturaleza y cerca de playas de arena dorada. Ideal para familias, parejas y grupos.',
     url: siteUrl,
     telephone: '+56912345678', // TODO: Reemplazar con número real
     email: 'reservas@tresmorroscoliumo.cl', // TODO: Reemplazar con email real
@@ -67,7 +67,7 @@ export function JsonLdSchema({ siteUrl = 'https://www.tresmorroscoliumo.cl' }: J
       { '@type': 'LocationFeatureSpecification', name: 'WiFi Gratuito', value: true },
       { '@type': 'LocationFeatureSpecification', name: 'Estacionamiento', value: true },
       { '@type': 'LocationFeatureSpecification', name: 'Cocina Equipada', value: true },
-      { '@type': 'LocationFeatureSpecification', name: 'Vista al Mar', value: true },
+      { '@type': 'LocationFeatureSpecification', name: 'Entorno Natural', value: true },
       { '@type': 'LocationFeatureSpecification', name: 'Terraza', value: true },
       { '@type': 'LocationFeatureSpecification', name: 'Parrilla/Quincho', value: true },
     ],
@@ -93,9 +93,9 @@ export function JsonLdSchema({ siteUrl = 'https://www.tresmorroscoliumo.cl' }: J
       '@context': 'https://schema.org',
       '@type': 'VacationRental',
       '@id': `${siteUrl}/cabanas/vegas-del-coliumo#vacationrental`,
-      name: 'Cabaña Vegas de Coliumo - Vista al Mar',
+      name: 'Cabaña Vegas de Coliumo - Naturaleza',
       description:
-        'Cabaña romántica con vista panorámica al océano Pacífico. Ideal para parejas que buscan privacidad y tranquilidad en Coliumo. Tinaja con hidromasaje privada con vista al mar.',
+        'Cabaña rodeada de la vega natural de Coliumo. Ideal para parejas que buscan privacidad y tranquilidad. Tinaja con hidromasaje privada rodeada de naturaleza.',
       url: `${siteUrl}/cabanas/vegas-del-coliumo`,
       image: `${siteUrl}/images/cabins/vegas-del-coliumo.jpg`,
       numberOfRooms: 2,
@@ -110,7 +110,7 @@ export function JsonLdSchema({ siteUrl = 'https://www.tresmorroscoliumo.cl' }: J
         unitCode: 'MTK',
       },
       amenityFeature: [
-        { '@type': 'LocationFeatureSpecification', name: 'Vista al Mar', value: true },
+        { '@type': 'LocationFeatureSpecification', name: 'Entorno Natural', value: true },
         { '@type': 'LocationFeatureSpecification', name: 'Tinaja con hidromasaje', value: true },
         { '@type': 'LocationFeatureSpecification', name: 'Cocina Equipada', value: true },
         { '@type': 'LocationFeatureSpecification', name: 'Terraza Privada', value: true },
@@ -262,10 +262,10 @@ export function JsonLdSchema({ siteUrl = 'https://www.tresmorroscoliumo.cl' }: J
       },
       {
         '@type': 'Question',
-        name: '¿Las cabañas tienen vista al mar?',
+        name: '¿Las cabañas están cerca de la playa?',
         acceptedAnswer: {
           '@type': 'Answer',
-          text: 'Sí, todas nuestras cabañas cuentan con vista al océano Pacífico. La cabaña Vegas de Coliumo ofrece vista panorámica directa, mientras que Caleta del Medio y Los Morros tienen vistas parciales y acceso a miradores cercanos.',
+          text: 'Nuestras cabañas están ubicadas en el sector Vega de Coliumo, a pocos minutos de las playas de arena dorada y la caleta de pescadores artesanales. Un entorno natural perfecto para desconectar en familia.',
         },
       },
       {

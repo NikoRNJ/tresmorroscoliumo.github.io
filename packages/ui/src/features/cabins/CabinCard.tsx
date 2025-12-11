@@ -44,12 +44,12 @@ function getCabinAmenities(amenities: string[], slug: string): string[] {
   if (slug === 'los-morros') {
     return [
       'Tinaja con hidromasaje (opcional)',
-      'Amplio living',
       'Cocina full equipada',
       'Parrilla',
       'Estacionamiento privado',
       'Terraza privada',
       'Juegos de mesa',
+      'TV',
     ];
   }
   if (slug === 'caleta-del-medio') {

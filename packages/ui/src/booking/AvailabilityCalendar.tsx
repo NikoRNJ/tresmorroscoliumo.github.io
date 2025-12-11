@@ -312,12 +312,19 @@ export function AvailabilityCalendar({
               onSelect={handleRangeSelect}
               disabled={[
                 { before: new Date() }, // Deshabilitar fechas pasadas
+                { dayOfWeek: [5, 6] }, // Bloquear viernes y sábados
                 ...disabledDates,
               ]}
               modifiers={modifiers}
               modifiersStyles={modifiersStyles}
               modifiersClassNames={modifiersClassNames}
               locale={es}
+              formatters={{
+                formatCaption: (date, options) => {
+                  const str = format(date, 'MMMM yyyy', { locale: es });
+                  return str.charAt(0).toUpperCase() + str.slice(1);
+                }
+              }}
               month={currentMonth}
               onMonthChange={(month) => setCurrentMonth(clampMonth(month))}
               showOutsideDays={false}
@@ -349,11 +356,11 @@ export function AvailabilityCalendar({
             </div>
             <div className="flex items-center gap-2">
               <div className="h-4 w-4 rounded bg-amber-600"></div>
-              <span className="text-gray-400">Horario de ingreso: 15:00 PM</span>
+              <span className="text-gray-400">Check-in (horario de ingreso): 15:00 PM</span>
             </div>
             <div className="flex items-center gap-2">
               <div className="h-4 w-4 rounded bg-orange-400"></div>
-              <span className="text-gray-400">Hora de salida: 12:00 PM</span>
+              <span className="text-gray-400">Check-out (horario de salida): 12:00 PM</span>
             </div>
           </div>
         </>

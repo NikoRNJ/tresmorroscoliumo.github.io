@@ -6,19 +6,20 @@ import path from 'path';
 export const dynamic = 'force-dynamic';
 
 const STORAGE_BUCKET = 'galeria';
-const VALID_FOLDERS = ['exterior', 'interior', 'playas', 'puntos-turisticos'];
+const VALID_FOLDERS = ['exterior', 'interior', 'playas', 'puntos-turisticos', 'hero'];
 
 const FOLDER_TO_CATEGORY: Record<string, string> = {
     'exterior': 'Exterior',
     'interior': 'Interior',
     'playas': 'Playas',
     'puntos-turisticos': 'Puntos turisticos',
+    'hero': 'Hero',
 };
 
-function getLocalPath() {
-    const mono = path.join(process.cwd(), 'apps', 'web', 'public', 'images', 'galeria');
+function getLocalBasePath() {
+    const mono = path.join(process.cwd(), 'apps', 'web', 'public', 'images');
     if (fs.existsSync(mono)) return mono;
-    return path.join(process.cwd(), 'public', 'images', 'galeria');
+    return path.join(process.cwd(), 'public', 'images');
 }
 
 function isImage(name: string) {
@@ -73,6 +74,47 @@ export async function GET(request: NextRequest) {
 
     try {
         console.log('[rebuild] Iniciando reconstrucción...');
+
+        // PASO 0: Sincronizar Local -> Storage (Subir archivos locales)
+        console.log('[rebuild] Sincronizando archivos locales a Storage...');
+        const localBasePath = getLocalBasePath();
+
+        for (const folder of VALID_FOLDERS) {
+            // Resolver ruta local: 'hero' está en root de images, otros en 'galeria/'
+            const folderPath = folder === 'hero'
+                ? path.join(localBasePath, 'hero')
+                : path.join(localBasePath, 'galeria', folder);
+
+            if (!fs.existsSync(folderPath)) continue;
+
+            const localFiles = fs.readdirSync(folderPath);
+            const imageFiles = localFiles.filter(f => isImage(f));
+
+            for (const file of imageFiles) {
+                try {
+                    const filePath = path.join(folderPath, file);
+                    const fileBuffer = fs.readFileSync(filePath);
+                    const contentType = getContentType(file);
+                    const storagePath = `${folder}/${file}`;
+
+                    const { error: uploadError } = await supabase.storage
+                        .from(STORAGE_BUCKET)
+                        .upload(storagePath, fileBuffer, {
+                            contentType,
+                            upsert: true
+                        });
+
+                    if (uploadError) {
+                        console.error(`[rebuild] Error subiendo ${file}:`, uploadError);
+                        results.errors.push(`Upload ${file}: ${uploadError.message}`);
+                    } else {
+                        results.uploaded++;
+                    }
+                } catch (err: any) {
+                    results.errors.push(`Local read error ${file}: ${err.message}`);
+                }
+            }
+        }
 
         // PASO 1: Limpiar tabla galeria COMPLETAMENTE
         const { data: allRecords } = await supabase.from('galeria').select('id');
