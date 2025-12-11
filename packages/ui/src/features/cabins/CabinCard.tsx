@@ -25,22 +25,75 @@ function formatCabinTitle(title: string, slug: string): string {
   return title;
 }
 
+/** Override de descripción para UI */
+function getCabinDescription(description: string | null, slug: string): string {
+  if (slug === 'los-morros') {
+    return 'Nuestra cabaña honra el encanto de los Morros. Es un espacio amplio y luminoso, con tinaja opcional y rodeado de naturaleza. El lugar perfecto para desconectarte de la rutina y conectar con lo esencial.';
+  }
+  if (slug === 'caleta-del-medio') {
+    return 'Acogedora cabaña inspirada en la caleta de pescadores artesanales. Un espacio ideal para descansar, relajarte y conectar con la naturaleza en un ambiente tranquilo y auténtico.';
+  }
+  if (slug === 'vegas-del-coliumo') {
+    return 'Cabaña rodeada de la vega natural de Coliumo. Un refugio tranquilo donde podrás disfrutar de la brisa marina y el sonido de las aves en un entorno único y acogedor.';
+  }
+  return description || 'Cabaña acogedora en Coliumo';
+}
+
+/** Override de amenidades para UI */
+function getCabinAmenities(amenities: string[], slug: string): string[] {
+  if (slug === 'los-morros') {
+    return [
+      'Tinaja con hidromasaje (opcional)',
+      'Amplio living',
+      'Cocina full equipada',
+      'Parrilla',
+      'Estacionamiento privado',
+      'Terraza privada',
+      'Juegos de mesa',
+    ];
+  }
+  if (slug === 'caleta-del-medio') {
+    return [
+      'Tinaja con hidromasaje (opcional)',
+      'Cocina full equipada',
+      'Parrilla',
+      'Estacionamiento privado',
+      'Terraza privada',
+      'Juegos de mesa',
+      'TV',
+    ];
+  }
+  if (slug === 'vegas-del-coliumo') {
+    return [
+      'Tinaja con hidromasaje (opcional)',
+      'Cocina full equipada',
+      'Parrilla',
+      'Estacionamiento privado',
+      'Terraza privada',
+      'Juegos de mesa',
+    ];
+  }
+  return amenities;
+}
+
 export function CabinCard({ cabin }: CabinCardProps) {
   const coverImage = getCabinCoverImage(cabin.slug);
-  const amenities = Array.isArray(cabin.amenities) ? cabin.amenities : [];
+  const rawAmenities = Array.isArray(cabin.amenities) ? cabin.amenities : [];
+  const amenities = getCabinAmenities(rawAmenities as string[], cabin.slug);
   const displayTitle = formatCabinTitle(cabin.title, cabin.slug);
+  const description = getCabinDescription(cabin.description, cabin.slug);
 
   return (
     <Card>
       <CardImage src={coverImage.src} alt={coverImage.alt} />
       <CardContent>
         <CardTitle>{displayTitle}</CardTitle>
-        <CardDescription className="mb-4 line-clamp-2">
-          {cabin.description || 'Cabaña acogedora en Coliumo'}
+        <CardDescription className="mb-4 line-clamp-3">
+          {description}
         </CardDescription>
 
         <div className="mb-4 flex flex-wrap gap-2">
-          {amenities.slice(0, 3).map((amenity, index) => (
+          {amenities.slice(0, 4).map((amenity, index) => (
             <span
               key={index}
               className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-primary-500/10 text-primary-500"
@@ -48,9 +101,9 @@ export function CabinCard({ cabin }: CabinCardProps) {
               {String(amenity)}
             </span>
           ))}
-          {amenities.length > 3 && (
+          {amenities.length > 4 && (
             <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-dark-800 text-gray-400">
-              +{amenities.length - 3} más
+              +{amenities.length - 4} más
             </span>
           )}
         </div>

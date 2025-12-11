@@ -40,6 +40,8 @@ function getCabinDescription(description: string | null, slug: string): string {
     baseDescription = 'Nuestra cabaña honra el encanto de los Morros. Es un espacio amplio y luminoso, con tinaja opcional y rodeado de naturaleza. El lugar perfecto para desconectarte de la rutina y conectar con lo esencial.';
   } else if (slug === 'caleta-del-medio') {
     baseDescription = 'Acogedora cabaña inspirada en la caleta de pescadores artesanales. Un espacio ideal para descansar, relajarte y conectar con la naturaleza en un ambiente tranquilo y auténtico.';
+  } else if (slug === 'vegas-del-coliumo') {
+    baseDescription = 'Cabaña rodeada de la vega natural de Coliumo. Un refugio tranquilo donde podrás disfrutar de la brisa marina y el sonido de las aves en un entorno único y acogedor.';
   } else {
     baseDescription = description || 'Cabaña acogedora en Coliumo';
   }
@@ -69,6 +71,16 @@ function getCabinAmenities(amenities: string[], slug: string): string[] {
       'Terraza privada',
       'Juegos de mesa',
       'TV',
+    ];
+  }
+  if (slug === 'vegas-del-coliumo') {
+    return [
+      'Tinaja con hidromasaje (opcional)',
+      'Cocina full equipada',
+      'Parrilla',
+      'Estacionamiento privado',
+      'Terraza privada',
+      'Juegos de mesa',
     ];
   }
   return amenities;

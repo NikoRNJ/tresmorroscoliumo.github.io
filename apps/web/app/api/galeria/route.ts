@@ -84,21 +84,23 @@ export async function GET() {
             categoryMap.get(tabId)!.images.push({ src: row.image_url, alt: row.alt_text || 'Imagen' });
         }
 
-        // DEV MODE: Add filesystem images
-        if (process.env.NODE_ENV === 'development') {
-            const devExteriors = getDevImages('exterior');
-            if (devExteriors.length > 0) {
-                if (!categoryMap.has('exteriores')) {
-                    categoryMap.set('exteriores', { id: 'exteriores', label: 'EXTERIORES', images: [] });
-                }
-                const tab = categoryMap.get('exteriores')!;
-                const existingSrcs = new Set(tab.images.map(i => i.src));
+        // DEV MODE & PRODUCTION: Add filesystem images for all categories
+        const folderMappings = [
+            { folder: 'exterior', id: 'exteriores', label: 'EXTERIORES' },
+            { folder: 'interior', id: 'interiores', label: 'INTERIORES' },
+            { folder: 'playas', id: 'playas', label: 'PLAYAS' },
+            { folder: 'puntos-turisticos', id: 'puntos-turisticos', label: 'PUNTOS TURÍSTICOS' },
+        ];
 
-                for (const img of devExteriors) {
-                    if (!existingSrcs.has(img.src)) {
-                        tab.images.push(img);
-                    }
+        for (const mapping of folderMappings) {
+            const devImages = getDevImages(mapping.folder);
+            if (devImages.length > 0) {
+                if (!categoryMap.has(mapping.id)) {
+                    categoryMap.set(mapping.id, { id: mapping.id, label: mapping.label, images: [] });
                 }
+                const tab = categoryMap.get(mapping.id)!;
+                // Replace DB images with local filesystem images for consistency
+                tab.images = devImages;
             }
         }
 
