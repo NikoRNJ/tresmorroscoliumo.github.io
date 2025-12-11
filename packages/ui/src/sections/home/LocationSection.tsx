@@ -235,13 +235,7 @@ export function LocationSection() {
               <div>
                 <h3 className="text-xl font-bold text-white mb-2">Entorno Natural</h3>
                 <p className="text-gray-400">
-                  Playas de arena dorada
-                  <br />
-                  Caleta de pescadores artesanales
-                  <br />
-                  Senderos y bosque nativo
-                  <br />
-                  Vista a Los Tres Morros
+                  Disfruta de playas de arena dorada, una caleta de pescadores llena de tradición y caminatas entre bosque nativo junto a tu familia.
                 </p>
               </div>
             </div>

@@ -30,23 +30,20 @@ function formatCabinTitle(title: string, slug: string): string {
 }
 
 /** Ubicación común para todas las cabañas */
-const CABIN_LOCATION = 'Avenida Los Morros 992, Coliumo, Tomé, Biobío.';
+const CABIN_LOCATION = 'Avenida Los Morros 992, Coliumo, Región del Bío-Bío, Chile';
 
 /** Override de descripción para UI */
 function getCabinDescription(description: string | null, slug: string): string {
-  let baseDescription: string;
-  
   if (slug === 'los-morros') {
-    baseDescription = 'Nuestra cabaña honra el encanto de los Morros. Es un espacio amplio y luminoso, con tinaja opcional y rodeado de naturaleza. El lugar perfecto para desconectarte de la rutina y conectar con lo esencial.';
-  } else if (slug === 'caleta-del-medio') {
-    baseDescription = 'Acogedora cabaña inspirada en la caleta de pescadores artesanales. Un espacio ideal para descansar, relajarte y conectar con la naturaleza en un ambiente tranquilo y auténtico.';
-  } else if (slug === 'vegas-del-coliumo') {
-    baseDescription = 'Cabaña rodeada de la vega natural de Coliumo. Un refugio tranquilo donde podrás disfrutar de la brisa marina y el sonido de las aves en un entorno único y acogedor.';
-  } else {
-    baseDescription = description || 'Cabaña acogedora en Coliumo';
+    return 'Nuestra cabaña honra el encanto de los Morros. Es un espacio amplio y luminoso, con tinaja opcional y rodeado de naturaleza. El lugar perfecto para desconectarte de la rutina y conectar con lo esencial.';
   }
-  
-  return `${baseDescription}\n\n📍 ${CABIN_LOCATION}`;
+  if (slug === 'caleta-del-medio') {
+    return 'Acogedora cabaña inspirada en la caleta de pescadores artesanales. Un espacio ideal para descansar, relajarte y conectar con la naturaleza en un ambiente tranquilo y auténtico.';
+  }
+  if (slug === 'vegas-del-coliumo') {
+    return 'Cabaña rodeada de la vega natural de Coliumo. Un refugio tranquilo donde podrás disfrutar de la brisa marina y el sonido de las aves en un entorno único y acogedor.';
+  }
+  return description || 'Cabaña acogedora en Coliumo';
 }
 
 /** Override de amenidades para UI */
@@ -180,13 +177,14 @@ export default async function CabinPage({ params }: CabinPageProps) {
               <p className="text-gray-300 leading-relaxed">{description}</p>
             </div>
 
-            {/* Detalles adicionales */}
-            {cabinData.location_details && (
-              <div className="mb-8">
-                <h2 className="mb-4 text-2xl font-bold text-white">Ubicación</h2>
-                <p className="text-gray-300 leading-relaxed">{cabinData.location_details}</p>
-              </div>
-            )}
+            {/* Ubicación */}
+            <div className="mb-8">
+              <h2 className="mb-4 text-2xl font-bold text-white">Ubicación</h2>
+              <p className="text-gray-300 leading-relaxed flex items-center gap-2">
+                <span className="text-primary-500">📍</span>
+                {CABIN_LOCATION}
+              </p>
+            </div>
 
             {/* Amenidades */}
             {amenities.length > 0 && (
