@@ -22,11 +22,23 @@ function resolveImageUrl(imageUrl: string, storagePath?: string | null): string 
         return imageUrl;
     }
 
-    // Si es una URL relativa local (/images/...), intentar construir URL de Supabase
-    if (imageUrl.startsWith('/images/galeria/') && storagePath?.startsWith('supabase://')) {
+    // Si es una URL relativa local (/images/...) Y tenemos un path de storage, construir URL pública de Supabase
+    if (imageUrl.startsWith('/images/') && storagePath?.startsWith('supabase://')) {
         const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-        const relativePath = storagePath.replace('supabase://', '');
-        return `${supabaseUrl}/storage/v1/object/public/galeria/${relativePath}`;
+        // El storagePath es algo como 'supabase://public/images/cabins/...' o 'public/images/...'
+        // En full-sync guardamos storage_path como 'public/images/...' (sin supabase:// a veces) o con.
+        // Asumamos que el bucket es 'galeria'.
+
+        let pathInBucket = storagePath.replace('supabase://', '');
+
+        // Si el path empieza con 'public/', lo quitamos porque el bucket ya es público pero la URL no lo repite normalmente 
+        // A MENOS que hayamos subido el archivo dentro de una carpeta llamada public en el bucket.
+        // En full-sync hacemos: supabase.storage.from('galeria').upload(filePath...)
+        // filePath era 'public/images/...'
+        // Así que el archivo EN EL BUCKET se llama 'public/images/...'
+
+        // URL formato: {supabaseUrl}/storage/v1/object/public/{bucketName}/{path}
+        return `${supabaseUrl}/storage/v1/object/public/galeria/${pathInBucket}`;
     }
 
     // Fallback: usar URL como está (funcionará en desarrollo)
