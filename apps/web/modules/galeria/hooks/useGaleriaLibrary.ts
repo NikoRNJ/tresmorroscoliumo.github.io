@@ -242,6 +242,14 @@ export function useGaleriaLibrary({ initialCategories, constraints }: UseGaleria
                 });
             }
             const newCategories = Array.from(categoryMap.values());
+
+            // SECURITY CHECK: If sync returns nothing and we have data, something might be wrong. Don't wipe UI.
+            if (newCategories.length === 0 && categories.length > 0) {
+                console.warn('[UseGaleriaLibrary] Sync returned empty, aborting destructive update.');
+                // No actualizamos categories, mantenemos lo que hay.
+                return;
+            }
+
             // Preserve any empty categories that might exist locally
             const emptyCats = categories.filter((c) => c.items.length === 0 && !categoryMap.has(c.slug));
             setCategories([...newCategories, ...emptyCats]);

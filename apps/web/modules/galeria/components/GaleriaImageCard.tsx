@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import Image from 'next/image';
+// import Image from 'next/image';
 import type { GaleriaItem } from '../types';
 import { Trash2, GripVertical, Edit2, X, Check, ImageOff, RefreshCw, ExternalLink, Eye } from 'lucide-react';
 
@@ -142,20 +142,18 @@ export function GaleriaImageCard({
                             </div>
                         )}
 
-                        {/* Actual image */}
-                        <Image
+                        {/* Actual image - USANDO IMG NATIVO para máxima fiabilidad en Admin */}
+                        <img
                             key={`${item.id}-${retryCount}`}
                             src={imageUrl}
                             alt={item.altText || 'Imagen de galería'}
-                            fill
-                            sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, (max-width: 1024px) 25vw, 16vw"
-                            className="object-cover transition-all duration-300 group-hover:scale-105"
+                            className="absolute inset-0 h-full w-full object-cover transition-all duration-300 group-hover:scale-105"
                             onLoad={() => setImageLoaded(true)}
-                            onError={() => {
-                                console.error('Error cargando imagen:', imageUrl);
+                            onError={(e) => {
+                                console.error('Error cargando imagen nativa:', imageUrl);
                                 setImageError(true);
                             }}
-                            unoptimized={true} // Forzamos unoptimized para evitar problemas con dominios externos o locales complejos
+                            loading="lazy"
                         />
                     </>
                 )}

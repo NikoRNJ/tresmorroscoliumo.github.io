@@ -35,7 +35,9 @@ export function CategoryTree({ categories, selected, onSelect }: CategoryTreePro
             const lowerName = cat.name.toLowerCase();
 
             // Logic: Cabins go to Cabins. System/Misc go to Others. EVERYTHING ELSE goes to Galeria.
-            if (lowerName.startsWith('cabin') || lowerName.startsWith('cabaña')) {
+            const cabinKeywords = ['cabin', 'cabaña', 'caleta del medio', 'vegas del coliumo', 'los morros'];
+
+            if (cabinKeywords.some(k => lowerName.includes(k))) {
                 groups[1].categories.push(cat);
             } else if (['hero', 'proposito', 'general'].some(t => lowerName.includes(t))) {
                 groups[2].categories.push(cat);
