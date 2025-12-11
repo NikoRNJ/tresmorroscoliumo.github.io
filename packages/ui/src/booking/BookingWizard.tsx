@@ -18,6 +18,20 @@ interface BookingWizardProps {
 
 type WizardStep = 'dates' | 'party-size' | 'details';
 
+/** Formatear nombre de cabaña para UI */
+function formatCabinTitle(title: string, slug: string): string {
+  if (slug === 'los-morros') {
+    return 'Cabaña Los Morros';
+  }
+  if (slug === 'vegas-del-coliumo') {
+    return 'Cabaña Vegas de Coliumo';
+  }
+  if (slug === 'caleta-del-medio') {
+    return 'Cabaña Caleta del Medio';
+  }
+  return title;
+}
+
 /**
  * Wizard de reserva en 3 pasos:
  * 1. Seleccionar fechas
@@ -123,7 +137,7 @@ export function BookingWizard({ cabin }: BookingWizardProps) {
           <div>
             <h2 className="text-2xl font-bold text-white">Selecciona tus fechas</h2>
             <p className="mt-1 text-gray-400">
-              Elige cuándo quieres alojarte en {cabin.title}
+              Elige cuando quieres hospedarte en {formatCabinTitle(cabin.title, cabin.slug)}
             </p>
           </div>
 

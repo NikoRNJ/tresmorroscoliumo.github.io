@@ -15,6 +15,65 @@ interface CabinPageProps {
   };
 }
 
+/** Formatear nombre de cabaña para UI */
+function formatCabinTitle(title: string, slug: string): string {
+  if (slug === 'los-morros') {
+    return 'Cabaña Los Morros';
+  }
+  if (slug === 'vegas-del-coliumo') {
+    return 'Cabaña Vegas de Coliumo';
+  }
+  if (slug === 'caleta-del-medio') {
+    return 'Cabaña Caleta del Medio';
+  }
+  return title;
+}
+
+/** Ubicación común para todas las cabañas */
+const CABIN_LOCATION = 'Avenida Los Morros 992, Coliumo, Tomé, Biobío.';
+
+/** Override de descripción para UI */
+function getCabinDescription(description: string | null, slug: string): string {
+  let baseDescription: string;
+  
+  if (slug === 'los-morros') {
+    baseDescription = 'Nuestra cabaña honra el encanto de los Morros. Es un espacio amplio y luminoso, con tinaja opcional y rodeado de naturaleza. El lugar perfecto para desconectarte de la rutina y conectar con lo esencial.';
+  } else if (slug === 'caleta-del-medio') {
+    baseDescription = 'Acogedora cabaña inspirada en la caleta de pescadores artesanales. Un espacio ideal para descansar, relajarte y conectar con la naturaleza en un ambiente tranquilo y auténtico.';
+  } else {
+    baseDescription = description || 'Cabaña acogedora en Coliumo';
+  }
+  
+  return `${baseDescription}\n\n📍 ${CABIN_LOCATION}`;
+}
+
+/** Override de amenidades para UI */
+function getCabinAmenities(amenities: string[], slug: string): string[] {
+  if (slug === 'los-morros') {
+    return [
+      'Tinaja con hidromasaje (opcional)',
+      'Amplio living',
+      'Cocina full equipada',
+      'Parrilla',
+      'Estacionamiento privado',
+      'Terraza privada',
+      'Juegos de mesa',
+    ];
+  }
+  if (slug === 'caleta-del-medio') {
+    return [
+      'Tinaja con hidromasaje (opcional)',
+      'Cocina full equipada',
+      'Parrilla',
+      'Estacionamiento privado',
+      'Terraza privada',
+      'Juegos de mesa',
+      'TV',
+    ];
+  }
+  return amenities;
+}
+
 /**
  * Generar metadata dinámica para SEO
  * OPTIMIZACIÓN: Revalidar cada 1 hora para reducir queries
@@ -64,8 +123,10 @@ export default async function CabinPage({ params }: CabinPageProps) {
     notFound();
   }
 
-  // Parsear amenidades desde JSON
-  const amenities = (cabinData.amenities as string[]) || [];
+  // Parsear amenidades desde JSON y aplicar overrides de UI
+  const rawAmenities = (cabinData.amenities as string[]) || [];
+  const amenities = getCabinAmenities(rawAmenities, cabinData.slug);
+  const description = getCabinDescription(cabinData.description, cabinData.slug);
   const cabinImages = getCabinGalleryImages(cabinData.slug);
 
   return (
@@ -86,7 +147,7 @@ export default async function CabinPage({ params }: CabinPageProps) {
       <Container className="pt-8">
         {/* Título y precio */}
         <div className="mb-8">
-          <h1 className="mb-2 text-4xl font-bold text-white">{cabinData.title}</h1>
+          <h1 className="mb-2 text-4xl font-bold text-white">{formatCabinTitle(cabinData.title, cabinData.slug)}</h1>
           <div className="flex items-baseline gap-2">
             <span className="text-3xl font-bold text-primary-500">
               {formatPrice(cabinData.base_price)}
@@ -104,7 +165,7 @@ export default async function CabinPage({ params }: CabinPageProps) {
             {/* Descripción */}
             <div className="mb-8">
               <h2 className="mb-4 text-2xl font-bold text-white">Descripción</h2>
-              <p className="text-gray-300 leading-relaxed">{cabinData.description}</p>
+              <p className="text-gray-300 leading-relaxed">{description}</p>
             </div>
 
             {/* Detalles adicionales */}

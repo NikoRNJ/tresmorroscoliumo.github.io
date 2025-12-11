@@ -11,15 +11,30 @@ interface CabinCardProps {
   cabin: Cabin;
 }
 
+/** Formatear nombre de cabaña para UI */
+function formatCabinTitle(title: string, slug: string): string {
+  if (slug === 'los-morros') {
+    return 'Cabaña Los Morros';
+  }
+  if (slug === 'vegas-del-coliumo') {
+    return 'Cabaña Vegas de Coliumo';
+  }
+  if (slug === 'caleta-del-medio') {
+    return 'Cabaña Caleta del Medio';
+  }
+  return title;
+}
+
 export function CabinCard({ cabin }: CabinCardProps) {
   const coverImage = getCabinCoverImage(cabin.slug);
   const amenities = Array.isArray(cabin.amenities) ? cabin.amenities : [];
+  const displayTitle = formatCabinTitle(cabin.title, cabin.slug);
 
   return (
     <Card>
       <CardImage src={coverImage.src} alt={coverImage.alt} />
       <CardContent>
-        <CardTitle>{cabin.title}</CardTitle>
+        <CardTitle>{displayTitle}</CardTitle>
         <CardDescription className="mb-4 line-clamp-2">
           {cabin.description || 'Cabaña acogedora en Coliumo'}
         </CardDescription>
@@ -64,7 +79,7 @@ export function CabinCard({ cabin }: CabinCardProps) {
             </div>
             {cabin.jacuzzi_price > 0 && (
               <div className="text-right text-sm text-gray-400">
-                <div>Jacuzzi opcional</div>
+                <div>Tinaja opcional</div>
                 <div className="text-primary-500 font-semibold">
                   +{formatPrice(cabin.jacuzzi_price)}/día
                 </div>

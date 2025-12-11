@@ -282,7 +282,7 @@ export function BookingForm({ cabin, startDate, endDate, partySize, onBack, onDa
         priceBreakdown={priceBreakdown}
       />
 
-      {/* Selector de Jacuzzi */}
+      {/* Selector de Tinaja con hidromasaje */}
       {cabin.jacuzzi_price > 0 && (
         <JacuzziSelector
           startDate={startDate}

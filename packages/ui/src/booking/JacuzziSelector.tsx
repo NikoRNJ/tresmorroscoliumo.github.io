@@ -14,8 +14,8 @@ interface JacuzziSelectorProps {
 }
 
 /**
- * Selector de días con jacuzzi
- * Permite seleccionar qué días de la estadía se quiere jacuzzi
+ * Selector de días con tinaja
+ * Permite seleccionar qué días de la estadía se quiere tinaja con hidromasaje
  * Adaptado al tema oscuro
  */
 export function JacuzziSelector({
@@ -35,7 +35,7 @@ export function JacuzziSelector({
   return (
     <div className="space-y-3">
       <div className="flex items-baseline justify-between">
-        <h4 className="font-semibold text-white">Jacuzzi (Opcional)</h4>
+        <h4 className="font-semibold text-white">Tinaja con hidromasaje (Opcional)</h4>
         <span className="text-sm text-gray-400">
           ${pricePerDay.toLocaleString('es-CL')} por día
         </span>

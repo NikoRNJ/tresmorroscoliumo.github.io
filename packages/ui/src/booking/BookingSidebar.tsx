@@ -113,7 +113,7 @@ export function BookingSidebar({ cabin }: BookingSidebarProps) {
           </div>
           {cabin.jacuzzi_price > 0 && (
             <div className="flex items-center justify-between">
-              <span className="text-gray-300">Jacuzzi (opcional)</span>
+              <span className="text-gray-300">Tinaja con hidromasaje (opcional)</span>
               <span className="font-semibold text-white">
                 {formatPrice(cabin.jacuzzi_price)}/día
               </span>

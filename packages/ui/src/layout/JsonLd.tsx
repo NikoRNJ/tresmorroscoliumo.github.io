@@ -19,7 +19,7 @@ export function JsonLdSchema({ siteUrl = 'https://www.tresmorroscoliumo.cl' }: J
     name: 'Cabañas Tres Morros Coliumo',
     alternateName: 'Tres Morros de Coliumo',
     description:
-      'Cabañas frente al mar en Coliumo, Tomé. Arriendo de cabañas equipadas con jacuzzi, vista al océano Pacífico y acceso directo a la playa. Ideal para familias, parejas y grupos.',
+      'Cabañas frente al mar en Coliumo, Tomé. Arriendo de cabañas equipadas con tinaja con hidromasaje, vista al océano Pacífico y acceso directo a la playa. Ideal para familias, parejas y grupos.',
     url: siteUrl,
     telephone: '+56912345678', // TODO: Reemplazar con número real
     email: 'reservas@tresmorroscoliumo.cl', // TODO: Reemplazar con email real
@@ -63,7 +63,7 @@ export function JsonLdSchema({ siteUrl = 'https://www.tresmorroscoliumo.cl' }: J
       bestRating: '5',
     },
     amenityFeature: [
-      { '@type': 'LocationFeatureSpecification', name: 'Jacuzzi', value: true },
+      { '@type': 'LocationFeatureSpecification', name: 'Tinaja con hidromasaje', value: true },
       { '@type': 'LocationFeatureSpecification', name: 'WiFi Gratuito', value: true },
       { '@type': 'LocationFeatureSpecification', name: 'Estacionamiento', value: true },
       { '@type': 'LocationFeatureSpecification', name: 'Cocina Equipada', value: true },
@@ -95,7 +95,7 @@ export function JsonLdSchema({ siteUrl = 'https://www.tresmorroscoliumo.cl' }: J
       '@id': `${siteUrl}/cabanas/vegas-del-coliumo#vacationrental`,
       name: 'Cabaña Vegas de Coliumo - Vista al Mar',
       description:
-        'Cabaña romántica con vista panorámica al océano Pacífico. Ideal para parejas que buscan privacidad y tranquilidad en Coliumo. Jacuzzi privado con vista al mar.',
+        'Cabaña romántica con vista panorámica al océano Pacífico. Ideal para parejas que buscan privacidad y tranquilidad en Coliumo. Tinaja con hidromasaje privada con vista al mar.',
       url: `${siteUrl}/cabanas/vegas-del-coliumo`,
       image: `${siteUrl}/images/cabins/vegas-del-coliumo.jpg`,
       numberOfRooms: 2,
@@ -111,7 +111,7 @@ export function JsonLdSchema({ siteUrl = 'https://www.tresmorroscoliumo.cl' }: J
       },
       amenityFeature: [
         { '@type': 'LocationFeatureSpecification', name: 'Vista al Mar', value: true },
-        { '@type': 'LocationFeatureSpecification', name: 'Jacuzzi', value: true },
+        { '@type': 'LocationFeatureSpecification', name: 'Tinaja con hidromasaje', value: true },
         { '@type': 'LocationFeatureSpecification', name: 'Cocina Equipada', value: true },
         { '@type': 'LocationFeatureSpecification', name: 'Terraza Privada', value: true },
       ],
@@ -249,7 +249,7 @@ export function JsonLdSchema({ siteUrl = 'https://www.tresmorroscoliumo.cl' }: J
         name: '¿Cuánto cuesta arrendar una cabaña en Coliumo?',
         acceptedAnswer: {
           '@type': 'Answer',
-          text: 'Nuestras cabañas en Coliumo tienen un valor desde $55.000 CLP por noche. El precio incluye capacidad base para 2 personas, con un costo adicional de $10.000 por persona extra (máximo 7 personas). El jacuzzi tiene un valor adicional de $25.000 por día.',
+          text: 'Nuestras cabañas en Coliumo tienen un valor desde $55.000 CLP por noche. El precio incluye capacidad base para 2 personas, con un costo adicional de $10.000 por persona extra (máximo 7 personas). La tinaja con hidromasaje tiene un valor adicional de $25.000 por día.',
         },
       },
       {

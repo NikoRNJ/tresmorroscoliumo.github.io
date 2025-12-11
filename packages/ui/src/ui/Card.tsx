@@ -29,6 +29,7 @@ export function CardImage({ src, alt, className }: { src: string; alt: string; c
         alt={alt}
         fill
         className="object-cover transition-transform duration-500 hover:scale-110"
+        style={{ objectPosition: 'center 85%' }}
         sizes="(max-width: 1024px) 100vw, 33vw"
         priority={false}
       />

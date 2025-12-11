@@ -62,12 +62,12 @@ export function BookingSummary({
           </div>
         </div>
 
-        {/* Jacuzzi (si aplica) */}
+        {/* Tinaja (si aplica) */}
         {priceBreakdown.jacuzziDays > 0 && (
           <div className="flex items-start gap-2">
             <Waves className="mt-0.5 h-5 w-5 flex-shrink-0 text-primary-500" />
             <div>
-              <p className="text-sm font-medium text-gray-400">Jacuzzi</p>
+              <p className="text-sm font-medium text-gray-400">Tinaja con hidromasaje</p>
               <p className="text-base font-semibold text-white">
                 {priceBreakdown.jacuzziDays} día{priceBreakdown.jacuzziDays !== 1 ? 's' : ''}
               </p>
@@ -100,7 +100,7 @@ export function BookingSummary({
           {priceBreakdown.jacuzziDays > 0 && (
             <div className="flex justify-between text-sm">
               <span className="text-gray-400">
-                Jacuzzi ({priceBreakdown.jacuzziDays} día
+                Tinaja ({priceBreakdown.jacuzziDays} día
                 {priceBreakdown.jacuzziDays !== 1 ? 's' : ''})
               </span>
               <span className="font-medium text-white">

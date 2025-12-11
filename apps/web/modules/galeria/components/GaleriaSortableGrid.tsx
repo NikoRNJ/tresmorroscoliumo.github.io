@@ -20,27 +20,9 @@ import type { GaleriaItem } from '../types';
 import { GaleriaImageCard } from './GaleriaImageCard';
 import Lightbox from 'yet-another-react-lightbox';
 import 'yet-another-react-lightbox/styles.css';
+import { resolveImageUrl } from '../utils/filePaths';
 
-// Resolve URL helper (duplicado pero necesario o importado si estuviera en utils)
-function resolveImageUrl(imageUrl: string, storagePath?: string | null): string {
-    if (imageUrl.startsWith('http')) return imageUrl;
-    if (imageUrl.startsWith('/images/') && storagePath?.startsWith('supabase://')) {
-        const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-        const pathInBucket = storagePath.replace('supabase://', '');
-        return `${supabaseUrl}/storage/v1/object/public/galeria/${pathInBucket}`;
-    }
-    // Si es local y tiene espacios, aseguramos encoding
-    if (imageUrl.startsWith('/images/')) {
-        try {
-            if (!imageUrl.includes('%')) {
-                return encodeURI(imageUrl);
-            }
-        } catch (e) {
-            return imageUrl;
-        }
-    }
-    return imageUrl;
-}
+
 
 type GaleriaSortableGridProps = {
     items: GaleriaItem[];

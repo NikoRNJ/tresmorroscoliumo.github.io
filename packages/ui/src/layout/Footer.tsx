@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { MapPin, Phone, Mail, Instagram, Facebook } from 'lucide-react';
+import { MapPin, Phone, Mail, Instagram, Facebook, MessageCircle } from 'lucide-react';
 
 /**
  * Footer del sitio con información de contacto y enlaces
@@ -21,6 +21,18 @@ export function Footer() {
       icon: Facebook,
       hoverColor: 'hover:text-blue-500 hover:bg-blue-500/10',
     },
+    {
+      name: 'WhatsApp',
+      href: 'https://wa.me/56966576206',
+      icon: MessageCircle,
+      hoverColor: 'hover:text-green-500 hover:bg-green-500/10',
+    },
+    {
+      name: 'Gmail',
+      href: 'mailto:cabanastresmorrosdecoliumo@gmail.com',
+      icon: Mail,
+      hoverColor: 'hover:text-red-500 hover:bg-red-500/10',
+    },
   ];
 
   return (
@@ -30,11 +42,11 @@ export function Footer() {
           {/* Columna 1: Info */}
           <div>
             <h3 className="mb-4 text-lg font-semibold text-white">
-              Tres Morros de Coliumo
+              Cabañas Tres Morros de Coliumo
             </h3>
             <p className="text-sm text-gray-400 mb-4">
-              Arrienda cabañas frente al mar en Coliumo, Región del Bío-Bío.
-              Disfruta de la naturaleza y la tranquilidad.
+              Cabañas familiares en Coliumo, cerca del mar y rodeadas de naturaleza.
+              Un ambiente tranquilo y seguro para descansar, disfrutar en familia y explorar la belleza de la costa del Biobío.
             </p>
             {/* Redes sociales */}
             <div className="flex items-center gap-3">
@@ -59,12 +71,18 @@ export function Footer() {
             <ul className="space-y-3 text-sm text-gray-400">
               <li className="flex items-start gap-2">
                 <MapPin className="mt-0.5 h-4 w-4 flex-shrink-0 text-primary-500" />
-                <span>Coliumo, Región del Bío-Bío, Chile</span>
+                <span>Avenida Los Morros 992, Coliumo, Región del Bío-Bío, Chile</span>
               </li>
               <li className="flex items-center gap-2">
                 <Phone className="h-4 w-4 flex-shrink-0 text-primary-500" />
                 <a href="tel:+56988661405" className="hover:text-primary-500 transition-colors">
                   +56 9 8866 1405
+                </a>
+              </li>
+              <li className="flex items-center gap-2">
+                <Phone className="h-4 w-4 flex-shrink-0 text-primary-500" />
+                <a href="tel:+56984161963" className="hover:text-primary-500 transition-colors">
+                  +56 9 8416 1963
                 </a>
               </li>
               <li className="flex items-center gap-2">

@@ -24,20 +24,16 @@ export function CabinsSection({ cabins }: CabinsSectionProps) {
             H2 principal con keyword "Cabañas en Coliumo"
             ============================================ */}
         <div className="text-center mb-16">
-          <p className="text-sm uppercase tracking-[0.4em] text-primary-300 mb-3">
-            Tu Refugio en la Costa
-          </p>
-          <h2 className="heading-secondary mb-6">
-            Vive la Experiencia <span className="text-primary-500">Frente al Mar</span>
-          </h2>
-
           {/* Párrafo SEO optimizado con tono natural y amigable */}
           <div className="text-lg text-gray-300 max-w-4xl mx-auto space-y-4">
             <p>
-              Queremos que tu visita a <strong>Coliumo</strong> sea inolvidable. Nuestras tres cabañas están pensadas para conectarte con la magia de la costa del <strong>Biobío</strong>: despierta con el suave murmullo de las olas, maravíllate con los atardeceres desde tu terraza y encuentra el relax total en nuestro <strong>jacuzzi con vista al océano</strong>.
+              Queremos que tu visita a <strong>Coliumo</strong> sea inolvidable. Nuestras tres cabañas están pensadas para conectarte con la magia de la costa del <strong>Biobío</strong>: despierta con el suave murmullo de las olas, maravíllate con los atardeceres desde tu terraza y encuentra el relax total en nuestra <strong>tinaja rodeada de árboles nativos</strong>, naturaleza y un gran aroma a lavanda.
             </p>
             <p className="text-gray-400">
-              Ya sea una escapada romántica, unas vacaciones en <strong>familia</strong> o un viaje con <strong>amigos</strong>, tenemos el espacio perfecto para ti. Cabañas acogedoras y totalmente equipadas para hasta 7 personas, con cocina completa, WiFi y estacionamiento, listas para ser tu hogar junto al mar.
+              Ya sea una escapada romántica, unas vacaciones en <strong>familia</strong> o un viaje con <strong>amigos</strong>, tenemos el espacio perfecto para ti. Cabañas acogedoras y totalmente equipadas para hasta 7 personas, con la comodidad completa para disfrutar unos juegos de mesa y un agradable descanso.
+            </p>
+            <p className="text-gray-400">
+              Contamos con <strong>estacionamiento privado</strong>, listas para tu comodidad y tranquilidad.
             </p>
           </div>
         </div>

@@ -252,8 +252,8 @@ export function AvailabilityCalendar({
             <ChevronLeft className="h-5 w-5" />
           </button>
 
-          <h3 className="text-lg font-semibold capitalize text-white">
-            {format(currentMonth, 'MMMM yyyy', { locale: es })}
+          <h3 className="text-lg font-semibold text-white">
+            {format(currentMonth, 'MMMM yyyy', { locale: es }).replace(/^\w/, c => c.toUpperCase())}
           </h3>
 
           <button
@@ -349,11 +349,11 @@ export function AvailabilityCalendar({
             </div>
             <div className="flex items-center gap-2">
               <div className="h-4 w-4 rounded bg-amber-600"></div>
-              <span className="text-gray-400">Check-in (llegan)</span>
+              <span className="text-gray-400">Horario de ingreso: 15:00 PM</span>
             </div>
             <div className="flex items-center gap-2">
               <div className="h-4 w-4 rounded bg-orange-400"></div>
-              <span className="text-gray-400">Check-out (se van)</span>
+              <span className="text-gray-400">Hora de salida: 12:00 PM</span>
             </div>
           </div>
         </>

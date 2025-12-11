@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Instagram, Facebook, X, Share2 } from 'lucide-react';
+import { Instagram, Facebook, X, Share2, MessageCircle, Mail } from 'lucide-react';
 
 /**
  * Botones flotantes de redes sociales
@@ -24,6 +24,20 @@ export function SocialFloatingButtons() {
       href: 'https://web.facebook.com/profile.php?id=61583396638851',
       icon: Facebook,
       bgColor: 'bg-blue-600',
+      hoverScale: 'hover:scale-110',
+    },
+    {
+      name: 'WhatsApp',
+      href: 'https://wa.me/56966576206',
+      icon: MessageCircle,
+      bgColor: 'bg-green-500',
+      hoverScale: 'hover:scale-110',
+    },
+    {
+      name: 'Gmail',
+      href: 'mailto:cabanastresmorrosdecoliumo@gmail.com',
+      icon: Mail,
+      bgColor: 'bg-red-500',
       hoverScale: 'hover:scale-110',
     },
   ];

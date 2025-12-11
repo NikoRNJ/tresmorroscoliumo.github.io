@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 // import Image from 'next/image';
 import type { GaleriaItem } from '../types';
 import { Trash2, GripVertical, Edit2, X, Check, ImageOff, RefreshCw, ExternalLink, Eye } from 'lucide-react';
+import { resolveImageUrl } from '../utils/filePaths';
 
 type GaleriaImageCardProps = {
     item: GaleriaItem;
@@ -16,36 +17,7 @@ type GaleriaImageCardProps = {
 /**
  * Resuelve la URL de imagen - intenta Supabase Storage si es URL relativa local
  */
-function resolveImageUrl(imageUrl: string, storagePath?: string | null): string {
-    // Si ya es una URL absoluta (Supabase Storage), usarla directamente
-    if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
-        return imageUrl;
-    }
 
-    // Si es una URL relativa local (/images/...) Y tenemos un path de storage, construir URL pública de Supabase
-    if (imageUrl.startsWith('/images/') && storagePath?.startsWith('supabase://')) {
-        const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-        const pathInBucket = storagePath.replace('supabase://', '');
-        return `${supabaseUrl}/storage/v1/object/public/galeria/${pathInBucket}`;
-    }
-
-    // Si es local y tiene espacios, aseguramos encoding
-    if (imageUrl.startsWith('/images/')) {
-        try {
-            // Verificar si ya está encoded (si tiene %20, asumimos que sí)
-            if (!imageUrl.includes('%')) {
-                return imageUrl.split('/').map(p => encodeURIComponent(p)).join('/').replace('images', 'images'); // encodeURIComponent encodes :, /, etc? No.
-                // Better approach: encodeURI ignores / and :
-                return encodeURI(imageUrl);
-            }
-        } catch (e) {
-            return imageUrl;
-        }
-    }
-
-    // Fallback: usar URL como está (funcionará en desarrollo)
-    return imageUrl;
-}
 
 export function GaleriaImageCard({
     item,
@@ -155,7 +127,7 @@ export function GaleriaImageCard({
                                 console.error('Error cargando imagen nativa:', imageUrl);
                                 setImageError(true);
                             }}
-                            loading="lazy"
+                            loading="eager"
                         />
                     </>
                 )}
