@@ -16,9 +16,10 @@ const FOLDER_MAP: Record<string, string> = {
     'galeria/puntos-turisticos': 'Puntos turisticos',
     'hero': 'Hero',
     'proposito': 'Proposito',
-    'cabins/caleta-del-medio': 'Cabin - Caleta del Medio',
-    'cabins/los-morros': 'Cabin - Los Morros',
-    'cabins/vegas-del-coliumo': 'Cabin - Vegas del Coliumo',
+    'cabins/caleta-del-medio': 'Cabaña - Caleta del Medio',
+    'cabins/los-morros': 'Cabaña - Los Morros',
+    'cabins/vegas-del-coliumo': 'Cabaña - Vegas del Coliumo',
+    'common': 'Otros',
 };
 
 function getLocalBasePath() {
@@ -123,19 +124,40 @@ export async function GET(request: NextRequest) {
                     if (!urlData.publicUrl) continue;
 
                     // C. Actualizar/Insertar en DB
-                    // Buscamos por storage_path para evitar duplicados
+                    // Buscamos por storage_path para evitar duplicados manualmente dado que no hay constraint
                     const dbStoragePath = `supabase://${storagePath}`;
 
-                    const { error: upsertError } = await supabase
+                    const { data: existing } = await supabase
                         .from('galeria')
-                        .upsert({
-                            storage_path: dbStoragePath,
-                            image_url: urlData.publicUrl,
-                            category: categoryName,
-                            alt_text: file.replace(/\.[^.]+$/, '').replace(/[-_]/g, ' '),
-                            position: position++, // Nota: esto reseteará posiciones cada vez.
-                            status: 'synced'
-                        }, { onConflict: 'storage_path' });
+                        .select('id')
+                        .eq('storage_path', dbStoragePath)
+                        .maybeSingle();
+
+                    let upsertError;
+
+                    if (existing) {
+                        const { error } = await supabase
+                            .from('galeria')
+                            .update({
+                                image_url: urlData.publicUrl,
+                                category: categoryName,
+                                alt_text: file.replace(/\.[^.]+$/, '').replace(/[-_]/g, ' '),
+                                position: position++,
+                            })
+                            .eq('id', existing.id);
+                        upsertError = error;
+                    } else {
+                        const { error } = await supabase
+                            .from('galeria')
+                            .insert({
+                                storage_path: dbStoragePath,
+                                image_url: urlData.publicUrl,
+                                category: categoryName,
+                                alt_text: file.replace(/\.[^.]+$/, '').replace(/[-_]/g, ' '),
+                                position: position++,
+                            });
+                        upsertError = error;
+                    }
 
                     if (upsertError) {
                         log.push({ error: `DB error ${file}`, details: upsertError.message });

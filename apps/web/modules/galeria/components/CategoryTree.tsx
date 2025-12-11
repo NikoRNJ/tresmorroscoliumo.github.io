@@ -19,6 +19,7 @@ type CategoryGroup = {
 export function CategoryTree({ categories, selected, onSelect }: CategoryTreeProps) {
     const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({
         galeria: true,
+        cabaas: true, // "Cabañas" normalized
         cabins: true,
         otros: true,
     });
@@ -35,11 +36,24 @@ export function CategoryTree({ categories, selected, onSelect }: CategoryTreePro
             const lowerName = cat.name.toLowerCase();
 
             // Logic: Cabins go to Cabins. System/Misc go to Others. EVERYTHING ELSE goes to Galeria.
-            const cabinKeywords = ['cabin', 'cabaña', 'caleta del medio', 'vegas del coliumo', 'los morros'];
+            const cabinKeywords = [
+                'cabin',
+                'cabana',
+                'cabaña',
+                'caba¤a',
+                'caleta del medio',
+                'vegas del coliumo',
+                'los morros'
+            ];
 
-            if (cabinKeywords.some(k => lowerName.includes(k))) {
+            // Should match: "Cabin - Los Morros", "Caleta del medio", etc.
+            const isCabin = cabinKeywords.some(k => lowerName.includes(k));
+
+            const isOther = ['hero', 'proposito', 'general', 'otros'].some(t => lowerName.includes(t));
+
+            if (isCabin) {
                 groups[1].categories.push(cat);
-            } else if (['hero', 'proposito', 'general'].some(t => lowerName.includes(t))) {
+            } else if (isOther) {
                 groups[2].categories.push(cat);
             } else {
                 // Default to Galeria group (includes Exterior, Interior, Playas, etc.)
@@ -47,7 +61,7 @@ export function CategoryTree({ categories, selected, onSelect }: CategoryTreePro
             }
         }
 
-        return groups.filter(g => g.categories.length > 0);
+        return groups;
     }, [categories]);
 
     const toggleGroup = (groupName: string) => {
@@ -148,4 +162,3 @@ export function CategoryTree({ categories, selected, onSelect }: CategoryTreePro
         </aside>
     );
 }
-

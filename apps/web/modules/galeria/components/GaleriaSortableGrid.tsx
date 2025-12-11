@@ -29,6 +29,16 @@ function resolveImageUrl(imageUrl: string, storagePath?: string | null): string 
         const pathInBucket = storagePath.replace('supabase://', '');
         return `${supabaseUrl}/storage/v1/object/public/galeria/${pathInBucket}`;
     }
+    // Si es local y tiene espacios, aseguramos encoding
+    if (imageUrl.startsWith('/images/')) {
+        try {
+            if (!imageUrl.includes('%')) {
+                return encodeURI(imageUrl);
+            }
+        } catch (e) {
+            return imageUrl;
+        }
+    }
     return imageUrl;
 }
 
